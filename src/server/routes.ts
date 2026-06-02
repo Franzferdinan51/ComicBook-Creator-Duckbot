@@ -760,9 +760,9 @@ export function buildRouter(): Router {
    * GET /api/comic/:jobId
    * → { status: 'pending' | 'done' | 'error', result?: ComicResult, error?: string }
    */
-  router.get('/comic/:jobId', (req: Request<{ jobId: string }>, res: Response) => {
+  router.get('/comic/:jobId', async (req: Request<{ jobId: string }>, res: Response) => {
     const jobId = req.params.jobId;
-    const record = jobs.get(jobId);
+    const record = await jobs.resolve(jobId);
     if (!record) {
       return res.status(404).json({ error: `job ${jobId} not found` });
     }
@@ -772,6 +772,7 @@ export function buildRouter(): Router {
       updatedAt: string;
       result?: ComicResult;
       error?: string;
+      fromHistory?: boolean;
     } = {
       status: record.status,
       createdAt: record.createdAt,
@@ -779,6 +780,7 @@ export function buildRouter(): Router {
     };
     if (record.status === 'done' && record.result) body.result = record.result;
     if (record.status === 'error' && record.error) body.error = record.error;
+    if (record.fromHistory) body.fromHistory = true;
     res.json(body);
   });
 
@@ -790,7 +792,7 @@ export function buildRouter(): Router {
    */
   router.get('/comic/:jobId/pdf', async (req: Request<{ jobId: string }>, res: Response) => {
     const jobId = req.params.jobId;
-    const record = jobs.get(jobId);
+    const record = await jobs.resolve(jobId);
     if (!record) {
       return res.status(404).json({ error: `job ${jobId} not found` });
     }
@@ -841,7 +843,7 @@ export function buildRouter(): Router {
    */
   router.get('/comic/:jobId/cbz', async (req: Request<{ jobId: string }>, res: Response) => {
     const jobId = req.params.jobId;
-    const record = jobs.get(jobId);
+    const record = await jobs.resolve(jobId);
     if (!record) {
       return res.status(404).json({ error: `job ${jobId} not found` });
     }
@@ -883,7 +885,7 @@ export function buildRouter(): Router {
    */
   router.get('/comic/:jobId/images/:panelId', async (req: Request<{ jobId: string; panelId: string }>, res: Response) => {
     const jobId = req.params.jobId;
-    const record = jobs.get(jobId);
+    const record = await jobs.resolve(jobId);
     if (!record) {
       return res.status(404).json({ error: `job ${jobId} not found` });
     }

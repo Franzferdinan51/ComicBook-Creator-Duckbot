@@ -31,7 +31,12 @@ export interface HistoryEntry {
   createdAt: string;        // ISO timestamp
   artStyle: string;
   pageCount: number;
-  outputPath: string;       // path to the PDF/CBZ
+  /** Primary output path (the format the user originally requested). */
+  outputPath: string;
+  /** Pre-rendered PDF path, if available. Newer jobs always have this. */
+  pdfPath?: string;
+  /** Pre-rendered CBZ path, if available. Newer jobs always have this. */
+  cbzPath?: string;
   scriptJson: ComicScript;  // the full script (so the frontend can re-render)
   thumbnailPath?: string;   // optional — reserved for future
 }

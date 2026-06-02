@@ -50,6 +50,28 @@ export interface CreateJobInput {
  *  endpoints. */
 const MAX_IN_MEMORY_JOBS = 200;
 
+/**
+ * A "result-ish" view of a job that the route layer can consume
+ * regardless of whether the job is still in memory or has been
+ * evicted (server restart, FIFO trim) and is only available in the
+ * on-disk history. Status is always 'done' for the history path —
+ * the in-memory record is the only thing that can report 'pending'
+ * or 'error'.
+ */
+export interface ResolvedJob {
+  jobId: string;
+  status: JobStatus;
+  createdAt: string;
+  updatedAt: string;
+  result: ComicResult;
+  error?: string;
+  /** True if this was synthesized from on-disk history. The
+   *  `abortController` is undefined and the story/options are
+   *  unavailable — so don't try to cancel or regenerate from
+   *  history-resolved records. */
+  fromHistory: boolean;
+}
+
 class JobManager {
   private jobs = new Map<string, JobRecord>();
   /** Insertion order for FIFO eviction. Mirrors this.jobs's keys. */
@@ -96,6 +118,87 @@ class JobManager {
     return this.jobs.get(jobId);
   }
 
+  /**
+   * Resolve a jobId to a `ResolvedJob` view. If the live in-memory
+   * record exists, returns it. Otherwise falls back to history.json
+   * on disk — rehydrating enough state to serve the PDF/CBZ/image
+   * routes. Returns undefined if neither source has the job.
+   *
+   * The history fallback exists so that a server restart, a 200-job
+   * FIFO trim, or even a deploy doesn't turn every old jobId in the
+   * browser into a 404. Old jobs that finished in a previous
+   * process keep working as long as their output files are on disk.
+   */
+  async resolve(jobId: string): Promise<ResolvedJob | undefined> {
+    const live = this.jobs.get(jobId);
+    if (live) {
+      return {
+        jobId: live.jobId,
+        status: live.status,
+        createdAt: live.createdAt,
+        updatedAt: live.updatedAt,
+        result: live.result as ComicResult,
+        error: live.error,
+        fromHistory: false,
+      };
+    }
+    // Fall back to on-disk history. The result is reconstructed
+    // from what we persisted: the script (so the page tree is
+    // available to the frontend) and the output paths (so the
+    // PDF/CBZ/image routes can stream the files). Anything that
+    // requires the live `story` or `options` (regenerate, cancel)
+    // is NOT available — callers should check `fromHistory` and
+    // degrade gracefully.
+    const { findHistoryEntry } = await import('./storage.js');
+    const entry = await findHistoryEntry(jobId);
+    if (!entry) return undefined;
+    // Build a minimal ComicResult shape. panelImagePaths can be
+    // reconstructed by scanning the per-job images dir next to the
+    // outputPath (we always write one file per panel there).
+    const result: ComicResult = {
+      script: entry.scriptJson,
+      outputPath: entry.outputPath,
+      pdfPath: entry.pdfPath ?? (entry.outputPath.endsWith('.pdf') ? entry.outputPath : null),
+      cbzPath: entry.cbzPath ?? (entry.outputPath.endsWith('.cbz') ? entry.outputPath : null),
+      pages: await Promise.all(
+        entry.scriptJson.pages.map(async (page) => {
+          // The images dir is the outputPath with extension replaced
+          // by `.images/`. Best-effort: if the dir doesn't exist,
+          // return an empty paths array.
+          const stem = entry.outputPath.replace(/\.[^./\\]+$/, '');
+          const imageDir = `${stem}.images`;
+          const panelImagePaths: string[] = [];
+          for (const panel of page.panels) {
+            for (const ext of ['jpg', 'png']) {
+              const candidate = `${imageDir}/${panel.id}.${ext}`;
+              try {
+                await (await import('node:fs/promises')).access(candidate);
+                panelImagePaths.push(candidate);
+                break;
+              } catch {
+                // try next ext
+              }
+            }
+          }
+          return {
+            page,
+            imagePath: panelImagePaths[0] ?? '',
+            panelImagePaths,
+            layout: page.layout,
+          };
+        })
+      ),
+    };
+    return {
+      jobId,
+      status: 'done',
+      createdAt: entry.createdAt,
+      updatedAt: entry.createdAt,
+      result,
+      fromHistory: true,
+    };
+  }
+
   /** List all known jobs, newest first. */
   list(): JobRecord[] {
     return Array.from(this.jobs.values()).sort((a, b) =>
@@ -134,6 +237,8 @@ class JobManager {
         artStyle: result.script.artStyle,
         pageCount: result.script.pages.length,
         outputPath: result.outputPath,
+        pdfPath: result.pdfPath ?? undefined,
+        cbzPath: result.cbzPath ?? undefined,
         scriptJson: result.script,
       };
       try {
