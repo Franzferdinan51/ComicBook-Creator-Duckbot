@@ -10,16 +10,22 @@
  *     need one if you wire ComfyUI under the same `xai` provider name,
  *     but the canonical Grok path is remote.)
  *   - XAI_BASE_URL (default: https://api.x.ai/v1)
- *   - XAI_MODEL     (default: grok-2-latest for text, grok-2-image for image)
+ *   - XAI_MODEL     (default: grok-2-latest for text, grok-imagine-image for image)
  *
- * Known model ids (as of early 2026):
+ * Known model ids (verified against GET /v1/models on this team, 2026-06-02):
  *   Text:
  *     - grok-2-latest         (current production Grok, recommended)
  *     - grok-2-1212          (snapshot)
  *     - grok-beta             (preview of the next major)
  *     - grok-2-vision-1212    (vision-capable; useful for image-to-text)
- *   Image (Grok Imagine):
- *     - grok-2-image          (current image model)
+ *     - grok-4.3, grok-4.20-0309-reasoning, grok-4.20-0309-non-reasoning
+ *   Image (Grok Imagine, hit POST /v1/images/generations):
+ *     - grok-imagine-image             (standard, recommended)
+ *     - grok-imagine-image-quality     (higher fidelity, slower)
+ *   Video (separate endpoint — not supported here):
+ *     - grok-imagine-video, grok-imagine-video-1.5-preview
+ *
+ * Note: "grok-2-image" is NOT a valid model id — it returns 404.
  *
  * Reference: https://docs.x.ai/docs/models
  */
@@ -132,14 +138,19 @@ export class XAIImage implements ImageProvider {
       throw new Error('xai: XAI_API_KEY not set');
     }
     const baseUrl = (cfg.baseUrl ?? 'https://api.x.ai/v1').replace(/\/$/, '');
-    // xAI's image model is "grok-2-image" / "grok-imagine". Default
-    // to grok-2-image if the user-supplied model is a text model.
-    const fallback = 'grok-2-image';
-    const model = opts.model ?? (cfg.model && cfg.model.includes('image') ? cfg.model : fallback);
+    // xAI's image models are grok-imagine-image / grok-imagine-image-quality.
+    // Anything matching "imagine" or "image" is passed through (in case the
+    // user has a future/quality variant), otherwise we fall back to the
+    // standard imagine model. "grok-2-image" is NOT a valid id and 404s.
+    const fallback = 'grok-imagine-image';
+    const model = opts.model ?? (cfg.model && /image|imagine/i.test(cfg.model) ? cfg.model : fallback);
     const body: XAIImageRequest = {
       model,
       prompt,
       n: opts.n ?? 1,
+      // xAI returns b64_json when explicitly asked; otherwise it returns
+      // an {url, mime_type} pair. We accept both shapes in the response
+      // handler below.
       response_format: 'b64_json',
     };
     const url = `${baseUrl}/images/generations`;

@@ -63,8 +63,11 @@ the Settings page in the WebUI) to see what's configured in your environment.
   header entirely. To force a key, set `LMSTUDIO_API_KEY` in env.
 - `xai` — xAI / Grok. OpenAI-compatible at `https://api.x.ai/v1`. Text uses
   `/chat/completions` with `grok-2-latest` (or `grok-2-1212` / `grok-beta` /
-  `grok-2-vision-1212`). Image uses `/images/generations` with
-  `grok-2-image` (Grok Imagine). Set `XAI_API_KEY` (or `GROK_API_KEY`).
+  `grok-2-vision-1212` / `grok-4.3` / `grok-4.20-0309-reasoning`). Image uses
+  `/images/generations` with `grok-imagine-image` (or
+  `grok-imagine-image-quality` for higher fidelity). Note: `grok-2-image`
+  is NOT a valid model id and returns 404. Set `XAI_API_KEY` (or
+  `GROK_API_KEY`), or sign in via the WebUI's xAI OAuth flow.
 - `gemini` — Google Gemini. Text uses the OpenAI-compat shim at
   `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`
   with `gemini-2.0-flash` / `gemini-2.5-pro` / `gemini-2.5-flash`. Image
@@ -87,7 +90,7 @@ to be in `[512, 2048]`. Panel images are stored as-is (PNG or JPEG) and
 served with the matching `Content-Type` by the panel-image route.
 
 **Image model override**: the `imageProvider` model defaults to
-provider-specific values (`image-01` for MiniMax, `grok-2-image` for xAI,
+provider-specific values (`image-01` for MiniMax, `grok-imagine-image` for xAI,
 `gemini-2.0-flash-exp` for Gemini, `sdxl` for LM Studio, `flux.1-schnell` for
 OpenRouter). Pass `--image-model=…` (CLI) or include `imageModel` in the
 request body to override.

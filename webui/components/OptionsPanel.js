@@ -291,14 +291,17 @@ const MODEL_SUGGESTIONS = {
   },
   xai: {
     text: [
+      'grok-4.3',
+      'grok-4.20-0309-reasoning',
+      'grok-4.20-non-reasoning',
       'grok-2-latest',
       'grok-2-1212',
       'grok-beta',
       'grok-2-vision-1212',
     ],
     image: [
-      'grok-2-image',
-      'grok-imagine',
+      'grok-imagine-image',
+      'grok-imagine-image-quality',
     ],
   },
   gemini: {
