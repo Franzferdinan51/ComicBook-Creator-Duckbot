@@ -1,0 +1,328 @@
+# comic-creator WebUI — API Contract
+
+This is the binding contract for the comic-creator HTTP server. The frontend
+task builds to this; the tests in `__test__.ts` verify it.
+
+The server listens on `COMIC_WEBUI_PORT` (default `3008`). The frontend is
+served from the same origin at `/` so the API can be reached at the relative
+`/api/*` path.
+
+## Quick start
+
+```bash
+cd ~/.openclaw/workspace/skills/comic-creator
+npm install
+npx tsx src/server/index.ts         # boots on 3008
+# or programmatically:
+npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008 });"
+```
+
+## Stability
+
+- All response shapes are stable. New optional fields may be added without a
+  major version bump; new endpoints may be added at any time; existing
+  endpoints and their required fields will not change shape within a major
+  version.
+- All error responses are `{ "error": "human-readable string" }` with an
+  appropriate 4xx/5xx status code.
+
+## Endpoints
+
+| Method | Path                                    | Purpose                          |
+|--------|-----------------------------------------|----------------------------------|
+| GET    | `/api/health`                           | Liveness probe                   |
+| GET    | `/api/providers`                        | Text + image providers + status  |
+| GET    | `/api/settings`                         | Read user settings               |
+| PUT    | `/api/settings`                         | Update user settings (partial)   |
+| POST   | `/api/comic`                            | Kick off a new comic generation  |
+| GET    | `/api/comic/:jobId`                     | Poll job status                  |
+| GET    | `/api/comic/:jobId/pdf`                 | Stream the generated PDF         |
+| GET    | `/api/comic/:jobId/images/:panelId`     | Stream a single panel PNG        |
+| POST   | `/api/comic/:jobId/regenerate`          | Re-run with new options          |
+| GET    | `/api/history`                          | List recent jobs                 |
+| DELETE | `/api/history/:jobId`                   | Remove a job from history        |
+
+---
+
+### `GET /api/health`
+
+**Response 200**
+```json
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "uptime": 12.345
+}
+```
+
+---
+
+### `GET /api/providers`
+
+**Response 200**
+```json
+{
+  "text": [
+    { "name": "mock",      "available": true,  "model": "mock" },
+    { "name": "openrouter","available": false, "error": "apiKey missing" },
+    { "name": "lmstudio",  "available": true,  "model": "qwen3.6-27b" },
+    { "name": "minimax",   "available": false, "error": "apiKey missing" }
+  ],
+  "image": [
+    { "name": "mock",      "available": true,  "model": "mock" },
+    { "name": "openrouter","available": false, "error": "apiKey missing" },
+    { "name": "lmstudio",  "available": true,  "model": "sdxl" },
+    { "name": "minimax",   "available": false, "error": "apiKey missing" }
+  ]
+}
+```
+
+`available: true` means the provider is configured and ready to use.
+The `mock` provider is always available.
+
+---
+
+### `GET /api/settings`
+
+**Response 200**
+```json
+{
+  "defaultProvider": "mock",
+  "defaultTextProvider": "mock",
+  "defaultImageProvider": "mock",
+  "defaultArtStyle": "manga",
+  "defaultPageCount": 4,
+  "defaultOutputFormat": "pdf"
+}
+```
+
+### `PUT /api/settings`
+
+**Body** (any subset of the fields above):
+```json
+{ "defaultArtStyle": "noir", "defaultPageCount": 6 }
+```
+
+**Response 200** — the full merged settings object.
+
+**400** on invalid `defaultOutputFormat` (must be `"pdf"` or `"cbz"`) or
+`defaultPageCount` (must be integer 1-50).
+
+---
+
+### `POST /api/comic`
+
+**Body**
+```json
+{
+  "story": "A robot learns to garden",
+  "options": {
+    "artStyle": "manga",
+    "imageProvider": "mock",
+    "textProvider": "mock",
+    "pageCount": 4,
+    "panelsPerPage": 4,
+    "outputFormat": "pdf",
+    "seed": 0
+  }
+}
+```
+
+`options` is `Partial<ComicOptions>` — every field is optional. See
+`src/types.ts` for the full shape.
+
+**Response 202**
+```json
+{ "jobId": "e60aab73-0600-4e3b-b016-623360bad0d1" }
+```
+
+**400** if `story` is empty/missing.
+
+---
+
+### `GET /api/comic/:jobId`
+
+**Response 200** (pending)
+```json
+{
+  "status": "pending",
+  "createdAt": "2026-06-01T19:08:23.123Z",
+  "updatedAt": "2026-06-01T19:08:23.123Z"
+}
+```
+
+**Response 200** (done)
+```json
+{
+  "status": "done",
+  "createdAt": "2026-06-01T19:08:23.123Z",
+  "updatedAt": "2026-06-01T19:08:24.456Z",
+  "result": {
+    "script": {
+      "title": "...",
+      "artStyle": "manga",
+      "pages": [
+        {
+          "pageNumber": 1,
+          "layout": "grid-2x2",
+          "panels": [
+            { "id": "p1-panel1", "description": "...", "dialogue": ["..."], "caption": "..." }
+          ]
+        }
+      ]
+    },
+    "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
+    "pages": [
+      { "page": { ... }, "imagePath": "/.../p1-panel1.png", "layout": "grid-2x2" }
+    ]
+  }
+}
+```
+
+**Response 200** (error)
+```json
+{
+  "status": "error",
+  "error": "openrouter: OPENROUTER_API_KEY not set",
+  "createdAt": "...",
+  "updatedAt": "..."
+}
+```
+
+**404** if the job is unknown (in-memory only — see Lifecycle).
+
+---
+
+### `GET /api/comic/:jobId/pdf`
+
+**Response 200** — streams the PDF binary.
+- `Content-Type: application/pdf`
+- `Content-Length: <size>`
+- `Content-Disposition: inline; filename="<jobId>.pdf"`
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+**410** if the on-disk file is gone.
+
+---
+
+### `GET /api/comic/:jobId/images/:panelId`
+
+**Response 200** — streams the panel PNG.
+- `Content-Type: image/png`
+- `Cache-Control: public, max-age=86400`
+
+The `panelId` must match a panel in the job's `result.script.pages[*].panels[*].id`
+(typically `p1-panel1`, `p2-panel3`, etc.). Path traversal attempts (`..`,
+`/`, `\`) are rejected with **400**.
+
+**404** if the panel is unknown. **400/404** for malformed `panelId`.
+
+---
+
+### `POST /api/comic/:jobId/regenerate`
+
+Re-runs the same `story` with new options merged on top of the originals.
+
+**Body**
+```json
+{ "options": { "artStyle": "noir", "pageCount": 6 } }
+```
+
+**Response 202**
+```json
+{ "jobId": "<new-jobId>" }
+```
+
+The new job has a **new** `jobId`. The old job's record remains in memory
+until the process restarts (or is garbage-collected by an LRU policy in
+a future version).
+
+**404** if the source job is unknown.
+
+---
+
+### `GET /api/history`
+
+**Response 200** — array of `HistoryEntry` (newest first, capped at 20):
+
+```json
+[
+  {
+    "jobId": "e60aab73-...",
+    "title": "...",
+    "createdAt": "2026-06-01T19:08:23.123Z",
+    "artStyle": "manga",
+    "pageCount": 4,
+    "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
+    "scriptJson": { "title": "...", "artStyle": "manga", "pages": [ ... ] }
+  }
+]
+```
+
+`state/history.json` persists up to **50** entries; this endpoint returns
+the most recent **20**.
+
+### `DELETE /api/history/:jobId`
+
+Removes the entry from `state/history.json`. Does **not** delete the on-disk
+PDF or the in-memory job record.
+
+**Response 204** on success. **404** if the jobId isn't in history.
+
+---
+
+## Lifecycle
+
+- **In-memory jobs**: jobs are stored in a process-level Map. They survive
+  across HTTP requests but are lost on process restart. The frontend should
+  treat unknown `jobId`s in `/api/comic/:jobId` as "stale, please re-create
+  from history".
+- **Persisted history**: `state/history.json` is the durable record. The
+  frontend should always source its job list from `GET /api/history`, then
+  use `GET /api/comic/:jobId` to poll for live status (in case the in-memory
+  state was lost on restart).
+- **Persisted settings**: `state/settings.json` is the durable record.
+  Reloaded on server boot.
+- **Output files**: PDFs and panel images live in
+  `~/.openclaw/workspace/output/comics/<timestamp>.pdf` and a sibling
+  `images/` directory. These are not cleaned up automatically.
+
+## Storage
+
+```
+<skill>/state/
+├── history.json     # array of HistoryEntry, max 50
+└── settings.json    # Settings object
+```
+
+Both files are written atomically (write to `.tmp`, then `rename`). The
+storage directory can be overridden via `setStorageDir()` (test helper).
+
+## Error model
+
+All errors return JSON with shape `{ "error": "human-readable message" }`:
+- **400** — bad input (missing field, invalid enum, etc.)
+- **404** — job or resource not found
+- **409** — job exists but isn't in a state that allows the requested action
+- **410** — resource was deleted (output file gone)
+- **500** — server-side crash; details in the response body
+
+The centralized Express error handler catches anything that escapes a route
+and returns 500 with the error message (no stack trace).
+
+## CORS
+
+CORS is enabled with `Access-Control-Allow-Origin: *` for the API. In a
+production deployment the frontend is served from the same origin, so the
+CORS headers are redundant but harmless.
+
+## Configuration
+
+| Env var               | Default                     | Purpose                              |
+|-----------------------|-----------------------------|--------------------------------------|
+| `COMIC_WEBUI_PORT`    | `3008`                      | HTTP port (use `0` for ephemeral)    |
+| `OPENROUTER_API_KEY`  | —                           | OpenRouter API key (text + image)    |
+| `LMSTUDIO_BASE_URL`   | `http://127.0.0.1:1234/v1`  | Local LM Studio endpoint             |
+| `MINIMAX_API_KEY`     | —                           | MiniMax API key (text + image)       |
+
+See `src/providers/config.ts` for the full provider config resolution.

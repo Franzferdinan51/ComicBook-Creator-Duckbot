@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comic Creator — Smoke Test</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      background: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 2rem;
+      max-width: 1100px;
+    }
+    h1 { color: #a78bfa; margin-bottom: 1rem; }
+    h2 { font-size: 1rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; margin: 1.5rem 0 .5rem; }
+    .ok    { color: #22c55e; }
+    .err   { color: #ef4444; }
+    .info  { color: #94a3b8; }
+    pre {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 1rem;
+      overflow: auto;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .summary {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    button {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: .5rem 1rem;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:hover { background: #6d28d9; }
+    .row { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; }
+    a { color: #a78bfa; }
+  </style>
+</head>
+<body>
+  <h1>🎨 Comic Creator — Smoke Test</h1>
+  <p class="info">
+    This page hits <code>/api/health</code> and <code>/api/providers</code> and renders the raw JSON.
+    If both endpoints return data, the WebUI is wired correctly. Open
+    <a href="/">the main app</a> once the checks pass.
+  </p>
+
+  <div class="row">
+    <button id="rerun">Re-run checks</button>
+    <span class="info">Auto-runs on load.</span>
+  </div>
+
+  <div id="summary" class="summary">Running…</div>
+
+  <h2><span class="info">GET</span> /api/health</h2>
+  <pre id="health">(pending)</pre>
+
+  <h2><span class="info">GET</span> /api/providers</h2>
+  <pre id="providers">(pending)</pre>
+
+  <h2><span class="info">GET</span> /api/settings</h2>
+  <pre id="settings">(pending)</pre>
+
+  <script>
+    'use strict';
+
+    const $ = (id) => document.getElementById(id);
+    const summary = $('summary');
+
+    function setCell(el, value, ok) {
+      el.textContent = JSON.stringify(value, null, 2);
+      el.className = ok ? 'ok' : 'err';
+    }
+
+    async function check(name, path, okIf) {
+      const el = $(name);
+      el.textContent = 'fetching…';
+      el.className = 'info';
+      try {
+        const res = await fetch(path);
+        const ct = res.headers.get('content-type') || '';
+        const body = ct.includes('json') ? await res.json() : await res.text();
+        const ok = res.ok && okIf(body, res);
+        el.className = ok ? 'ok' : 'err';
+        el.textContent = `HTTP ${res.status} ${res.statusText}\n` + JSON.stringify(body, null, 2);
+        return { ok, body, status: res.status };
+      } catch (err) {
+        el.className = 'err';
+        el.textContent = 'Network error: ' + err.message;
+        return { ok: false, error: err.message };
+      }
+    }
+
+    async function run() {
+      summary.textContent = 'Running smoke checks…';
+      summary.className = 'summary info';
+
+      const results = {};
+
+      results.health = await check('health', '/api/health',
+        (b) => b && b.status === 'ok' && typeof b.version === 'string');
+
+      results.providers = await check('providers', '/api/providers',
+        (b) => b && Array.isArray(b.text) && Array.isArray(b.image) && b.text.length >= 1);
+
+      results.settings = await check('settings', '/api/settings',
+        (b) => b && typeof b === 'object' && 'defaultArtStyle' in b);
+
+      const allOk = Object.values(results).every((r) => r.ok);
+      const lines = Object.entries(results).map(
+        ([k, r]) => `${r.ok ? '✓' : '✗'} ${k} — ${r.ok ? 'OK' : (r.error || `HTTP ${r.status}`)}`
+      );
+      summary.className = 'summary ' + (allOk ? 'ok' : 'err');
+      summary.innerHTML = (allOk
+        ? '<strong>✓ All checks passed.</strong> The WebUI is wired correctly.'
+        : '<strong>✗ Some checks failed.</strong>') +
+        '\n<ul style="margin:.5rem 0 0 1.25rem">' +
+        lines.map((l) => `<li>${l}</li>`).join('') + '</ul>';
+    }
+
+    document.getElementById('rerun').addEventListener('click', run);
+    run();
+  </script>
+</body>
+</html>

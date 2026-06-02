@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+*.bak
+output/
+test-output/
+*.tsbuildinfo
+
+# Local development scratch
+_*.ts
+
+# Persisted state — regenerated on first run, contains user credentials
+state/

@@ -1,0 +1,54 @@
+{
+  "name": "comic-creator",
+  "version": "0.1.0",
+  "description": "AI-powered multi-page comic book creator. Takes a story prompt, generates a page-by-page script, creates panel art, and outputs a PDF or CBZ.",
+  "main": "src/index.ts",
+  "type": "module",
+  "bin": {
+    "comic-creator": "./bin/comic-creator.mjs",
+    "comic-creator-mcp": "./bin/comic-creator-mcp.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "SKILL.md",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "tsx src/assembler/__test__.ts",
+    "test:mcp": "tsx src/mcp/__test__.ts",
+    "start": "tsx src/index.ts"
+  },
+  "keywords": [
+    "comic",
+    "manga",
+    "graphic-novel",
+    "ai",
+    "openclaw",
+    "skill"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "pdfkit": "^0.15.0",
+    "pngjs": "^7.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pdfkit": "^0.13.4",
+    "@types/pngjs": "^6.0.5",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
