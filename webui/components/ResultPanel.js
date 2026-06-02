@@ -161,6 +161,12 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
   // (kept in component state — not URL state) so refreshing the page
   // resets to PDF.
   const [downloadFormat, setDownloadFormat] = useState('pdf');
+  // Bump this to force the PDF-fetch effect to re-run (used by the
+  // "Try again" button on the error state). Useful when the user
+  // hits a transient failure — e.g. server restart wiped the
+  // in-memory job, then the history-fallback fix kicked in and the
+  // same jobId is now retrievable again.
+  const [reloadKey, setReloadKey] = useState(0);
   const canvasRef = useRef(null);
 
   // Render the currently-selected page into the main canvas.
@@ -168,6 +174,13 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     if (!result || !jobId) return;
     let cancelled = false;
     let doc;
+
+    // Clear the previous error so the spinner/canvas re-renders cleanly
+    // on a retry (otherwise an old error stays visible until the new
+    // load finishes).
+    setPdfError(null);
+    setTotalPages(0);
+    setThumbs([]);
 
     (async () => {
       try {
@@ -193,7 +206,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, jobId]);
+  }, [result, jobId, reloadKey]);
 
   // Re-render when the user flips pages.
   useEffect(() => {
@@ -449,7 +462,47 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
       ${pdfError ? html`
         <div class="error-state" role="alert">
           <p>Could not render PDF preview: <code>${pdfError}</code></p>
-          <p>You can still download it above.</p>
+          <p>
+            You can still download the file below. If the server was
+            just restarted, the preview may need a moment — try again.
+          </p>
+          <div class="error-state-actions">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              onClick=${() => setReloadKey((k) => k + 1)}
+              title="Re-fetch the PDF and re-parse the preview"
+            >
+              ↻ Try preview again
+            </button>
+            <a
+              class="btn btn-ghost"
+              href=${`/api/comic/${jobId}/pdf`}
+              target="_blank"
+              rel="noopener"
+            >Open PDF in a new tab</a>
+          </div>
+        </div>
+      ` : null}
+
+      ${result.coverImagePath ? html`
+        <div class="cover-preview-wrap">
+          <p class="cover-preview-label">Cover / Title Page</p>
+          <img
+            class="cover-preview-img"
+            src=${`/api/comic/${jobId}/cover`}
+            alt="Cover illustration for ${title}"
+          />
+          <div class="cover-preview-actions">
+            <a
+              class="btn btn-ghost btn-sm"
+              href=${`/api/comic/${jobId}/cover`}
+              download=${`${titleSlug}-cover.jpg`}
+              title="Download the cover image"
+            >
+              📷 Download cover
+            </a>
+          </div>
         </div>
       ` : null}
 

@@ -77,6 +77,21 @@ export interface ComicOptions {
   outputPath?: string;
   /** deterministic seed for the mock provider (default 0) */
   seed?: number;
+  /**
+   * Provide an externally-generated cover image buffer. The assembler
+   * renders it full-bleed on the title page with the title overlaid.
+   * If omitted the assembler falls back to a plain text-only title page.
+   * When `generateCover` is true this field is populated automatically.
+   */
+  coverImage?: Buffer;
+  /**
+   * Automatically generate a wide cinematic cover image for the title
+   * page using the configured image provider. Default: true.
+   * When true, the resulting `ComicResult.coverImage` path is also saved
+   * next to the output file for inspection. Ignored when `coverImage`
+   * is already set.
+   */
+  generateCover?: boolean;
 }
 
 export interface ComicResult {
@@ -92,6 +107,8 @@ export interface ComicResult {
   pdfPath: string | null;
   /** Path to the CBZ (zip of panel images), if the comic was assembled as CBZ. */
   cbzPath: string | null;
+  /** Absolute path to the generated cover/title page image, if any. */
+  coverImagePath: string | null;
   pages: Array<{
     page: Page;
     /**

@@ -18,6 +18,7 @@
  *   GET    /api/comic/:jobId           — poll job status
  *   GET    /api/comic/:jobId/pdf       — stream the PDF (Content-Type: application/pdf)
  *   GET    /api/comic/:jobId/images/:panelId — single panel PNG/JPEG
+ *   GET    /api/comic/:jobId/cover           — cover/title-page image (if generated)
  *   POST   /api/comic/:jobId/regenerate — re-run with new options
  *   GET    /api/history                — list recent jobs
  *   DELETE /api/history/:jobId         — remove a job from history
@@ -923,6 +924,35 @@ export function buildRouter(): Router {
     res.setHeader('Content-Length', String(size));
     res.setHeader('Cache-Control', 'public, max-age=86400');
     const buf = await readFile(imagePath);
+    res.end(buf);
+  });
+
+  /**
+   * GET /api/comic/:jobId/cover
+   * Returns the cover/title-page image if one was generated.
+   * Headers: Content-Type: image/png or image/jpeg
+   */
+  router.get('/comic/:jobId/cover', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const coverPath = record.result.coverImagePath;
+    if (!coverPath || !existsSync(coverPath)) {
+      return res.status(404).json({ error: 'no cover image for this comic' });
+    }
+    const size = statSync(coverPath).size;
+    const mime = coverPath.endsWith('.jpg') ? 'image/jpeg' : 'image/png';
+    res.setHeader('Content-Type', mime);
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    const buf = await readFile(coverPath);
     res.end(buf);
   });
 

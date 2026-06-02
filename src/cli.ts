@@ -367,7 +367,7 @@ export async function runCli(
     }
   }
 
-  return { script, outputPath: finalPath, pdfPath, cbzPath, pages };
+  return { script, outputPath: finalPath, pdfPath, cbzPath, coverImagePath: null, pages };
 }
 
 async function main(): Promise<void> {

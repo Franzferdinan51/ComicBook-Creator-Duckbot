@@ -37,6 +37,8 @@ export interface HistoryEntry {
   pdfPath?: string;
   /** Pre-rendered CBZ path, if available. Newer jobs always have this. */
   cbzPath?: string;
+  /** Cover/title page image, if generated. */
+  coverImagePath?: string;
   scriptJson: ComicScript;  // the full script (so the frontend can re-render)
   thumbnailPath?: string;   // optional — reserved for future
 }

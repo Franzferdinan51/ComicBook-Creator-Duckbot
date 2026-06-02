@@ -49,6 +49,8 @@ export async function createComic(
     imageAspectRatio: options.imageAspectRatio,
     imagePromptOptimizer: options.imagePromptOptimizer,
     imageAigcWatermark: options.imageAigcWatermark,
+    generateCover: options.generateCover ?? true,
+    coverImage: options.coverImage,
   } as const;
 
   const textProvider = getTextProvider(opts.textProvider);
@@ -79,9 +81,45 @@ export async function createComic(
     imageProvider
   );
 
+  // --- Cover image ---
+  // Generate a wide cinematic cover using the configured image provider.
+  // The cover shows the story's title, art style, and a scene hint.
+  // We save it to disk and also pass the Buffer directly to assembleComic
+  // so the PDF gets it without a round-trip.
+  let coverImagePath: string | null = null;
+  let coverImage: Buffer | undefined = opts.coverImage;
+
+  if (!coverImage && opts.generateCover) {
+    const coverPrompt = [
+      opts.artStyle === 'anime' ? 'anime' : opts.artStyle,
+      'style.',
+      'A dramatic wide cinematic comic book cover illustration.',
+      `Title: "${script.title}"`,
+      'Bold typography, vibrant colors, epic composition.',
+    ].join(' ');
+
+const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
+    const coverDir = `${stem}.images`;
+    await mkdir(coverDir, { recursive: true });
+
+    try {
+      coverImage = await imageProvider.generate(coverPrompt, {
+        width: 1536,
+        height: 768,
+        ...(opts.imageModel ? { model: opts.imageModel } : {}),
+      });
+      const ext = detectImageFormat(coverImage);
+      coverImagePath = join(coverDir, `cover.${ext}`);
+      await writeFile(coverImagePath, coverImage);
+    } catch (err) {
+      console.warn(`[createComic] cover image generation failed: ${(err as Error).message}`);
+    }
+  }
+
   const outputPath = await assembleComic(script, images, {
     outputPath: opts.outputPath,
     format: opts.outputFormat,
+    coverImage,
   });
 
   // Pre-render the OTHER format too so the user can download whichever
@@ -149,7 +187,7 @@ export async function createComic(
     });
   }
 
-  return { script, outputPath, pdfPath, cbzPath, pages: pageImages };
+  return { script, outputPath, pdfPath, cbzPath, coverImagePath, pages: pageImages };
 }
 
 /** Detect image format from the first 3 bytes. Returns "png" or "jpg". */

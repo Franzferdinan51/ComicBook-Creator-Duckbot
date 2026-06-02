@@ -160,6 +160,7 @@ class JobManager {
       outputPath: entry.outputPath,
       pdfPath: entry.pdfPath ?? (entry.outputPath.endsWith('.pdf') ? entry.outputPath : null),
       cbzPath: entry.cbzPath ?? (entry.outputPath.endsWith('.cbz') ? entry.outputPath : null),
+      coverImagePath: entry.coverImagePath ?? null,
       pages: await Promise.all(
         entry.scriptJson.pages.map(async (page) => {
           // The images dir is the outputPath with extension replaced
@@ -239,6 +240,7 @@ class JobManager {
         outputPath: result.outputPath,
         pdfPath: result.pdfPath ?? undefined,
         cbzPath: result.cbzPath ?? undefined,
+        coverImagePath: result.coverImagePath ?? undefined,
         scriptJson: result.script,
       };
       try {
