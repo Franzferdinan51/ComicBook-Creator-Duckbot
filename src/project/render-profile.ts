@@ -8,7 +8,10 @@ export function normalizeRenderProfile(
   if (outputProfile === 'storyboard-widescreen') {
     return {
       outputProfile,
-      page: { width: 1600, height: 900, margin: 48, bleed: 0 },
+      // PDF page dimensions are in points, not pixels. Keep the
+      // physical page at a sane landscape size while panel renders
+      // stay high-resolution for export quality.
+      page: { width: 960, height: 540, margin: 36, bleed: 0 },
       panel: {
         aspectRatio: '16:9',
         targetWidth: 1536,
@@ -22,7 +25,7 @@ export function normalizeRenderProfile(
   if (outputProfile === 'digital-portrait') {
     return {
       outputProfile,
-      page: { width: 1080, height: 1920, margin: 48, bleed: 0 },
+      page: { width: 540, height: 960, margin: 36, bleed: 0 },
       panel: {
         aspectRatio: '9:16',
         targetWidth: 1024,
@@ -35,7 +38,7 @@ export function normalizeRenderProfile(
 
   return {
     outputProfile: 'comic-print',
-    page: { width: 825, height: 1275, margin: 36, bleed: 18 },
+    page: { width: 504, height: 777.6, margin: 24, bleed: 18 },
     panel: {
       aspectRatio: '2:3',
       targetWidth: 1024,

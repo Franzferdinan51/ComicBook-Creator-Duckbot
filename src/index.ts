@@ -7,6 +7,19 @@
  */
 
 import type { ComicOptions, ComicResult, ComicScript } from './types.js';
+
+export interface StartWebUIOptions {
+  port?: number;
+  webuiDir?: string;
+  corsOrigin?: string | true;
+}
+
+export interface WebUIHandle {
+  port: number;
+  app: unknown;
+  close: () => Promise<void>;
+}
+
 export type {
   ComicOptions,
   ComicResult,
@@ -29,8 +42,6 @@ export { generateScript, generatePanelImages } from './pipeline/index.js';
 export type { ScriptGeneratorOptions, ImageGeneratorOptions } from './pipeline/index.js';
 export { assembleComic } from './assembler/index.js';
 export { buildStoryProject, normalizeRenderProfile } from './project/index.js';
-export { startWebUI } from './server/index.js';
-export type { StartWebUIOptions, WebUIHandle } from './server/index.js';
 
 import { getTextProvider, getImageProvider } from './providers/index.js';
 import { generateScript, generatePanelImages } from './pipeline/index.js';
@@ -248,4 +259,9 @@ export function mimeForImageFormat(ext: 'png' | 'jpg'): 'image/png' | 'image/jpe
 }
 
 // Default export for `import comicCreator from 'comic-creator'`
-export default { createComic };
+export async function startWebUI(options: StartWebUIOptions = {}): Promise<WebUIHandle> {
+  const server = await import('./server/index.js');
+  return server.startWebUI(options);
+}
+
+export default { createComic, startWebUI };
