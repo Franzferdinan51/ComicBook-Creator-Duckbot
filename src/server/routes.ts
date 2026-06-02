@@ -72,6 +72,30 @@ import type { ComicOptions, ComicResult } from '../types.js';
 /** Names of the providers that the user can configure through the UI. */
 const CONFIGURABLE_PROVIDERS = new Set(['openrouter', 'lmstudio', 'minimax', 'xai', 'gemini', 'comfyui']);
 
+/**
+ * Turn an arbitrary comic title into a safe, browser-friendly filename slug.
+ * Used to set the Content-Disposition filename when streaming the PDF so the
+ * downloaded file has a meaningful name (e.g. "the-bridge-at-sundown.pdf")
+ * instead of a raw jobId.
+ *
+ * - Lowercase
+ * - Replaces runs of non-alphanumeric chars with single hyphens
+ * - Trims leading/trailing hyphens
+ * - Caps at 80 chars to keep filenames sane on every OS
+ * - Falls back to "comic" if the result is empty
+ */
+function slugifyFilename(raw: string): string {
+  const slug = raw
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '') // strip diacritics
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+    .replace(/-+$/, '');
+  return slug || 'comic';
+}
+
 function isConfigurableProvider(name: string): boolean {
   return CONFIGURABLE_PROVIDERS.has(name);
 }
@@ -783,9 +807,14 @@ export function buildRouter(): Router {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Length', String(size));
     res.setHeader('Cache-Control', 'public, max-age=3600');
+    // Use the comic's title as the filename (sanitized) so the downloaded
+    // file has a meaningful name. `attachment` triggers the browser's
+    // Save-As dialog instead of trying to render inline. Fall back to
+    // the jobId if the title is missing or unsafe.
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="${record.jobId}.pdf"`
+      `attachment; filename="${titleSlug}.pdf"`
     );
     // Stream the file in 64 KB chunks. createReadStream handles backpressure
     // via the 'drain' event implicitly through pipe().

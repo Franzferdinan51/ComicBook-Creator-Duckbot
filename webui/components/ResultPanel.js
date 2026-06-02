@@ -42,12 +42,121 @@ function loadPdfJs() {
   return pdfJsLoadPromise;
 }
 
+// ---------------------------------------------------------------------------
+// buildStoreZip — minimal STORE-mode (uncompressed) ZIP writer.
+//
+// Each entry: local file header (30 + name bytes) + raw file data.
+// Followed by a single central directory record per file (46 + name bytes)
+// and a single EOCD record (22 bytes). No compression, no extra fields,
+// no data descriptors, no zip64 — exactly what the server's CBZ assembler
+// produces, and it round-trips through macOS / Windows / Linux unzip.
+//
+// Spec: https://pkwarefiles.azureedge.net/webdocs/casestudies/APPNOTE.TXT
+// ---------------------------------------------------------------------------
+function buildStoreZip(entries) {
+  const enc = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  for (const e of entries) {
+    const nameBytes = enc.encode(e.name);
+    const data = e.data;
+    const crc = crc32(data);
+    const size = data.length;
+    // Local file header
+    const lfh = new Uint8Array(30 + nameBytes.length);
+    const lv = new DataView(lfh.buffer);
+    lv.setUint32(0, 0x04034b50, true);   // signature
+    lv.setUint16(4, 20, true);            // version needed
+    lv.setUint16(6, 0, true);             // flags
+    lv.setUint16(8, 0, true);             // method = STORE
+    lv.setUint16(10, 0, true);            // mod time
+    lv.setUint16(12, 0x21, true);         // mod date (2000-01-01 placeholder)
+    lv.setUint32(14, crc, true);          // CRC-32
+    lv.setUint32(18, size, true);         // compressed size
+    lv.setUint32(22, size, true);         // uncompressed size
+    lv.setUint16(26, nameBytes.length, true);
+    lv.setUint16(28, 0, true);            // extra field length
+    lfh.set(nameBytes, 30);
+    localParts.push(lfh, data);
+    // Central directory header
+    const cdh = new Uint8Array(46 + nameBytes.length);
+    const cv = new DataView(cdh.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);            // version made by
+    cv.setUint16(6, 20, true);            // version needed
+    cv.setUint16(8, 0, true);             // flags
+    cv.setUint16(10, 0, true);            // method
+    cv.setUint16(12, 0, true);            // mod time
+    cv.setUint16(14, 0x21, true);         // mod date
+    cv.setUint32(16, crc, true);
+    cv.setUint32(20, size, true);
+    cv.setUint32(24, size, true);
+    cv.setUint16(28, nameBytes.length, true);
+    cv.setUint16(30, 0, true);            // extra field length
+    cv.setUint16(32, 0, true);            // comment length
+    cv.setUint16(34, 0, true);            // disk number
+    cv.setUint16(36, 0, true);            // internal attrs
+    cv.setUint32(38, 0, true);            // external attrs
+    cv.setUint32(42, offset, true);       // local header offset
+    cdh.set(nameBytes, 46);
+    centralParts.push(cdh);
+    offset += lfh.length + data.length;
+  }
+  // EOCD
+  const cdSize = centralParts.reduce((n, p) => n + p.length, 0);
+  const cdOffset = offset;
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true);              // disk number
+  ev.setUint16(6, 0, true);              // start disk
+  ev.setUint16(8, entries.length, true);
+  ev.setUint16(10, entries.length, true);
+  ev.setUint32(12, cdSize, true);
+  ev.setUint32(16, cdOffset, true);
+  ev.setUint16(20, 0, true);             // comment length
+  return concatBytes([...localParts, ...centralParts, eocd]);
+}
+
+function concatBytes(arrays) {
+  const total = arrays.reduce((n, a) => n + a.length, 0);
+  const out = new Uint8Array(total);
+  let o = 0;
+  for (const a of arrays) {
+    out.set(a, o);
+    o += a.length;
+  }
+  return out;
+}
+
+// Standard CRC-32 (polynomial 0xEDB88320) — table-driven for speed.
+let _crc32Table = null;
+function crc32(buf) {
+  if (!_crc32Table) {
+    _crc32Table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) {
+        c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      }
+      _crc32Table[n] = c >>> 0;
+    }
+  }
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) {
+    c = _crc32Table[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+  }
+  return (c ^ 0xffffffff) >>> 0;
+}
+
 export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [pdfError, setPdfError] = useState(null);
   const [thumbs, setThumbs] = useState([]); // array of { dataUrl, page }
   const [regenLoading, setRegenLoading] = useState(false);
+  const [downloadingImages, setDownloadingImages] = useState(false);
   const canvasRef = useRef(null);
 
   // Render the currently-selected page into the main canvas.
@@ -157,6 +266,90 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     }
   }
 
+  // Filename slug mirroring the server's slugifyFilename() so the
+  // downloaded ZIP / JSON matches the PDF name.
+  function localSlug(raw) {
+    const slug = String(raw || '')
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80)
+      .replace(/-+$/, '');
+    return slug || 'comic';
+  }
+
+  // Build a small ZIP of every page's panel images and trigger a download.
+  // Done client-side to avoid streaming large base64 blobs back through the
+  // server. Each entry is a STORE-mode (no compression) ZIP record; this
+  // matches what the server's CBZ assembler produces and is fast for
+  // already-compressed JPEGs/PNGs.
+  async function handleDownloadAllImages() {
+    if (!result || !jobId) return;
+    const pages = result.script?.pages || [];
+    if (pages.length === 0) {
+      showToast('No pages to download.', 'error');
+      return;
+    }
+    setDownloadingImages(true);
+    try {
+      // Fetch every panel image in parallel.
+      const entries = [];
+      await Promise.all(
+        pages.map(async (p) => {
+          for (let i = 0; i < p.panels.length; i++) {
+            const panel = p.panels[i];
+            const url = `/api/comic/${jobId}/images/${panel.id}`;
+            const r = await fetch(url);
+            if (!r.ok) continue;
+            const buf = new Uint8Array(await r.arrayBuffer());
+            const ext = (r.headers.get('content-type') || '').includes('jpeg') ? 'jpg' : 'png';
+            entries.push({
+              name: `page-${p.pageNumber}-panel-${i + 1}.${ext}`,
+              data: buf,
+            });
+          }
+        })
+      );
+      if (entries.length === 0) {
+        showToast('No images were generated.', 'error');
+        return;
+      }
+      const zipBytes = buildStoreZip(entries);
+      const blob = new Blob([zipBytes], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${localSlug(result.script?.title)}-pages.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+      showToast(`Zipped ${entries.length} panel image(s).`, 'success');
+    } catch (err) {
+      showToast(`Download failed: ${err.message}`, 'error');
+    } finally {
+      setDownloadingImages(false);
+    }
+  }
+
+  function handleDownloadScript() {
+    if (!result || !result.script) return;
+    const blob = new Blob([JSON.stringify(result.script, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${localSlug(result.script.title)}-script.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    showToast('Script JSON downloaded.', 'success');
+  }
+
   if (!result) return null;
 
   const title = result.script?.title || 'Comic ready';
@@ -181,10 +374,40 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
         <span>${panelCount} panels</span>
       </div>
 
+      <div class="result-actions result-actions-top" role="group" aria-label="Download and share">
+        <a
+          class="btn btn-primary btn-lg"
+          href=${`/api/comic/${jobId}/pdf`}
+          download
+        >📥 Download PDF</a>
+
+        <a
+          class="btn btn-ghost"
+          href=${`/api/comic/${jobId}/pdf`}
+          target="_blank"
+          rel="noopener"
+        >👁 Open in new tab</a>
+
+        <button class="btn btn-ghost" type="button" onClick=${copyLink}>
+          🔗 Copy link
+        </button>
+
+        <button
+          class="btn btn-ghost"
+          type="button"
+          disabled=${regenLoading}
+          onClick=${handleRegenerate}
+        >
+          ${regenLoading
+            ? html`<span class="spinner" aria-hidden="true"></span> Starting…`
+            : '↻ Regenerate with new options'}
+        </button>
+      </div>
+
       ${pdfError ? html`
         <div class="error-state" role="alert">
           <p>Could not render PDF preview: <code>${pdfError}</code></p>
-          <p>You can still download it below.</p>
+          <p>You can still download it above.</p>
         </div>
       ` : null}
 
@@ -231,28 +454,26 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
         </div>
       ` : null}
 
-      <div class="result-actions">
-        <a
-          class="btn"
-          href=${`/api/comic/${jobId}/pdf`}
-          download
-          target="_blank"
-          rel="noopener"
-        >📥 Download PDF</a>
-
-        <button class="btn btn-ghost" type="button" onClick=${copyLink}>
-          🔗 Copy link
+      <div class="result-actions" role="group" aria-label="More actions">
+        <button
+          class="btn btn-ghost"
+          type="button"
+          disabled=${downloadingImages}
+          onClick=${handleDownloadAllImages}
+          title="Download every page as a ZIP of PNG/JPG files"
+        >
+          ${downloadingImages
+            ? html`<span class="spinner" aria-hidden="true"></span> Zipping…`
+            : '🖼 Download all pages (.zip)'}
         </button>
 
         <button
           class="btn btn-ghost"
           type="button"
-          disabled=${regenLoading}
-          onClick=${handleRegenerate}
+          onClick=${handleDownloadScript}
+          title="Download the underlying JSON script for this comic"
         >
-          ${regenLoading
-            ? html`<span class="spinner" aria-hidden="true"></span> Starting…`
-            : '↻ Regenerate with new options'}
+          📝 Download script (.json)
         </button>
       </div>
     </section>

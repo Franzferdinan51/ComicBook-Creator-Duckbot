@@ -303,6 +303,19 @@ select option:disabled { color: var(--text-muted); }
 .btn:hover { background: var(--accent-hover); }
 .btn:active { transform: scale(.98); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary {
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 2px 12px rgba(124, 92, 255, .35);
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 0 1px var(--accent-hover), 0 4px 18px rgba(124, 92, 255, .5);
+}
+.btn-lg {
+  padding: .85rem 1.6rem;
+  font-size: 1rem;
+  border-radius: var(--radius);
+}
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--border);
@@ -724,6 +737,17 @@ button.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.1); }
   display: flex;
   gap: .6rem;
   flex-wrap: wrap;
+}
+.result-actions-top {
+  margin: 1.1rem 0 .4rem;
+  padding: 1rem 1.1rem;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  align-items: center;
+}
+.result-actions-top .btn-lg {
+  flex: 1 1 240px;
 }
 
 .error-state {
