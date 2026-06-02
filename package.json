@@ -15,7 +15,7 @@
     "README.md"
   ],
   "scripts": {
-    "test": "tsx src/project/render-profile.test.ts && tsx src/project/story-project.test.ts && tsx src/assembler/layouts.test.ts",
+    "test": "tsx src/project/render-profile.test.ts && tsx src/project/story-project.test.ts && tsx src/assembler/layouts.test.ts && tsx src/index.test.ts",
     "test:server": "tsx src/server/routes.test.ts",
     "test:mcp": "echo \"No MCP tests yet\"",
     "start": "tsx src/index.ts"

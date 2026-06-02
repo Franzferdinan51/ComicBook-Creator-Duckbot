@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import { access, readFile, rm } from 'node:fs/promises';
+import { createComic } from './index.js';
+import { PNG } from 'pngjs';
+
+async function main(): Promise<void> {
+  const result = await createComic('A robot learns to garden on Mars.', {
+    imageProvider: 'mock',
+    textProvider: 'mock',
+    pageCount: 1,
+    panelsPerPage: 3,
+    outputFormat: 'pdf',
+    outputProfile: 'storyboard-widescreen',
+    generateCover: true,
+  });
+
+  assert.equal(result.project.renderProfile.outputProfile, 'storyboard-widescreen');
+  assert.equal(result.project.renderProfile.page.width, 960);
+  assert.equal(result.project.renderProfile.page.height, 540);
+  assert.equal(result.project.renderProfile.panel.targetWidth, 1536);
+  assert.equal(result.project.renderProfile.panel.targetHeight, 864);
+  assert.equal(result.script.pages.length, 1);
+  assert.equal(result.script.pages[0]?.panels.length, 3);
+  assert.equal(result.adaptationPackage.sceneOutline.length > 0, true);
+  assert.equal(result.musicCuePackage.cues.length > 0, true);
+
+  await access(result.outputPath);
+  assert.equal(!!result.cbzPath, true);
+  await access(result.cbzPath!);
+  assert.equal(!!result.coverImagePath, true);
+  await access(result.coverImagePath!);
+
+  const pdf = await readFile(result.outputPath);
+  const pdfText = pdf.toString('latin1');
+  assert.equal(pdfText.includes('/MediaBox [0 0 960 540]'), true);
+
+  const panelPath = result.pages[0]?.panelImagePaths[0];
+  assert.ok(panelPath);
+  const panel = PNG.sync.read(await readFile(panelPath));
+  assert.equal(panel.width, 1536);
+  assert.equal(panel.height, 864);
+
+  const cover = PNG.sync.read(await readFile(result.coverImagePath!));
+  assert.equal(cover.width, 1600);
+  assert.equal(cover.height, 900);
+
+  const stem = result.outputPath.replace(/\.[^./\\]+$/, '');
+  await rm(result.outputPath, { force: true });
+  if (result.cbzPath) await rm(result.cbzPath, { force: true });
+  await rm(`${stem}.images`, { recursive: true, force: true });
+
+  console.log('PASS index');
+}
+
+void main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
