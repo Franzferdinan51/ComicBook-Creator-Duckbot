@@ -98,15 +98,40 @@ function renderPage(
     doc.save();
     doc.lineWidth(1.5).rect(rect.x, rect.y, rect.w, rect.h).stroke();
 
-    // Draw the image (with a small inset so the border stays visible)
+    // Draw the image (with a small inset so the border stays visible).
+    // We do a manual "cover" scale + center-crop: parse the source
+    // image's pixel dimensions from its header, scale to fully fill the
+    // cell (overflow on one axis), then translate so the visible region
+    // is centered. This avoids the letterbox look that pdfkit's
+    // `fit: [w, h]` produces when the source aspect doesn't match the
+    // cell aspect — a 16:9 image in a 1:1 cell would otherwise be a
+    // tiny horizontal strip with empty space top and bottom.
     const buf = images.get(panel.id);
     if (buf && buf.length > 0) {
       try {
-        doc.image(buf, rect.x + 2, rect.y + 2, {
-          width: rect.w - 4,
-          height: rect.h - 4,
-          fit: [rect.w - 4, rect.h - 4],
-        });
+        const dims = peekImageDimensions(buf);
+        if (dims) {
+          const cellW = rect.w - 4;
+          const cellH = rect.h - 4;
+          const scale = Math.max(cellW / dims.w, cellH / dims.h);
+          const drawW = dims.w * scale;
+          const drawH = dims.h * scale;
+          const offsetX = (cellW - drawW) / 2;
+          const offsetY = (cellH - drawH) / 2;
+          doc.image(buf, rect.x + 2 + offsetX, rect.y + 2 + offsetY, {
+            width: drawW,
+            height: drawH,
+          });
+        } else {
+          // Unknown format — fall back to fit-contain.
+          doc.image(buf, rect.x + 2, rect.y + 2, {
+            width: rect.w - 4,
+            height: rect.h - 4,
+            fit: [rect.w - 4, rect.h - 4],
+            align: 'center',
+            valign: 'center',
+          });
+        }
       } catch (e) {
         doc.fontSize(8).fillColor('#888').text('(image render failed)', rect.x + 4, rect.y + 4);
         doc.fillColor('black');
@@ -229,6 +254,71 @@ async function assembleCBZ(
 
   await writeFile(outputPath, Buffer.concat([...chunks, ...central, eocd]));
   return outputPath;
+}
+
+/**
+ * Peek at the first ~64 bytes of an image buffer to extract its
+ * pixel dimensions. Supports PNG (via the IHDR chunk) and JPEG
+ * (scan for SOF0/SOF2 markers). Returns null if the format is
+ * unrecognized — caller falls back to a best-effort fit.
+ *
+ * We only need the dimensions, so we never decode the image. Cheap
+ * to call per panel.
+ */
+function peekImageDimensions(buf: Buffer): { w: number; h: number } | null {
+  if (buf.length < 16) return null;
+  // PNG: 89 50 4E 47 0D 0A 1A 0A, then IHDR length (4) "IHDR" (4),
+  // then width (4 BE) height (4 BE).
+  if (
+    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47 &&
+    buf[4] === 0x0d && buf[5] === 0x0a && buf[6] === 0x1a && buf[7] === 0x0a
+  ) {
+    const w = buf.readUInt32BE(16);
+    const h = buf.readUInt32BE(20);
+    if (w > 0 && h > 0) return { w, h };
+  }
+  // JPEG: 0xFF 0xD8 0xFF then a marker. SOF0/SOF1/SOF2/SOF3/SOF5..SOF15
+  // all carry the image dimensions in their payload. The marker length
+  // (2 bytes BE) and the data segment follow; height is at offset +5
+  // and width at offset +7 from the start of the segment data.
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    let i = 2;
+    while (i < buf.length - 9) {
+      if (buf[i] !== 0xff) {
+        i++;
+        continue;
+      }
+      // Skip fill bytes (0xFF padding).
+      while (i < buf.length && buf[i] === 0xff) i++;
+      if (i >= buf.length) break;
+      const marker = buf[i];
+      i++;
+      // SOI (0xD8), TEM (0x01), RST0-7 (0xD0-0xD7), and standalone
+      // markers have no length segment.
+      const isStandalone =
+        marker === 0x01 ||
+        (marker >= 0xd0 && marker <= 0xd9) ||
+        marker === 0x00;
+      if (isStandalone) continue;
+      if (i + 1 >= buf.length) break;
+      const segLen = buf.readUInt16BE(i);
+      if (segLen < 2) break;
+      // SOF0..SOF3, SOF5..SOF7, SOF9..SOF11, SOF13..SOF15 all
+      // carry dimensions. Bits 0-3 of the marker nibble tell us
+      // which SOF — but 0xC0-0xCF except 0xC4 and 0xC8 are SOF.
+      const isSof =
+        (marker >= 0xc0 && marker <= 0xcf) &&
+        marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
+      if (isSof && i + 7 < buf.length) {
+        // Precision (1) + height (2 BE) + width (2 BE)
+        const h = buf.readUInt16BE(i + 3);
+        const w = buf.readUInt16BE(i + 5);
+        if (w > 0 && h > 0) return { w, h };
+      }
+      i += segLen;
+    }
+  }
+  return null;
 }
 
 /** Standard CRC-32 used by ZIP. Polynomial 0xEDB88320, init 0xFFFFFFFF. */

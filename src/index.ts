@@ -84,6 +84,38 @@ export async function createComic(
     format: opts.outputFormat,
   });
 
+  // Pre-render the OTHER format too so the user can download whichever
+  // they want at view time without waiting. Both files are written next
+  // to the primary output (just with a different extension) and exposed
+  // via the API. PDF assembly is the expensive one; CBZ is just a zip
+  // of the already-saved panel images, so it's effectively free.
+  //
+  // If the user's chosen outputFormat is 'pdf' we additionally build
+  // 'foo.cbz' at the same stem, and vice versa. If for any reason the
+  // secondary build fails (out of disk, race condition), we log and
+  // continue — the user can still download the primary format.
+  const otherFormat: 'pdf' | 'cbz' = opts.outputFormat === 'pdf' ? 'cbz' : 'pdf';
+  const otherPath = outputPath.replace(/\.[^./\\]+$/, '') + '.' + otherFormat;
+  let cbzPath: string | null = null;
+  let pdfPath: string | null = null;
+  if (opts.outputFormat === 'pdf') {
+    pdfPath = outputPath;
+    try {
+      await assembleComic(script, images, { outputPath: otherPath, format: 'cbz' });
+      cbzPath = otherPath;
+    } catch (err) {
+      console.warn(`[createComic] secondary CBZ assembly failed: ${(err as Error).message}`);
+    }
+  } else {
+    cbzPath = outputPath;
+    try {
+      await assembleComic(script, images, { outputPath: otherPath, format: 'pdf' });
+      pdfPath = otherPath;
+    } catch (err) {
+      console.warn(`[createComic] secondary PDF assembly failed: ${(err as Error).message}`);
+    }
+  }
+
   // Save a copy of each panel image next to the PDF for inspection.
   // We keep the original format (PNG or JPEG) — different providers return
   // different encodings. The route layer detects the format and serves with
@@ -99,7 +131,11 @@ export async function createComic(
     const panelImagePaths: string[] = [];
     for (const panel of page.panels) {
       const buf = images.get(panel.id);
-      if (!buf) continue;
+      if (!buf) {
+        // No image was generated for this panel (provider failure or
+        // rate-limit). Skip — the assembler will render an empty cell.
+        continue;
+      }
       const ext = detectImageFormat(buf);
       const imagePath = join(imageDir, `${panel.id}.${ext}`);
       await writeFile(imagePath, buf);
@@ -108,11 +144,12 @@ export async function createComic(
     pageImages.push({
       page,
       imagePath: panelImagePaths[0] ?? '',
+      panelImagePaths,
       layout: page.layout,
     });
   }
 
-  return { script, outputPath, pages: pageImages };
+  return { script, outputPath, pdfPath, cbzPath, pages: pageImages };
 }
 
 /** Detect image format from the first 3 bytes. Returns "png" or "jpg". */

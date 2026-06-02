@@ -799,9 +799,12 @@ export function buildRouter(): Router {
         .status(409)
         .json({ error: `job ${jobId} not done (status: ${record.status})` });
     }
-    const path = record.result.outputPath;
-    if (!existsSync(path)) {
-      return res.status(410).json({ error: `output file no longer on disk: ${path}` });
+    // Prefer the explicitly pre-rendered PDF (created at job time so
+    // the user can always download it). Fall back to the legacy
+    // outputPath field for old jobs that pre-date the dual-format field.
+    const path = record.result.pdfPath ?? record.result.outputPath;
+    if (!path || !existsSync(path)) {
+      return res.status(410).json({ error: `output file no longer on disk` });
     }
     const size = statSync(path).size;
     res.setHeader('Content-Type', 'application/pdf');
@@ -823,6 +826,47 @@ export function buildRouter(): Router {
     stream.on('error', (err) => {
       // Client may have disconnected mid-stream. The file isn't corrupted.
       console.warn(`[pdf stream] error streaming ${path}: ${err.message}`);
+      if (!res.headersSent) res.status(500).end();
+      else res.destroy();
+    });
+    stream.pipe(res);
+  });
+
+  /**
+   * GET /api/comic/:jobId/cbz — streams the CBZ (zipped panel images) for
+   * the comic. Same shape as /pdf but with .cbz extension and
+   * application/vnd.comicbook+zip (or application/zip — comic readers
+   * accept both). Always present since the server pre-renders both
+   * formats at job completion time.
+   */
+  router.get('/comic/:jobId/cbz', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = jobs.get(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    if (!record.result.cbzPath || !existsSync(record.result.cbzPath)) {
+      return res.status(410).json({ error: 'CBZ is not available for this comic' });
+    }
+    const path = record.result.cbzPath;
+    const size = statSync(path).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/vnd.comicbook+zip');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${titleSlug}.cbz"`
+    );
+    const { createReadStream } = await import('node:fs');
+    const stream = createReadStream(path, { highWaterMark: 64 * 1024 });
+    stream.on('error', (err) => {
+      console.warn(`[cbz stream] error streaming ${path}: ${err.message}`);
       if (!res.headersSent) res.status(500).end();
       else res.destroy();
     });

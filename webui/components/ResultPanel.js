@@ -157,6 +157,10 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
   const [thumbs, setThumbs] = useState([]); // array of { dataUrl, page }
   const [regenLoading, setRegenLoading] = useState(false);
   const [downloadingImages, setDownloadingImages] = useState(false);
+  // Format selector for the primary download button. Persists per session
+  // (kept in component state — not URL state) so refreshing the page
+  // resets to PDF.
+  const [downloadFormat, setDownloadFormat] = useState('pdf');
   const canvasRef = useRef(null);
 
   // Render the currently-selected page into the main canvas.
@@ -359,6 +363,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     (acc, p) => acc + (p.panels?.length || 0), 0
   );
 
+  // Format availability — the server pre-renders BOTH formats at job
+  // completion time, so both should normally be available. The fields
+  // are nullable for legacy jobs that pre-date the dual-format field,
+  // in which case we fall back to `outputPath` and guess by extension.
+  const hasPdf = !!(result.pdfPath || (result.outputPath && /\.pdf$/i.test(result.outputPath)));
+  const hasCbz = !!(result.cbzPath || (result.outputPath && /\.cbz$/i.test(result.outputPath)));
+  // Title-based slug for the download filename attribute. Matches the
+  // server's slugifyFilename() so the saved file name is the same on
+  // both ends.
+  const titleSlug = localSlug(title);
+
   return html`
     <section class="panel result-panel" aria-labelledby="result-title">
       <header class="panel-title">
@@ -375,15 +390,42 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
       </div>
 
       <div class="result-actions result-actions-top" role="group" aria-label="Download and share">
+        <div class="format-selector" role="group" aria-label="Download format">
+          <button
+            type="button"
+            class=${'format-chip' + (downloadFormat === 'pdf' ? ' active' : '')}
+            onClick=${() => setDownloadFormat('pdf')}
+            title="Download as a printable PDF document"
+            disabled=${!hasPdf}
+          >
+            📄 PDF
+          </button>
+          <button
+            type="button"
+            class=${'format-chip' + (downloadFormat === 'cbz' ? ' active' : '')}
+            onClick=${() => setDownloadFormat('cbz')}
+            title="Download as a CBZ (zip of panel images — works in YACReader, Komga, CDisplay)"
+            disabled=${!hasCbz}
+          >
+            📚 CBZ
+          </button>
+        </div>
+
         <a
           class="btn btn-primary btn-lg"
-          href=${`/api/comic/${jobId}/pdf`}
-          download
-        >📥 Download PDF</a>
+          href=${downloadFormat === 'cbz' && hasCbz
+            ? `/api/comic/${jobId}/cbz`
+            : `/api/comic/${jobId}/pdf`}
+          download=${downloadFormat === 'cbz' && hasCbz ? `${titleSlug}.cbz` : `${titleSlug}.pdf`}
+        >
+          📥 Download ${downloadFormat.toUpperCase()}
+        </a>
 
         <a
           class="btn btn-ghost"
-          href=${`/api/comic/${jobId}/pdf`}
+          href=${downloadFormat === 'cbz' && hasCbz
+            ? `/api/comic/${jobId}/cbz`
+            : `/api/comic/${jobId}/pdf`}
           target="_blank"
           rel="noopener"
         >👁 Open in new tab</a>
@@ -476,6 +518,58 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
           📝 Download script (.json)
         </button>
       </div>
+
+      ${/* Per-panel image strip — shows every generated panel image, so
+         the user can verify the script said N panels and we actually
+         generated N images. Clicking a panel opens the full-size
+         version in a new tab. */''}
+      ${(() => {
+        const allPanels = (result.pages || []).flatMap((p) => {
+          const list = (p.panelImagePaths && p.panelImagePaths.length > 0)
+            ? p.panelImagePaths
+            : (p.imagePath ? [p.imagePath] : []);
+          return list.map((img, i) => ({
+            pageNumber: p.page.pageNumber,
+            panelIndex: i,
+            panelId: p.page.panels[i]?.id || `p${p.page.pageNumber}-panel${i + 1}`,
+            description: p.page.panels[i]?.description || '',
+            imagePath: img,
+          }));
+        });
+        if (allPanels.length === 0) return null;
+        return html`
+          <details class="panel-strip-wrap" open>
+            <summary>${allPanels.length} panel image${allPanels.length === 1 ? '' : 's'} (click any to open full size)</summary>
+            <div class="panel-strip">
+              ${allPanels.map((pan) => {
+                // Convert the absolute server path to the public URL the
+                // server exposes for image downloads.
+                const filename = pan.imagePath.split('/').pop();
+                const url = `/api/comic/${jobId}/images/${pan.panelId}`;
+                // Override the panelId lookup by using the panel's actual id
+                // (server stores files as p1-panel1.jpg etc).
+                return html`
+                  <a
+                    key=${pan.panelId}
+                    class="panel-thumb"
+                    href=${`/api/comic/${jobId}/images/${pan.panelId}`}
+                    target="_blank"
+                    rel="noopener"
+                    title=${`Page ${pan.pageNumber} panel ${pan.panelIndex + 1}: ${pan.description.slice(0, 80)}${pan.description.length > 80 ? '…' : ''}`}
+                  >
+                    <img
+                      src=${`/api/comic/${jobId}/images/${pan.panelId}`}
+                      alt=${`Page ${pan.pageNumber} panel ${pan.panelIndex + 1}`}
+                      loading="lazy"
+                    />
+                    <span class="panel-thumb-label">p${pan.pageNumber}·${pan.panelIndex + 1}</span>
+                  </a>
+                `;
+              })}
+            </div>
+          </details>
+        `;
+      })()}
     </section>
   `;
 }

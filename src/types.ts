@@ -81,6 +81,33 @@ export interface ComicOptions {
 
 export interface ComicResult {
   script: ComicScript;
+  /**
+   * Path to the file in the user's primary `outputFormat`. Kept for
+   * backward compatibility — the canonical fields are now `pdfPath` and
+   * `cbzPath`, both of which are always populated so the user can
+   * download in either format without re-generating.
+   */
   outputPath: string;
-  pages: Array<{ page: Page; imagePath: string; layout: Page['layout'] }>;
+  /** Path to the PDF, if the comic was assembled as PDF. */
+  pdfPath: string | null;
+  /** Path to the CBZ (zip of panel images), if the comic was assembled as CBZ. */
+  cbzPath: string | null;
+  pages: Array<{
+    page: Page;
+    /**
+     * @deprecated Use `panelImagePaths` instead — `imagePath` only carries
+     * the first panel's image and is preserved only for backward
+     * compatibility. New code should read `panelImagePaths` and render one
+     * image per panel.
+     */
+    imagePath: string;
+    /**
+     * Absolute path to every panel image in this page, in reading order.
+     * Always contains one entry per panel in the page (so a 3-panel page
+     * has 3 entries). The WebUI and downstream consumers can iterate
+     * this directly instead of guessing from the script.
+     */
+    panelImagePaths: string[];
+    layout: Page['layout'];
+  }>;
 }

@@ -317,7 +317,12 @@ export async function runCli(
   // real image providers.
   const imageDir = `${finalPath.replace(/\.[^./\\]+$/, '')}.images`;
   await mkdir(imageDir, { recursive: true });
-  const pages: Array<{ page: typeof script.pages[number]; imagePath: string; layout: PageLayout }> = [];
+  const pages: Array<{
+    page: typeof script.pages[number];
+    imagePath: string;
+    panelImagePaths: string[];
+    layout: PageLayout;
+  }> = [];
   for (const page of script.pages) {
     const panelImagePaths: string[] = [];
     for (const panel of page.panels) {
@@ -325,16 +330,44 @@ export async function runCli(
       if (!buf) continue;
       const isJpg = buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
       const ext = isJpg ? 'jpg' : 'png';
-      await writeFile(join(imageDir, `${panel.id}.${ext}`), buf);
-      panelImagePaths.push(join(imageDir, `${panel.id}.${ext}`));
+      const p = join(imageDir, `${panel.id}.${ext}`);
+      await writeFile(p, buf);
+      panelImagePaths.push(p);
     }
     pages.push({
       page,
       imagePath: panelImagePaths[0] ?? '',
+      panelImagePaths,
       layout: page.layout as PageLayout,
     });
   }
-  return { script, outputPath: finalPath, pages };
+
+  // Pre-render the OTHER format too so the user can convert without
+  // re-running the pipeline. Matches the behavior of createComic() so
+  // the CLI and library outputs are consistent.
+  const otherFormat: 'pdf' | 'cbz' = args.format === 'pdf' ? 'cbz' : 'pdf';
+  const otherPath = finalPath.replace(/\.[^./\\]+$/, '') + '.' + otherFormat;
+  let pdfPath: string | null = null;
+  let cbzPath: string | null = null;
+  if (args.format === 'pdf') {
+    pdfPath = finalPath;
+    try {
+      await assembleComic(script, images, { outputPath: otherPath, format: 'cbz' });
+      cbzPath = otherPath;
+    } catch (err) {
+      log(`comic-creator:         secondary CBZ assembly failed: ${(err as Error).message}`);
+    }
+  } else {
+    cbzPath = finalPath;
+    try {
+      await assembleComic(script, images, { outputPath: otherPath, format: 'pdf' });
+      pdfPath = otherPath;
+    } catch (err) {
+      log(`comic-creator:         secondary PDF assembly failed: ${(err as Error).message}`);
+    }
+  }
+
+  return { script, outputPath: finalPath, pdfPath, cbzPath, pages };
 }
 
 async function main(): Promise<void> {

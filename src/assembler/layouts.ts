@@ -71,19 +71,31 @@ export function layoutPage(
     return squareGrid(page.panels, pageWidth, pageHeight, margin, gap, 2);
   }
   if (explicit === 'strip-3' || (!explicit && n === 3)) {
-    // 3 in a row, single row, full height
+    // 3 panels in a row. Use a SQUARE cell aspect (1:1) so the
+    // generated panel image (typically 1024x1024, 1408x768, 1:1, or
+    // 16:9) fits the cell without being squished into a tall thin
+    // strip. We compute the largest n-column row of squares that fits
+    // the page width, then center the strip vertically with the
+    // remaining height (which is used for the title bar).
     const cols = 3;
     const usableW = pageWidth - 2 * margin;
-    const usableH = pageHeight - 2 * margin;
     const w = (usableW - gap * (cols - 1)) / cols;
-    const h = usableH;
+    const h = w; // square cells
+    // If the row is taller than the page (e.g. wide landscape page),
+    // shrink to fit.
+    const maxH = pageHeight - 2 * margin;
+    const cellH = Math.min(h, maxH);
+    const cellW = cellH === h ? w : cellH;
+    const rowW = cols * cellW + (cols - 1) * gap;
+    const xStart = margin + (usableW - rowW) / 2;
+    const yStart = margin + (maxH - cellH) / 2;
     const rects: PanelRect[] = [];
     page.panels.forEach((_panel: Panel, i: number) => {
       rects.push({
-        x: margin + i * (w + gap),
-        y: margin,
-        w,
-        h,
+        x: xStart + i * (cellW + gap),
+        y: yStart,
+        w: cellW,
+        h: cellH,
         panelIndex: i,
       });
     });
