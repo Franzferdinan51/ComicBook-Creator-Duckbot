@@ -7,7 +7,20 @@
  */
 
 import type { ComicOptions, ComicResult, ComicScript } from './types.js';
-export type { ComicOptions, ComicResult, ComicScript, Panel, Page, PageLayout } from './types.js';
+export type {
+  ComicOptions,
+  ComicResult,
+  ComicScript,
+  Panel,
+  Page,
+  PageLayout,
+  RenderProfile,
+  StoryProject,
+  StoryBible,
+  AdaptationPackage,
+  MusicCuePackage,
+  OutputProfile,
+} from './types.js';
 
 // Re-exports so users can import everything from one place
 export { getTextProvider, getImageProvider, listTextProviders, listImageProviders } from './providers/index.js';
@@ -15,12 +28,14 @@ export type { TextProvider, ImageProvider } from './providers/index.js';
 export { generateScript, generatePanelImages } from './pipeline/index.js';
 export type { ScriptGeneratorOptions, ImageGeneratorOptions } from './pipeline/index.js';
 export { assembleComic } from './assembler/index.js';
+export { buildStoryProject, normalizeRenderProfile } from './project/index.js';
 export { startWebUI } from './server/index.js';
 export type { StartWebUIOptions, WebUIHandle } from './server/index.js';
 
 import { getTextProvider, getImageProvider } from './providers/index.js';
 import { generateScript, generatePanelImages } from './pipeline/index.js';
 import { assembleComic } from './assembler/index.js';
+import { buildStoryProject } from './project/index.js';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 
@@ -39,6 +54,7 @@ export async function createComic(
     textProvider: options.textProvider ?? options.imageProvider ?? 'mock',
     pageCount: options.pageCount ?? 4,
     panelsPerPage: options.panelsPerPage ?? 4,
+    outputProfile: options.outputProfile ?? 'comic-print',
     outputFormat: options.outputFormat ?? 'pdf',
     outputPath:
       options.outputPath ??
@@ -55,6 +71,7 @@ export async function createComic(
 
   const textProvider = getTextProvider(opts.textProvider);
   const imageProvider = getImageProvider(opts.imageProvider);
+  const project = buildStoryProject(story, opts);
 
   const script: ComicScript = await generateScript(
     story,
@@ -72,6 +89,7 @@ export async function createComic(
     script,
     {
       artStyle: opts.artStyle,
+      renderProfile: project.renderProfile,
       seed: opts.seed,
       ...(opts.imageModel ? { model: opts.imageModel } : {}),
       ...(opts.imageAspectRatio ? { aspectRatio: opts.imageAspectRatio } : {}),
@@ -104,8 +122,8 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
 
     try {
       coverImage = await imageProvider.generate(coverPrompt, {
-        width: 1536,
-        height: 768,
+        width: project.renderProfile.cover.width,
+        height: project.renderProfile.cover.height,
         ...(opts.imageModel ? { model: opts.imageModel } : {}),
       });
       const ext = detectImageFormat(coverImage);
@@ -119,6 +137,7 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   const outputPath = await assembleComic(script, images, {
     outputPath: opts.outputPath,
     format: opts.outputFormat,
+    renderProfile: project.renderProfile,
     coverImage,
   });
 
@@ -139,7 +158,11 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   if (opts.outputFormat === 'pdf') {
     pdfPath = outputPath;
     try {
-      await assembleComic(script, images, { outputPath: otherPath, format: 'cbz' });
+      await assembleComic(script, images, {
+        outputPath: otherPath,
+        format: 'cbz',
+        renderProfile: project.renderProfile,
+      });
       cbzPath = otherPath;
     } catch (err) {
       console.warn(`[createComic] secondary CBZ assembly failed: ${(err as Error).message}`);
@@ -147,7 +170,11 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   } else {
     cbzPath = outputPath;
     try {
-      await assembleComic(script, images, { outputPath: otherPath, format: 'pdf' });
+      await assembleComic(script, images, {
+        outputPath: otherPath,
+        format: 'pdf',
+        renderProfile: project.renderProfile,
+      });
       pdfPath = otherPath;
     } catch (err) {
       console.warn(`[createComic] secondary PDF assembly failed: ${(err as Error).message}`);
@@ -187,7 +214,18 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
     });
   }
 
-  return { script, outputPath, pdfPath, cbzPath, coverImagePath, pages: pageImages };
+  return {
+    script,
+    outputPath,
+    pdfPath,
+    cbzPath,
+    coverImagePath,
+    project,
+    storyBible: project.storyBible,
+    adaptationPackage: project.adaptationPackage,
+    musicCuePackage: project.musicCuePackage,
+    pages: pageImages,
+  };
 }
 
 /** Detect image format from the first 3 bytes. Returns "png" or "jpg". */

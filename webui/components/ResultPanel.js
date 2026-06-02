@@ -367,11 +367,42 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     showToast('Script JSON downloaded.', 'success');
   }
 
+  function downloadJsonArtifact(filenameSuffix, payload, successMessage) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${localSlug(result.script?.title)}-${filenameSuffix}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    showToast(successMessage, 'success');
+  }
+
+  function handleDownloadProject() {
+    if (!result?.project) return;
+    downloadJsonArtifact('project', result.project, 'Project JSON downloaded.');
+  }
+
+  function handleDownloadAdaptation() {
+    if (!result?.adaptationPackage) return;
+    downloadJsonArtifact('adaptation', result.adaptationPackage, 'Adaptation outline downloaded.');
+  }
+
+  function handleDownloadMusic() {
+    if (!result?.musicCuePackage) return;
+    downloadJsonArtifact('music', result.musicCuePackage, 'Music brief downloaded.');
+  }
+
   if (!result) return null;
 
   const title = result.script?.title || 'Comic ready';
   const artStyle = result.script?.artStyle || '—';
   const pageCount = result.script?.pages?.length || 0;
+  const outputProfile = result.project?.renderProfile?.outputProfile || 'comic-print';
   const panelCount = (result.script?.pages || []).reduce(
     (acc, p) => acc + (p.panels?.length || 0), 0
   );
@@ -400,6 +431,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
         <span class="badge">${artStyle}</span>
         <span>${pageCount} pages</span>
         <span>${panelCount} panels</span>
+        <span>${outputProfile}</span>
       </div>
 
       <div class="result-actions result-actions-top" role="group" aria-label="Download and share">
@@ -505,6 +537,33 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
           </div>
         </div>
       ` : null}
+
+      <div class="artifact-grid">
+        <section class="panel artifact-panel">
+          <h3>Project Assets</h3>
+          <p>Profile: <strong>${outputProfile}</strong></p>
+          <p>${result.storyBible?.chapterOutline?.length || 0} outline beats prepared.</p>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProject}>
+            Download project JSON
+          </button>
+        </section>
+
+        <section class="panel artifact-panel">
+          <h3>Adaptation</h3>
+          <p>${result.adaptationPackage?.sceneOutline?.length || 0} screen scenes prepared.</p>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAdaptation}>
+            Download adaptation JSON
+          </button>
+        </section>
+
+        <section class="panel artifact-panel">
+          <h3>Music</h3>
+          <p>${result.musicCuePackage?.cues?.length || 0} cue ideas prepared.</p>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadMusic}>
+            Download music brief
+          </button>
+        </section>
+      </div>
 
       <div class="pdf-viewer">
         <div class="pdf-canvas-wrap">

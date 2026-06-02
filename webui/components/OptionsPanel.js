@@ -24,6 +24,12 @@ const LAYOUTS = [
   { value: 'custom',    label: 'Custom' },
 ];
 
+const OUTPUT_PROFILES = [
+  { value: 'comic-print', label: 'Comic Print' },
+  { value: 'digital-portrait', label: 'Digital Portrait' },
+  { value: 'storyboard-widescreen', label: 'Storyboard Widescreen' },
+];
+
 const PAGE_COUNT_MIN = 1;
 const PAGE_COUNT_MAX = 12;
 const PANELS_MIN = 1;
@@ -130,6 +136,20 @@ export function OptionsPanel({ options = {}, providers, onChange, disabled = fal
           >
             ${LAYOUTS.map((l) => html`
               <option key=${l.value} value=${l.value}>${l.label}</option>
+            `)}
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="output-profile">Output profile</label>
+          <select
+            id="output-profile"
+            value=${options.outputProfile || 'comic-print'}
+            disabled=${disabled}
+            onChange=${(e) => set({ outputProfile: e.target.value })}
+          >
+            ${OUTPUT_PROFILES.map((profile) => html`
+              <option key=${profile.value} value=${profile.value}>${profile.label}</option>
             `)}
           </select>
         </div>

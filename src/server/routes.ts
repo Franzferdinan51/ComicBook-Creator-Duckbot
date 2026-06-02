@@ -683,6 +683,16 @@ export function buildRouter(): Router {
       if (Number.isInteger(options.panelsPerPage) && (options.panelsPerPage as number) >= 1 && (options.panelsPerPage as number) <= 12) {
         safeOptions.panelsPerPage = options.panelsPerPage;
       }
+      if (options.outputProfile != null) {
+        if (
+          options.outputProfile !== 'comic-print' &&
+          options.outputProfile !== 'digital-portrait' &&
+          options.outputProfile !== 'storyboard-widescreen'
+        ) {
+          return res.status(400).json({ error: 'outputProfile must be "comic-print", "digital-portrait", or "storyboard-widescreen"' });
+        }
+        safeOptions.outputProfile = options.outputProfile;
+      }
       if (options.outputFormat === 'pdf' || options.outputFormat === 'cbz') {
         safeOptions.outputFormat = options.outputFormat;
       }

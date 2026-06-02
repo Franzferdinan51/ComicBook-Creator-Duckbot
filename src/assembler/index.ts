@@ -12,12 +12,13 @@ import PDFDocument from 'pdfkit';
 import { createWriteStream, unlinkSync } from 'node:fs';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import type { ComicScript, Page } from '../types.js';
+import type { ComicScript, Page, RenderProfile } from '../types.js';
 import { layoutPage } from './layouts.js';
 
 export interface AssembleOptions {
   outputPath: string;
   format: 'pdf' | 'cbz';
+  renderProfile?: RenderProfile;
   /**
    * Optional cover image. When set, the PDF title page renders this
    * image full-bleed with the comic's title overlaid on top. The
@@ -35,7 +36,7 @@ export async function assembleComic(
 ): Promise<string> {
   await mkdir(dirname(options.outputPath), { recursive: true });
   if (options.format === 'pdf') {
-    return assemblePDF(script, images, options.outputPath, options.coverImage);
+    return assemblePDF(script, images, options.outputPath, options.renderProfile, options.coverImage);
   }
   return assembleCBZ(script, images, options.outputPath);
 }
@@ -44,13 +45,16 @@ function assemblePDF(
   script: ComicScript,
   images: Map<string, Buffer>,
   outputPath: string,
+  renderProfile?: RenderProfile,
   coverImage?: Buffer
 ): Promise<string> {
   return new Promise((resolve, reject) => {
+    const pageWidth = renderProfile?.page.width ?? 612;
+    const pageHeight = renderProfile?.page.height ?? 792;
+    const pageMargin = renderProfile?.page.margin ?? 36;
     const doc = new PDFDocument({
-      size: 'LETTER',
-      layout: 'portrait',
-      margin: 36,
+      size: [pageWidth, pageHeight],
+      margin: pageMargin,
     });
     const stream = createWriteStream(outputPath);
     doc.pipe(stream);
@@ -85,7 +89,7 @@ function assemblePDF(
       // --- Comic pages ---
       for (let i = 0; i < script.pages.length; i++) {
         const page = script.pages[i];
-        renderPage(doc, page, images);
+        renderPage(doc, page, images, renderProfile);
         if (i < script.pages.length - 1) doc.addPage();
       }
       doc.end();
@@ -182,11 +186,12 @@ function renderCoverPage(
 function renderPage(
   doc: PDFKit.PDFDocument,
   page: Page,
-  images: Map<string, Buffer>
+  images: Map<string, Buffer>,
+  renderProfile?: RenderProfile
 ): void {
   const pageWidth = doc.page.width;
   const pageHeight = doc.page.height;
-  const margin = 36;
+  const margin = renderProfile?.page.margin ?? 36;
   const geo = layoutPage(page, pageWidth, pageHeight, margin);
 
   for (const rect of geo.panels) {

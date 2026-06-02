@@ -16,7 +16,12 @@
 import { promises as fs } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join, dirname } from 'node:path';
-import type { ComicScript } from '../types.js';
+import type {
+  AdaptationPackage,
+  ComicScript,
+  MusicCuePackage,
+  StoryProject,
+} from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -39,6 +44,12 @@ export interface HistoryEntry {
   cbzPath?: string;
   /** Cover/title page image, if generated. */
   coverImagePath?: string;
+  /** Structured project artifact used to derive the comic. */
+  project?: StoryProject;
+  /** Screen/show adaptation artifact for the project. */
+  adaptationPackage?: AdaptationPackage;
+  /** Music or song-development artifact for the project. */
+  musicCuePackage?: MusicCuePackage;
   scriptJson: ComicScript;  // the full script (so the frontend can re-render)
   thumbnailPath?: string;   // optional — reserved for future
 }

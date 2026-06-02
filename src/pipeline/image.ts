@@ -17,13 +17,14 @@
  * has.
  */
 
-import type { ComicScript, Panel } from '../types.js';
+import type { ComicScript, Panel, RenderProfile } from '../types.js';
 import type { ImageProvider } from '../providers/index.js';
 
 export interface ImageGeneratorOptions {
   artStyle?: string; // default 'manga'
   width?: number; // default 1024
   height?: number; // default 1024
+  renderProfile?: RenderProfile;
   concurrency?: number; // default 4
   /**
    * Deterministic seed forwarded to the image provider so a re-run
@@ -102,8 +103,8 @@ export async function generatePanelImages(
   imageProvider: ImageProvider
 ): Promise<Map<string, Buffer>> {
   const artStyle = options.artStyle ?? 'manga';
-  const width = options.width ?? 1024;
-  const height = options.height ?? 1024;
+  const width = options.renderProfile?.panel.targetWidth ?? options.width ?? 1024;
+  const height = options.renderProfile?.panel.targetHeight ?? options.height ?? 1024;
   const concurrency = options.concurrency ?? 4;
 
   // Flatten every panel across every page, in reading order.

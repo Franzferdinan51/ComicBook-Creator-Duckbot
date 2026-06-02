@@ -33,6 +33,67 @@ export interface ComicScript {
   pages: Page[];
 }
 
+export type OutputProfile = 'comic-print' | 'digital-portrait' | 'storyboard-widescreen';
+
+export interface RenderProfile {
+  outputProfile: OutputProfile;
+  page: {
+    width: number;
+    height: number;
+    margin: number;
+    bleed: number;
+  };
+  panel: {
+    aspectRatio: string;
+    targetWidth: number;
+    targetHeight: number;
+    fit: 'contain' | 'cover';
+  };
+  cover: {
+    width: number;
+    height: number;
+    aspectRatio: string;
+  };
+}
+
+export interface StoryBible {
+  premise: string;
+  synopsis: string;
+  chapterOutline: string[];
+  sceneBeats: string[];
+}
+
+export interface AdaptationPackage {
+  format: 'screen-outline';
+  sceneOutline: Array<{
+    sceneId: string;
+    summary: string;
+    visualGoal: string;
+  }>;
+}
+
+export interface MusicCuePackage {
+  format: 'music-brief';
+  cues: Array<{
+    cueId: string;
+    title: string;
+    mood: string;
+    placement: string;
+  }>;
+  themeSongPrompt: string;
+}
+
+export interface StoryProject {
+  id: string;
+  title: string;
+  premise: string;
+  artStyle: string;
+  renderProfile: RenderProfile;
+  storyBible: StoryBible;
+  adaptationPackage: AdaptationPackage;
+  musicCuePackage: MusicCuePackage;
+}
+
 export interface ComicOptions {
   artStyle?: string;
   /** "openrouter" | "lmstudio" | "minimax" | "mock" | custom name — default "mock" */
@@ -71,6 +132,8 @@ export interface ComicOptions {
   pageCount?: number;
   /** default 4 */
   panelsPerPage?: number;
+  /** default 'comic-print' */
+  outputProfile?: OutputProfile;
   /** default 'pdf' */
   outputFormat?: 'pdf' | 'cbz';
   /** default: ~/.openclaw/workspace/output/comics/<timestamp>.pdf */
@@ -109,6 +172,14 @@ export interface ComicResult {
   cbzPath: string | null;
   /** Absolute path to the generated cover/title page image, if any. */
   coverImagePath: string | null;
+  /** Reusable structured project artifact backing this comic. */
+  project: StoryProject;
+  /** Convenience alias for `project.storyBible`. */
+  storyBible: StoryBible;
+  /** Convenience alias for `project.adaptationPackage`. */
+  adaptationPackage: AdaptationPackage;
+  /** Convenience alias for `project.musicCuePackage`. */
+  musicCuePackage: MusicCuePackage;
   pages: Array<{
     page: Page;
     /**

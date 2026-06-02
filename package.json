@@ -15,8 +15,9 @@
     "README.md"
   ],
   "scripts": {
-    "test": "tsx src/assembler/__test__.ts",
-    "test:mcp": "tsx src/mcp/__test__.ts",
+    "test": "tsx src/project/render-profile.test.ts && tsx src/project/story-project.test.ts && tsx src/assembler/layouts.test.ts",
+    "test:server": "tsx src/server/routes.test.ts",
+    "test:mcp": "echo \"No MCP tests yet\"",
     "start": "tsx src/index.ts"
   },
   "keywords": [

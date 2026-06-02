@@ -15,7 +15,6 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { createComic } from '../index.js';
 import type { ComicOptions, ComicResult } from '../types.js';
 import { upsertHistoryEntry, type HistoryEntry } from './storage.js';
 
@@ -161,6 +160,45 @@ class JobManager {
       pdfPath: entry.pdfPath ?? (entry.outputPath.endsWith('.pdf') ? entry.outputPath : null),
       cbzPath: entry.cbzPath ?? (entry.outputPath.endsWith('.cbz') ? entry.outputPath : null),
       coverImagePath: entry.coverImagePath ?? null,
+      project: entry.project ?? {
+        id: jobId,
+        title: entry.scriptJson.title,
+        premise: entry.scriptJson.title,
+        artStyle: entry.scriptJson.artStyle,
+        renderProfile: {
+          outputProfile: 'comic-print',
+          page: { width: 825, height: 1275, margin: 36, bleed: 18 },
+          panel: { aspectRatio: '2:3', targetWidth: 1024, targetHeight: 1536, fit: 'contain' },
+          cover: { width: 1536, height: 2304, aspectRatio: '2:3' },
+        },
+        storyBible: {
+          premise: entry.scriptJson.title,
+          synopsis: `${entry.scriptJson.title} recovered from history.`,
+          chapterOutline: [],
+          sceneBeats: [],
+        },
+        adaptationPackage: { format: 'screen-outline', sceneOutline: [] },
+        musicCuePackage: {
+          format: 'music-brief',
+          cues: [],
+          themeSongPrompt: `Create a theme for "${entry.scriptJson.title}".`,
+        },
+      },
+      storyBible: entry.project?.storyBible ?? {
+        premise: entry.scriptJson.title,
+        synopsis: `${entry.scriptJson.title} recovered from history.`,
+        chapterOutline: [],
+        sceneBeats: [],
+      },
+      adaptationPackage: entry.adaptationPackage ?? entry.project?.adaptationPackage ?? {
+        format: 'screen-outline',
+        sceneOutline: [],
+      },
+      musicCuePackage: entry.musicCuePackage ?? entry.project?.musicCuePackage ?? {
+        format: 'music-brief',
+        cues: [],
+        themeSongPrompt: `Create a theme for "${entry.scriptJson.title}".`,
+      },
       pages: await Promise.all(
         entry.scriptJson.pages.map(async (page) => {
           // The images dir is the outputPath with extension replaced
@@ -225,6 +263,7 @@ class JobManager {
   /** Internal: actually run createComic and update the record. */
   private async run(record: JobRecord): Promise<void> {
     try {
+      const { createComic } = await import('../index.js');
       const result = await createComic(record.story, record.options ?? {});
       record.result = result;
       record.status = 'done';
@@ -241,6 +280,9 @@ class JobManager {
         pdfPath: result.pdfPath ?? undefined,
         cbzPath: result.cbzPath ?? undefined,
         coverImagePath: result.coverImagePath ?? undefined,
+        project: result.project,
+        adaptationPackage: result.adaptationPackage,
+        musicCuePackage: result.musicCuePackage,
         scriptJson: result.script,
       };
       try {
