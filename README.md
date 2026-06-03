@@ -21,6 +21,7 @@ npm start
 | Artifact | Description |
 |----------|-------------|
 | `outputPath` | Comic PDF download |
+| `studioBundlePath` | Unified JSON handoff for external agents; start here first |
 | `projectPath` | Full `*-project.json` source-of-truth handoff for external agents |
 | `coverImagePath` | AI-generated cover page image |
 | `storyBible` | Premise, synopsis, chapter outline, scene beats |
@@ -30,7 +31,6 @@ npm start
 | `animaticTimelinePath` | Video/audio timing timeline for rough animatics |
 | `songSheetPath` | Markdown song sheet for music follow-up |
 | `songAudioPath` | Generated theme audio from the selected music provider |
-| `studioBundlePath` | Unified JSON handoff with project, adaptation, music, and artifact paths |
 | `agentGuidancePath` | Markdown handoff so external agents keep working from the same project |
 
 ## Quick example
@@ -146,7 +146,7 @@ comic-creator-mcp
 
 Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
 
-The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff.
+The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed.
 
 ## Agent playbook
 

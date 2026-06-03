@@ -25,8 +25,8 @@ long-horizon planning and OpenClaw for connected execution.
 ## Recommended Workflow
 
 1. Read the generated `*-agent-guidance.md` file first.
-2. Inspect the project JSON, studio bundle, storyboard package, animatic
-   timeline, song sheet, and theme audio path.
+2. Inspect the studio bundle, then the project JSON, storyboard package,
+   animatic timeline, song sheet, and theme audio path.
 3. Split work into three tracks:
    - comic production and revision
    - show/movie adaptation

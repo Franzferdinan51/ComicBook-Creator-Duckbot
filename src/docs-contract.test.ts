@@ -25,6 +25,7 @@ assert.equal(readme.includes('get_studio_bundle'), true);
 assert.equal(readme.includes('--agent-playbook'), true);
 assert.equal(readme.includes('--json'), true);
 assert.equal(readme.includes('unified studio bundle'), true);
+assert.equal(readme.includes('External agents should start from the studio bundle first'), true);
 assert.equal(playbook.includes('## Task Routing'), true);
 assert.equal(playbook.includes('## Agent Loop'), true);
 assert.equal(playbook.includes('studioBundlePath'), true);

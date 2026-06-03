@@ -33,7 +33,8 @@ For the most actionable workflow, start with the repo playbook at
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
 - WebUI: the result panel exposes project, adaptation, music, and agent
-  guidance downloads, plus a unified studio bundle for one-shot handoff.
+  guidance downloads, plus a unified studio bundle for one-shot handoff. Start
+  with the studio bundle first when resuming work.
 - Library API: `createComic()` returns `project`, `storyBible`,
   `adaptationPackage`, `musicCuePackage`, `agentGuidancePackage`, and
   `projectPath` plus `agentGuidancePath`.
@@ -47,7 +48,7 @@ For the most actionable workflow, start with the repo playbook at
 
 ## External Agent Sequence
 
-1. Read the repo playbook and the project handoff.
+1. Read the repo playbook and the studio bundle first.
 2. Pull the project JSON and confirm the current output paths.
 3. Use Hermes Agent to split work into story, show/movie, and music tracks.
 4. Use OpenClaw to run the concrete CLI or MCP actions.
