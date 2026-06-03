@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { buildStoryProject } from './story-project.js';
+import { renderAgentGuidanceMarkdown } from './agent-guidance.js';
 
 const project = buildStoryProject('A small crew saves a floating city.', {
   artStyle: 'cinematic comic',
@@ -27,5 +28,10 @@ assert.equal(project.agentGuidancePackage.frameworks.openClaw.repository, 'https
 assert.equal(project.agentGuidancePackage.workflowSteps.length >= 3, true);
 assert.equal(project.agentGuidancePackage.deliverables.some((item) => item.includes('screen adaptation')), true);
 assert.equal(project.agentGuidancePackage.systemPrompt.includes(project.title), true);
+
+const guidance = renderAgentGuidanceMarkdown(project);
+assert.equal(guidance.includes('Hermes + OpenClaw playbook'), true);
+assert.equal(guidance.includes('Show / Movie Handoff'), true);
+assert.equal(guidance.includes('song sheet and theme audio'), true);
 
 console.log('PASS story-project');

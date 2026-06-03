@@ -4,6 +4,10 @@ This project is designed to be driven by humans, CLI scripts, MCP hosts, and
 external agents. The agent layer should treat each comic run as a reusable
 studio project, not just a PDF job.
 
+For the most actionable workflow, start with the repo playbook at
+`docs/agents/hermes-openclaw-playbook.md`, then use the generated
+`*-agent-guidance.md` file for the specific project instance.
+
 ## Base Agent Patterns
 
 - Hermes Agent: use for long-horizon planning, memory-aware follow-up work,
@@ -36,6 +40,14 @@ studio project, not just a PDF job.
   music-generation prompt. `songSheetPath` and `songAudioPath` point to the
   generated markdown sheet and provider-generated theme audio. `musicProvider`
   records the provider used for the audio artifact.
+
+## External Agent Sequence
+
+1. Read the repo playbook and the project handoff.
+2. Pull the project JSON and confirm the current output paths.
+3. Use Hermes Agent to split work into story, show/movie, and music tracks.
+4. Use OpenClaw to run the concrete CLI or MCP actions.
+5. Write decisions back into the project artifact before starting the next pass.
 
 ## Agent Contract
 

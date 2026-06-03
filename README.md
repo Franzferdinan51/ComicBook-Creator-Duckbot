@@ -142,6 +142,10 @@ comic-creator-mcp
 
 Tools: `create_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
 
+## Agent playbook
+
+External agents should start with [`docs/agents/hermes-openclaw-playbook.md`](docs/agents/hermes-openclaw-playbook.md) and then load the generated `*-agent-guidance.md` handoff for the specific comic run.
+
 ## Tests
 
 ```bash

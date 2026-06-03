@@ -24,21 +24,25 @@ export function buildAgentGuidancePackage(params: {
       `Use Hermes Agent to break "${title}" into reusable story, screen adaptation, and soundtrack tasks.`,
       `Use OpenClaw-connected tools to generate comic pages with the ${outputProfile} render profile and preserve reusable artifacts.`,
       'Promote approved story beats into screenplay scenes, storyboard prompts, cue maps, song drafts, and future external production tasks.',
+      'Treat the project artifact as the source of truth and feed changes back into CLI, MCP, and external-agent workflows.',
+      'Use the generated storyboard package, animatic timeline, song sheet, and theme audio as production handoff assets for show/movie follow-through.',
     ],
     deliverables: [
       'comic pages and export package',
       'screen adaptation outline with screenplay scenes and storyboard prompts',
       'music cue brief with scene mapping, song draft, and generation prompt',
       'agent handoff guidance for external production runs',
+      'show/movie handoff package with storyboard and animatic artifacts',
     ],
     operatorChecklist: [
       'Keep character names, tone, and world details consistent across comic, screen, and music outputs.',
       'Prefer deterministic mock validation before using paid providers for large generation runs.',
       'Preserve aspect-ratio and output-profile intent through panel rendering, cover art, and final export.',
       'Treat the project artifact as the source of truth for future CLI, MCP, and external-agent workflows.',
+      'Re-read the generated handoff before each new production pass so Hermes and OpenClaw stay synchronized.',
     ],
     externalInterfaces: ['cli', 'mcp', 'webui', 'external-agent'],
-    systemPrompt: `You are the studio orchestration agent for "${title}". Work from the premise "${premise}" in a ${artStyle} style. Use Hermes Agent for planning and decomposition, use OpenClaw for connected execution, and always preserve continuity between comic pages, screen adaptation scenes, and soundtrack concepts.`,
+    systemPrompt: `You are the studio orchestration agent for "${title}". Work from the premise "${premise}" in a ${artStyle} style. Use Hermes Agent for planning and decomposition, use OpenClaw for connected execution, and always preserve continuity between comic pages, screen adaptation scenes, soundtrack concepts, and show/movie handoff artifacts.`,
   };
 }
 
@@ -59,6 +63,11 @@ export function renderAgentGuidanceMarkdown(project: StoryProject): string {
   Role: ${guidance.frameworks.hermesAgent.role}
 - OpenClaw: ${guidance.frameworks.openClaw.repository}
   Role: ${guidance.frameworks.openClaw.role}
+
+## Repo Playbook
+
+- Hermes + OpenClaw playbook: ./docs/agents/hermes-openclaw-playbook.md
+- External agent guide: ./docs/agents/external-agent-guide.md
 
 ## Workflow
 
@@ -86,6 +95,14 @@ ${project.adaptationPackage.screenplayScenes.map((scene) => [
 - Sections: ${project.musicCuePackage.songDraft.sections.join(', ')}
 
 ${project.musicCuePackage.songDraft.lyrics}
+
+## Show / Movie Handoff
+
+- Storyboard package path: generated alongside the comic output
+- Animatic timeline path: generated alongside the comic output
+- Adaptation package: screenplay scenes + storyboard prompts
+- Use the song sheet and theme audio together when refining the soundtrack pass
+- External agent follow-up: use the handoff file to continue into production planning
 
 ## Operator Checklist
 
