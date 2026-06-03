@@ -4,6 +4,7 @@
  * Exposes the comic-creator pipeline as 7 MCP tools over stdio:
  *   - create_comic        — kick off a comic generation job
  *   - get_comic           — poll job status
+ *   - regenerate_comic    — re-run an existing job with updated options
  *   - get_comic_pdf       — fetch PDF as base64
  *   - get_comic_image     — fetch a single panel PNG as base64
  *   - get_project         — fetch the full project JSON for external agents
@@ -149,6 +150,65 @@ export function buildMcpServer(): McpServer {
         return jsonResult({ jobId: record.jobId });
       } catch (e) {
         return errResult(`create_comic failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // regenerate_comic
+  // -------------------------------------------------------------------------
+  server.tool(
+    'regenerate_comic',
+    'Re-run an existing live comic job with updated options. Returns a new jobId.',
+    {
+      jobId: z.string().min(1).describe('The live jobId to regenerate.'),
+      options: z
+        .object({
+          artStyle: z.string().optional().describe('e.g. "manga", "noir", "watercolor".'),
+          imageProvider: z
+            .enum(['mock', 'openrouter', 'lmstudio', 'minimax'])
+            .optional()
+            .describe('Image provider override.'),
+          textProvider: z
+            .enum(['mock', 'openrouter', 'lmstudio', 'minimax'])
+            .optional()
+            .describe('Text provider override.'),
+          musicProvider: z
+            .enum(['mock', 'minimax'])
+            .optional()
+            .describe('Music provider override.'),
+          pageCount: z.number().int().min(1).max(50).optional().describe('Pages.'),
+          panelsPerPage: z.number().int().min(1).max(12).optional().describe('Panels per page.'),
+          outputProfile: z
+            .enum(['comic-print', 'digital-portrait', 'storyboard-widescreen'])
+            .optional()
+            .describe('Render/output profile override.'),
+          outputFormat: z.enum(['pdf', 'cbz']).optional().describe('Output container override.'),
+          imageModel: z.string().optional().describe('Override image model id.'),
+          textModel: z.string().optional().describe('Override text model id.'),
+          outputPath: z.string().optional().describe('Override the output file path.'),
+          generateCover: z.boolean().optional().describe('Whether to generate a cover image.'),
+          seed: z.number().int().optional().describe('Deterministic seed.'),
+        })
+        .partial()
+        .optional()
+        .describe('Optional options to merge over the live job settings.'),
+    },
+    async ({ jobId, options }) => {
+      try {
+        const jobs = getJobManager();
+        const record = jobs.get(jobId);
+        if (!record) return errResult(`job ${jobId} not found or not live`);
+        if (record.status !== 'pending') {
+          return errResult(`job ${jobId} is not pending (status: ${record.status})`);
+        }
+        const next = jobs.createAndStart({
+          story: record.story,
+          options: { ...record.options, ...(options ?? {}) },
+        });
+        return jsonResult({ jobId: next.jobId });
+      } catch (e) {
+        return errResult(`regenerate_comic failed: ${(e as Error).message}`);
       }
     }
   );
