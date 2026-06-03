@@ -1,73 +1,184 @@
-# comic-creator
+# Comic Studio
 
-AI-powered multi-page comic book creator. Takes a story prompt, generates a page-by-page script with panel descriptions and dialogue, creates panel art via a configured image provider, and outputs a PDF or CBZ.
+AI-powered creative studio — generate multi-page comics, screen/show storyboards, and music cues from a single story prompt.
 
-## Install
+Take a story → get a comic PDF, a screen-adaptation outline, a music-brief package, and a reusable project that external agents can keep building from.
+
+## Getting started
+
+**Double-click `start.command`** in this folder — opens the WebUI at `http://localhost:3008` with no terminal needed.
+
+Or from the terminal:
 
 ```bash
-cd ~/.openclaw/workspace/skills/comic-creator
-npm install --no-audit --no-fund
+npm install
+npm start
+# → http://localhost:3008
 ```
 
-## Quick start
+## What gets generated
+
+| Artifact | Description |
+|----------|-------------|
+| `outputPath` | Comic PDF download |
+| `coverImagePath` | AI-generated cover page image |
+| `storyBible` | Premise, synopsis, chapter outline, scene beats |
+| `adaptationPackage` | Per-scene screenplay summaries + visual goals |
+| `musicCuePackage` | Mood cues, song draft, theme-prompt for audio tools |
+| `agentGuidancePath` | JSON handoff so external agents keep working from the same project |
+
+## Quick example
 
 ```ts
 import { createComic } from 'comic-creator';
 
 const result = await createComic('A shy robot discovers a garden on Mars', {
   artStyle: 'manga',
-  imageProvider: 'mock',     // or 'openrouter', 'lmstudio', 'minimax'
-  textProvider: 'mock',
-  musicProvider: 'mock',
+  imageProvider: 'mock',     // or 'openrouter', 'lmstudio', 'minimax', 'xai', 'gemini'
   pageCount: 4,
   panelsPerPage: 4,
-  outputFormat: 'pdf',
 });
 
-console.log('Comic saved at:', result.outputPath);
-console.log('Agent handoff saved at:', result.agentGuidancePath);
+console.log('PDF:', result.outputPath);
+console.log('Story Bible:', result.storyBible.synopsis);
+console.log('Music cues:', result.musicCuePackage.cues);
+console.log('Adaptation scenes:', result.adaptationPackage.sceneOutline);
 ```
-
-Each run now also returns reusable story, adaptation, music, and agent-guidance
-artifacts so CLI tools, MCP hosts, and external agents can keep working from
-the same project foundation instead of starting over from the PDF.
-The adaptation package includes screenplay scenes and storyboard prompts; the
-music package includes cue mapping, a song draft, and a music-generation
-prompt for follow-up audio tools. The default pipeline also writes a full
-`*-project.json` file for external agents, a song sheet markdown file, and a
-theme WAV through the selected music provider (`mock` today, with the provider
-surface ready for real audio engines).
-For show/movie workflows, it also writes a storyboard package JSON and an
-animatic timeline JSON tied to the generated panel images and temporary theme.
-
-For external-agent workflows, see
-[`docs/agents/external-agent-guide.md`](./docs/agents/external-agent-guide.md).
 
 ## Layouts
 
 - `grid-2x2` — 4 panels in 2 rows of 2 (default)
 - `grid-2x3` — 6 panels in 3 rows of 2
-- `strip-3` — 3 panels in a single row
+- `strip-3` — 3 panels in a single row (good for action sequences)
 - `custom` — auto-arrange N panels into a roughly square grid
 
-## Providers (text + image + music)
+## Output profiles
 
-- `mock` — deterministic, no API calls (best for testing and dry runs)
-- `openrouter` — routes to FLUX, DALL-E, etc. via OpenRouter (best quality)
-- `lmstudio` — local model, free, slower (best for privacy)
-- `minimax` — MiniMax image gen (good for stylized art)
+| Profile | Image size | Best for |
+|---------|-----------|----------|
+| `comic-print` | 1024×1536 | Print comics, physical distribution |
+| `digital-portrait` | 896×1152 | Webtoons, vertical scroll |
+| `storyboard-widescreen` | 1536×864 | Show/movie storyboards, cinematic |
 
-The `mock` provider generates a deterministic color grid PNG based on the panel
-id and seed — perfect for end-to-end smoke tests without burning API credits.
-Music currently ships with the deterministic `mock` provider, which writes a
-playable WAV placeholder from the generated song draft. Pass
-`musicProvider: 'mock'` in code or `--music-provider=mock` in the CLI; future
-music backends plug into the same provider contract.
+## Providers
 
-## Test
+### Image (panel art + cover)
 
-```bash
-npx tsx src/assembler/__test__.ts
+| Provider | Default model | Notes |
+|----------|--------------|-------|
+| `mock` | — | Color grid placeholder; no API calls |
+| `openrouter` | `flux.1-schnell` | FLUX, DALL-E, Stable Diffusion |
+| `minimax` | `image-01` | MiniMax native; prompt optimizer supported |
+| `lmstudio` | `sdxl` | Local SDXL — free, private |
+| `xai` | `grok-imagine-image` | High-fidelity xAI image gen |
+| `gemini` | `imagen-3.0-generate-002` | Google Imagen |
+| `comfyui` | Local checkpoint | Any `.safetensors` via ComfyUI |
+| `<custom>` | — | Any OpenAI-compatible endpoint via Settings |
+
+### Text (script + story bible + music prompts)
+
+| Provider | Default model |
+|----------|--------------|
+| `mock` | — |
+| `openrouter` | `openrouter/auto` |
+| `minimax` | `MiniMax-M3` |
+| `lmstudio` | Local model (loopback, no key) |
+| `xai` | `grok-2-latest` |
+| `gemini` | `gemini-2.0-flash` |
+
+### Music (placeholder — surface ready)
+
+`mock` provider ships today with a WAV placeholder. Real audio generation plugs into the same `MusicProvider` interface.
+
+## WebUI
+
+```
+open start.command
+# → http://localhost:3008
 ```
 
-Should print `PASS` and write `/tmp/assembler-test.pdf` (>5KB, starts with `%PDF-`).
+The WebUI gives you:
+- Story input + style/format/provider options
+- Live job status and progress
+- PDF preview with page navigation and thumbnails
+- Download as PDF or CBZ, or grab all panel images as a ZIP
+- Cover image preview + download
+- Story Bible, Adaptation Package, and Music Cue Package download cards
+- History of past comics
+- Provider credential settings
+
+## CLI
+
+```bash
+node bin/comic-creator.mjs "A robot discovers a garden"
+node bin/comic-creator.mjs --style=noir --pages=4 --panels=3 --output=/tmp/my-comic.pdf "A robot discovers a garden"
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--style=<name>` | `manga` | Art style |
+| `--pages=<n>` | `4` | Number of pages |
+| `--panels=<n>` | `4` | Panels per page |
+| `--layout=<name>` | `auto` | `grid-2x2` \| `grid-2x3` \| `strip-3` \| `custom` |
+| `--format=<pdf\|cbz>` | `pdf` | Output container |
+| `--image-provider=<name>` | `mock` | Image provider |
+| `--text-provider=<name>` | `mock` | Text/script provider |
+| `--music-provider=<name>` | `mock` | Music provider |
+| `--output-profile=<name>` | `comic-print` | Output profile |
+| `--output=<path>` | auto | Override output path |
+
+## MCP server
+
+External agents (OpenClaw, Claude Desktop, etc.) can invoke the pipeline via MCP tool calls.
+
+```bash
+comic-creator-mcp
+```
+
+Tools: `create_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, `get_comic_cover`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
+
+## Tests
+
+```bash
+npm test          # all tests
+npm run test:server   # server integration
+npm run test:mcp      # MCP end-to-end
+```
+
+## Project structure
+
+```
+comic-creator/
+├── start.command            # double-click to launch WebUI (macOS)
+├── SKILL.md                 # OpenClaw skill entry
+├── README.md                # this file
+├── package.json
+├── bin/
+│   ├── comic-creator.mjs       # CLI entry point
+│   └── comic-creator-mcp.mjs    # MCP server entry point
+├── webui/                  # Static WebUI (served by the server)
+│   ├── index.html
+│   ├── app.css / app.js
+│   └── components/
+├── src/
+│   ├── index.ts            # createComic() + startWebUI()
+│   ├── types.ts            # Shared types (ComicScript, ComicResult, StoryProject…)
+│   ├── cli.ts              # CLI entry
+│   ├── providers/           # Text + image + music providers
+│   ├── pipeline/           # generateScript() + generatePanelImages()
+│   ├── project/             # StoryProject + StoryBible + MusicAssets + VideoAssets
+│   │   ├── story-project.ts
+│   │   ├── render-profile.ts
+│   │   ├── music-assets.ts
+│   │   ├── video-assets.ts
+│   │   └── agent-guidance.ts
+│   ├── assembler/          # PDF/CBZ page assembly
+│   └── server/             # WebUI HTTP API
+├── docs/
+│   └── agents/             # External agent integration guide
+└── state/                  # Persisted state (history + settings)
+```
+
+## License
+
+MIT — Franzferdinan51 / DuckBot
