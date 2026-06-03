@@ -132,6 +132,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--music-provider=<name>` | `mock` | Music provider |
 | `--output-profile=<name>` | `comic-print` | Output profile |
 | `--output=<path>` | auto | Override output path |
+| `--json` | off | Print the full `ComicResult` JSON |
 | `--agent-playbook` | off | Print the repo-level Hermes/OpenClaw playbook |
 
 ## MCP server

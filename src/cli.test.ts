@@ -16,8 +16,9 @@ const parsed = parseArgs([
 
 assert.equal(parsed.outputProfile, 'storyboard-widescreen');
 assert.equal(parsed.musicProvider, 'mock');
+assert.equal(parseArgs(['--json', 'A JSON story']).json, true);
 
-const playbookProbe = await execFileAsync(process.execPath, ['bin/comic-creator.mjs', '--agent-playbook'], {
+const playbookProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--agent-playbook'], {
   cwd: process.cwd(),
   maxBuffer: 1024 * 1024,
 });
@@ -58,6 +59,14 @@ const wav = await readFile(result.songAudioPath!);
 assert.equal(wav.subarray(0, 4).toString('ascii'), 'RIFF');
 const timeline = JSON.parse(await readFile(result.animaticTimelinePath!, 'utf8'));
 assert.equal(timeline.tracks.audio[0].audioPath, result.songAudioPath);
+
+const jsonProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--json', '--pages=1', '--panels=3', 'A JSON agent story'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+const jsonResult = JSON.parse(jsonProbe.stdout);
+assert.equal(jsonResult.outputPath.endsWith('.pdf'), true);
+assert.equal(jsonResult.agentGuidancePath.endsWith('-agent-guidance.md'), true);
 
 const stem = outputPath.replace(/\.[^./\\]+$/, '');
 await rm(outputPath, { force: true });

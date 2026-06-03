@@ -21,6 +21,7 @@ assert.equal(readme.includes('Markdown handoff'), true);
 assert.equal(readme.includes('docs/agents/hermes-openclaw-playbook.md'), true);
 assert.equal(readme.includes('get_agent_playbook'), true);
 assert.equal(readme.includes('--agent-playbook'), true);
+assert.equal(readme.includes('--json'), true);
 assert.equal(playbook.includes('## Task Routing'), true);
 assert.equal(playbook.includes('## Agent Loop'), true);
 assert.equal(playbook.includes('minimax'), true);
