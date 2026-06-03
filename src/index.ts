@@ -149,7 +149,7 @@ export async function createComic(
       'Bold typography, vibrant colors, epic composition.',
     ].join(' ');
 
-const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
+    const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
     const coverDir = `${stem}.images`;
     await mkdir(coverDir, { recursive: true });
 
@@ -221,16 +221,16 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   //
   // The image directory is per-job (sibling to the PDF) so two comics in the
   // same parent directory don't trample each other's panel images.
-  const stem = outputPath.replace(/\.[^./\\]+$/, '');
-  const imageDir = `${stem}.images`;
+  const stemFromOutput = outputPath.replace(/\.[^./\\]+$/, '');
+  const imageDir = `${stemFromOutput}.images`;
   await mkdir(imageDir, { recursive: true });
-  const projectPath = `${stem}-project.json`;
-  const agentGuidancePath = `${stem}-agent-guidance.md`;
-  const songSheetPath = `${stem}-song-sheet.md`;
-  const songAudioPath = `${stem}-theme.${musicProvider.outputExtension}`;
-  const storyboardPackagePath = `${stem}-storyboard-package.json`;
-  const animaticTimelinePath = `${stem}-animatic-timeline.json`;
-  const studioBundlePath = `${stem}-studio-bundle.json`;
+  const projectPath = `${stemFromOutput}-project.json`;
+  const agentGuidancePath = `${stemFromOutput}-agent-guidance.md`;
+  const songSheetPath = `${stemFromOutput}-song-sheet.md`;
+  const songAudioPath = `${stemFromOutput}-theme.${musicProvider.outputExtension}`;
+  const storyboardPackagePath = `${stemFromOutput}-storyboard-package.json`;
+  const animaticTimelinePath = `${stemFromOutput}-animatic-timeline.json`;
+  const studioBundlePath = `${stemFromOutput}-studio-bundle.json`;
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
