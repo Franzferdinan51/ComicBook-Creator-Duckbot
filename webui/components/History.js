@@ -135,6 +135,17 @@ export function History({ onOpen }) {
     showToast('Studio bundle downloaded.', 'success');
   }
 
+  function handleDownloadAgentPlaybook(e) {
+    e.stopPropagation();
+    const a = document.createElement('a');
+    a.href = '/api/agent-playbook';
+    a.download = 'hermes-openclaw-playbook.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Agent playbook downloaded.', 'success');
+  }
+
   if (loading) {
     return html`
       <section class="panel" aria-labelledby="history-title">
@@ -229,6 +240,11 @@ export function History({ onOpen }) {
                   type="button"
                   onClick=${(e) => { e.stopPropagation(); handleOpen(entry); }}
                 >Open</button>
+                <button
+                  type="button"
+                  onClick=${handleDownloadAgentPlaybook}
+                  title="Download the repo-level Hermes/OpenClaw playbook"
+                >Playbook</button>
                 <button
                   type="button"
                   onClick=${(e) => handleDownloadStudioBundle(entry, e)}

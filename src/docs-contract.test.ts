@@ -47,6 +47,7 @@ assert.equal(historyPanel.includes('studio-bundle'), true);
 assert.equal(historyPanel.includes('bundle.artifactPaths?.projectPath ?? null'), true);
 assert.equal(historyPanel.includes('bundle.format === \'studio-bundle\''), true);
 assert.equal(historyPanel.includes('Goal: '), true);
+assert.equal(historyPanel.includes('Download the repo-level Hermes/OpenClaw playbook'), true);
 assert.equal(optionsPanel.includes('Project goal'), true);
 assert.equal(optionsPanel.includes('project-goal'), true);
 assert.equal(optionsPanel.includes('Screen projects default to the storyboard widescreen profile'), true);
