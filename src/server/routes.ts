@@ -971,6 +971,64 @@ export function buildRouter(): Router {
   });
 
   /**
+   * GET /api/comic/:jobId/storyboard-package
+   * Returns the generated storyboard package JSON.
+   */
+  router.get('/comic/:jobId/storyboard-package', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const storyboardPackagePath = record.result.storyboardPackagePath;
+    if (!storyboardPackagePath || !existsSync(storyboardPackagePath)) {
+      return res.status(404).json({ error: 'no storyboard package for this comic' });
+    }
+    const size = statSync(storyboardPackagePath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-storyboard-package.json"`);
+    const buf = await readFile(storyboardPackagePath, 'utf8');
+    res.end(buf);
+  });
+
+  /**
+   * GET /api/comic/:jobId/animatic-timeline
+   * Returns the generated animatic timeline JSON.
+   */
+  router.get('/comic/:jobId/animatic-timeline', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const animaticTimelinePath = record.result.animaticTimelinePath;
+    if (!animaticTimelinePath || !existsSync(animaticTimelinePath)) {
+      return res.status(404).json({ error: 'no animatic timeline for this comic' });
+    }
+    const size = statSync(animaticTimelinePath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-animatic-timeline.json"`);
+    const buf = await readFile(animaticTimelinePath, 'utf8');
+    res.end(buf);
+  });
+
+  /**
    * GET /api/comic/:jobId/song-sheet
    * Returns the generated song sheet markdown.
    * Headers: Content-Type: text/markdown

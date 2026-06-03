@@ -21,6 +21,8 @@ import {
   renderAgentGuidanceMarkdown,
   renderSongSheetMarkdown,
   generateMockThemeWav,
+  buildStoryboardPackage,
+  buildAnimaticTimeline,
   type ComicOptions,
   type ComicResult,
   type OutputProfile,
@@ -341,6 +343,8 @@ export async function runCli(
   const agentGuidancePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-guidance.md`;
   const songSheetPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-song-sheet.md`;
   const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.wav`;
+  const storyboardPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-storyboard-package.json`;
+  const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(songAudioPath, generateMockThemeWav(project));
@@ -368,6 +372,16 @@ export async function runCli(
       layout: page.layout as PageLayout,
     });
   }
+  await writeFile(
+    storyboardPackagePath,
+    JSON.stringify(buildStoryboardPackage({ project, pages, songAudioPath }), null, 2),
+    'utf8'
+  );
+  await writeFile(
+    animaticTimelinePath,
+    JSON.stringify(buildAnimaticTimeline({ project, pages, songAudioPath }), null, 2),
+    'utf8'
+  );
 
   // Pre-render the OTHER format too so the user can convert without
   // re-running the pipeline. Matches the behavior of createComic() so
@@ -408,6 +422,8 @@ export async function runCli(
     agentGuidancePath,
     songSheetPath,
     songAudioPath,
+    storyboardPackagePath,
+    animaticTimelinePath,
     pages,
   };
 }

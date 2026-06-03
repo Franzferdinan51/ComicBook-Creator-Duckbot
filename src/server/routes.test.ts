@@ -23,6 +23,8 @@ const entry: HistoryEntry = {
   coverImagePath: '/tmp/history-job.images/cover.png',
   songSheetPath: '/tmp/history-job-song-sheet.md',
   songAudioPath: '/tmp/history-job-theme.wav',
+  storyboardPackagePath: '/tmp/history-job-storyboard-package.json',
+  animaticTimelinePath: '/tmp/history-job-animatic-timeline.json',
   project: {
     id: 'project-1',
     title: 'History Project',
@@ -122,6 +124,8 @@ try {
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.sceneCueMap), true);
   assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
   assert.equal(resolved?.result.songAudioPath, '/tmp/history-job-theme.wav');
+  assert.equal(resolved?.result.storyboardPackagePath, '/tmp/history-job-storyboard-package.json');
+  assert.equal(resolved?.result.animaticTimelinePath, '/tmp/history-job-animatic-timeline.json');
   console.log('PASS routes');
 } finally {
   await rm(storageDir, { recursive: true, force: true });

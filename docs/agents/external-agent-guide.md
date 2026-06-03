@@ -20,13 +20,16 @@ studio project, not just a PDF job.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
   `get_agent_guidance`, `get_song_sheet`, and `get_theme_audio` for complete
-  agent workflows.
+  agent workflows. Use `get_storyboard_package` and `get_animatic_timeline`
+  for show/movie handoff files.
 - WebUI: the result panel exposes project, adaptation, music, and agent
   guidance downloads.
 - Library API: `createComic()` returns `project`, `storyBible`,
   `adaptationPackage`, `musicCuePackage`, `agentGuidancePackage`, and
   `agentGuidancePath`.
   `adaptationPackage` includes screenplay scenes and storyboard prompts.
+  `storyboardPackagePath` and `animaticTimelinePath` point to generated
+  production handoff JSON files.
   `musicCuePackage` includes cue mapping, a song draft, lyrics, and a
   music-generation prompt. `songSheetPath` and `songAudioPath` point to the
   generated markdown sheet and deterministic WAV theme.
@@ -47,8 +50,8 @@ studio project, not just a PDF job.
 
 1. Generate or load a comic project.
 2. Read the generated `*-agent-guidance.md` file.
-3. Use the project JSON to plan screen adaptation, storyboard, song, and score
-   tasks.
+3. Use the project JSON plus storyboard package to plan screen adaptation,
+   storyboard, animatic, song, and score tasks.
 4. Use MCP or CLI calls for deterministic reruns and artifact retrieval.
 5. Store follow-up decisions in the project artifact before producing new
    media assets.

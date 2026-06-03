@@ -34,6 +34,8 @@ The adaptation package includes screenplay scenes and storyboard prompts; the
 music package includes cue mapping, a song draft, and a music-generation
 prompt for follow-up audio tools. The default pipeline also writes a song
 sheet markdown file and a deterministic mock WAV theme beside the comic export.
+For show/movie workflows, it also writes a storyboard package JSON and an
+animatic timeline JSON tied to the generated panel images and temporary theme.
 
 For external-agent workflows, see
 [`docs/agents/external-agent-guide.md`](./docs/agents/external-agent-guide.md).

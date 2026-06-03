@@ -32,6 +32,8 @@ async function main(): Promise<void> {
   assert.equal(result.agentGuidancePath != null, true);
   assert.equal(result.songSheetPath?.endsWith('-song-sheet.md'), true);
   assert.equal(result.songAudioPath?.endsWith('-theme.wav'), true);
+  assert.equal(result.storyboardPackagePath?.endsWith('-storyboard-package.json'), true);
+  assert.equal(result.animaticTimelinePath?.endsWith('-animatic-timeline.json'), true);
 
   await access(result.outputPath);
   assert.equal(!!result.cbzPath, true);
@@ -41,6 +43,8 @@ async function main(): Promise<void> {
   await access(result.agentGuidancePath!);
   await access(result.songSheetPath!);
   await access(result.songAudioPath!);
+  await access(result.storyboardPackagePath!);
+  await access(result.animaticTimelinePath!);
 
   const pdf = await readFile(result.outputPath);
   const pdfText = pdf.toString('latin1');
@@ -64,6 +68,14 @@ async function main(): Promise<void> {
   const wav = await readFile(result.songAudioPath!);
   assert.equal(wav.subarray(0, 4).toString('ascii'), 'RIFF');
   assert.equal(wav.subarray(8, 12).toString('ascii'), 'WAVE');
+  const storyboardPackage = JSON.parse(await readFile(result.storyboardPackagePath!, 'utf8'));
+  assert.equal(storyboardPackage.title, result.project.title);
+  assert.equal(storyboardPackage.shots.length >= 3, true);
+  assert.equal(storyboardPackage.shots[0].panelImagePath.length > 0, true);
+  const animaticTimeline = JSON.parse(await readFile(result.animaticTimelinePath!, 'utf8'));
+  assert.equal(animaticTimeline.format, 'animatic-timeline');
+  assert.equal(animaticTimeline.tracks.video.length >= 3, true);
+  assert.equal(animaticTimeline.tracks.audio[0].audioPath, result.songAudioPath);
 
   const stem = result.outputPath.replace(/\.[^./\\]+$/, '');
   await rm(result.outputPath, { force: true });
@@ -71,6 +83,8 @@ async function main(): Promise<void> {
   await rm(result.agentGuidancePath!, { force: true });
   await rm(result.songSheetPath!, { force: true });
   await rm(result.songAudioPath!, { force: true });
+  await rm(result.storyboardPackagePath!, { force: true });
+  await rm(result.animaticTimelinePath!, { force: true });
   await rm(`${stem}.images`, { recursive: true, force: true });
 
   console.log('PASS index');

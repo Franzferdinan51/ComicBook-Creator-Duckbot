@@ -59,6 +59,10 @@ export interface HistoryEntry {
   songSheetPath?: string;
   /** Path to the generated theme WAV. */
   songAudioPath?: string;
+  /** Path to the generated storyboard package JSON. */
+  storyboardPackagePath?: string;
+  /** Path to the generated animatic timeline JSON. */
+  animaticTimelinePath?: string;
   scriptJson: ComicScript;  // the full script (so the frontend can re-render)
   thumbnailPath?: string;   // optional — reserved for future
 }

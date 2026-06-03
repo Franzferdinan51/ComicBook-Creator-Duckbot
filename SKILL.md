@@ -182,6 +182,8 @@ main export so Hermes/OpenClaw and other external agents can continue from
 the same project, adaptation, and music context.
 It also writes `*-song-sheet.md` and `*-theme.wav` so music follow-up agents
 have both a human-readable song plan and a playable audio placeholder.
+For show/movie handoff, it writes `*-storyboard-package.json` and
+`*-animatic-timeline.json` beside the comic export.
 
 The stable external-agent contract is documented in
 [`docs/agents/external-agent-guide.md`](./docs/agents/external-agent-guide.md).
@@ -289,7 +291,8 @@ comic-creator-mcp
 The `comic-creator-mcp` binary speaks JSON-RPC over stdio and registers
 eleven tools: `create_comic`, `get_comic`, `get_comic_pdf`,
 `get_comic_image`, `get_agent_guidance`, `get_song_sheet`, `get_theme_audio`,
-`list_providers`, `get_history`, `get_settings`, `update_settings`.
+`get_storyboard_package`, `get_animatic_timeline`, `list_providers`,
+`get_history`, `get_settings`, `update_settings`.
 
 Point your MCP host at the `comic-creator-mcp` binary. Example config
 for an MCP host that reads `~/.config/<host>/mcp_servers.json`:

@@ -265,6 +265,8 @@ class JobManager {
       agentGuidancePath: entry.agentGuidancePath ?? null,
       songSheetPath: entry.songSheetPath ?? null,
       songAudioPath: entry.songAudioPath ?? null,
+      storyboardPackagePath: entry.storyboardPackagePath ?? null,
+      animaticTimelinePath: entry.animaticTimelinePath ?? null,
       pages: await Promise.all(
         entry.scriptJson.pages.map(async (page) => {
           // The images dir is the outputPath with extension replaced
@@ -353,6 +355,8 @@ class JobManager {
         agentGuidancePath: result.agentGuidancePath ?? undefined,
         songSheetPath: result.songSheetPath ?? undefined,
         songAudioPath: result.songAudioPath ?? undefined,
+        storyboardPackagePath: result.storyboardPackagePath ?? undefined,
+        animaticTimelinePath: result.animaticTimelinePath ?? undefined,
         scriptJson: result.script,
       };
       try {

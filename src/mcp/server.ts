@@ -249,6 +249,80 @@ export function buildMcpServer(): McpServer {
   );
 
   server.tool(
+    'get_storyboard_package',
+    'Fetch the generated storyboard package JSON for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.storyboardPackagePath;
+        if (!path || !existsSync(path)) {
+          return errResult(`storyboard package not available for job ${jobId}`);
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.storyboard-package.json`,
+                mimeType: 'application/json',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_storyboard_package failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
+    'get_animatic_timeline',
+    'Fetch the generated animatic timeline JSON for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.animaticTimelinePath;
+        if (!path || !existsSync(path)) {
+          return errResult(`animatic timeline not available for job ${jobId}`);
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.animatic-timeline.json`,
+                mimeType: 'application/json',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_animatic_timeline failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
     'get_theme_audio',
     'Fetch the generated mock theme WAV for a completed comic, returned as base64.',
     {

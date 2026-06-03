@@ -408,6 +408,28 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     showToast('Song sheet downloaded.', 'success');
   }
 
+  function handleDownloadStoryboardPackage() {
+    if (!result?.storyboardPackagePath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/storyboard-package`;
+    a.download = `${localSlug(result.script?.title)}-storyboard-package.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Storyboard package downloaded.', 'success');
+  }
+
+  function handleDownloadAnimaticTimeline() {
+    if (!result?.animaticTimelinePath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/animatic-timeline`;
+    a.download = `${localSlug(result.script?.title)}-animatic-timeline.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Animatic timeline downloaded.', 'success');
+  }
+
   function handleDownloadAgentGuidance() {
     if (result?.agentGuidancePath) {
       const a = document.createElement('a');
@@ -591,6 +613,16 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAdaptation}>
             Download adaptation JSON
           </button>
+          ${result.storyboardPackagePath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStoryboardPackage}>
+              Download storyboard package
+            </button>
+          ` : null}
+          ${result.animaticTimelinePath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAnimaticTimeline}>
+              Download animatic timeline
+            </button>
+          ` : null}
         </section>
 
         <section class="panel artifact-panel">

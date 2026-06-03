@@ -49,6 +49,8 @@ export {
   renderAgentGuidanceMarkdown,
   renderSongSheetMarkdown,
   generateMockThemeWav,
+  buildStoryboardPackage,
+  buildAnimaticTimeline,
 } from './project/index.js';
 
 import { getTextProvider, getImageProvider } from './providers/index.js';
@@ -59,6 +61,8 @@ import {
   renderAgentGuidanceMarkdown,
   renderSongSheetMarkdown,
   generateMockThemeWav,
+  buildStoryboardPackage,
+  buildAnimaticTimeline,
 } from './project/index.js';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
@@ -218,6 +222,8 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   const agentGuidancePath = `${stem}-agent-guidance.md`;
   const songSheetPath = `${stem}-song-sheet.md`;
   const songAudioPath = `${stem}-theme.wav`;
+  const storyboardPackagePath = `${stem}-storyboard-package.json`;
+  const animaticTimelinePath = `${stem}-animatic-timeline.json`;
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(songAudioPath, generateMockThemeWav(project));
@@ -243,6 +249,16 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
       layout: page.layout,
     });
   }
+  await writeFile(
+    storyboardPackagePath,
+    JSON.stringify(buildStoryboardPackage({ project, pages: pageImages, songAudioPath }), null, 2),
+    'utf8'
+  );
+  await writeFile(
+    animaticTimelinePath,
+    JSON.stringify(buildAnimaticTimeline({ project, pages: pageImages, songAudioPath }), null, 2),
+    'utf8'
+  );
 
   return {
     script,
@@ -258,6 +274,8 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
     agentGuidancePath,
     songSheetPath,
     songAudioPath,
+    storyboardPackagePath,
+    animaticTimelinePath,
     pages: pageImages,
   };
 }

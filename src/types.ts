@@ -237,6 +237,10 @@ export interface ComicResult {
   songSheetPath: string | null;
   /** Absolute path to the generated mock theme WAV, if written. */
   songAudioPath: string | null;
+  /** Absolute path to the generated storyboard package JSON, if written. */
+  storyboardPackagePath: string | null;
+  /** Absolute path to the generated animatic timeline JSON, if written. */
+  animaticTimelinePath: string | null;
   pages: Array<{
     page: Page;
     /**
