@@ -11,9 +11,11 @@ import { html, showToast, navTo } from './_lib.js';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
+  { id: 'pitch', label: 'Pitch' },
   { id: 'story', label: 'Story' },
   { id: 'script', label: 'Script' },
   { id: 'shots', label: 'Shots' },
+  { id: 'previs', label: 'Previs' },
   { id: 'timeline', label: 'Timeline' },
   { id: 'music', label: 'Music' },
   { id: 'deliverables', label: 'Deliverables' },
@@ -93,11 +95,33 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
   const chapterOutline = result.storyBible?.chapterOutline || [];
   const sceneBeats = result.storyBible?.sceneBeats || [];
   const songSections = result.musicCuePackage?.songDraft?.sections || [];
+  const trailerBeats = [
+    {
+      label: 'Hook',
+      text: result.storyBible?.premise || `${title} opens with a strong central premise.`,
+    },
+    {
+      label: 'Engine',
+      text: sceneOutline[0]?.summary || screenplayScenes[0]?.action || 'A first dramatic beat pulls the audience into the world.',
+    },
+    {
+      label: 'Escalation',
+      text: sceneOutline[Math.max(0, Math.floor(sceneOutline.length / 2))]?.summary || 'The middle of the story raises the stakes and broadens the world.',
+    },
+    {
+      label: 'Finish',
+      text: (sceneOutline.length > 0 ? sceneOutline[sceneOutline.length - 1]?.summary : null)
+        || (sceneCueMap.length > 0 ? sceneCueMap[sceneCueMap.length - 1]?.purpose : null)
+        || 'The ending lands with a clean emotional or visual payoff.',
+    },
+  ];
   const journeySteps = [
     { label: 'Comic pages', tab: 'overview' },
+    { label: 'Pitch deck', tab: 'pitch' },
     { label: 'Story bible', tab: 'story' },
     { label: 'Screenplay', tab: 'script' },
     { label: 'Storyboard', tab: 'shots' },
+    { label: 'Previs', tab: 'previs' },
     { label: 'Animatic', tab: 'timeline' },
     { label: 'Score', tab: 'music' },
     { label: 'Bundle', tab: 'deliverables' },
@@ -282,6 +306,52 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         </div>
       ` : null}
 
+      ${activeTab === 'pitch' ? html`
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card movie-pitch-card">
+            <h3>Pitch spine</h3>
+            <p class="movie-pitch-line">${result.storyBible?.premise || `${title} is ready for a cinematic adaptation.`}</p>
+            <p class="muted small">${result.storyBible?.synopsis || 'The pitch deck starts from the generated story bible and carries it into film/show form.'}</p>
+          </section>
+          <section class="movie-card movie-pitch-card">
+            <h3>Audience and promise</h3>
+            <div class="movie-pitch-tags">
+              <span class="movie-chip">Goal ${projectGoalLabel}</span>
+              <span class="movie-chip subtle">${artStyle}</span>
+              <span class="movie-chip subtle">${outputProfile}</span>
+            </div>
+            <p class="muted small" style="margin-top: .65rem;">
+              Use this board to shape a pitch, trailer, teaser, or show bible without flattening the comic into a slideshow.
+            </p>
+          </section>
+        </div>
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card">
+            <h3>Trailer beats</h3>
+            <div class="movie-trailer-beats">
+              ${trailerBeats.map((beat, index) => html`
+                <article class="movie-trailer-beat" key=${beat.label}>
+                  <span class="movie-chip">${String(index + 1).padStart(2, '0')}</span>
+                  <div>
+                    <strong>${beat.label}</strong>
+                    <p>${beat.text}</p>
+                  </div>
+                </article>
+              `)}
+            </div>
+          </section>
+          <section class="movie-card">
+            <h3>Pitch deliverables</h3>
+            <ul class="movie-list">
+              <li>Use the story bible as the emotional backbone.</li>
+              <li>Use the screenplay scenes as the scene order for a show/movie pass.</li>
+              <li>Use storyboard prompts and animatic timing to plan pacing.</li>
+              <li>Use the music package to shape teaser energy and theme music.</li>
+            </ul>
+          </section>
+        </div>
+      ` : null}
+
       ${activeTab === 'story' ? html`
         <div class="movie-grid movie-grid-two">
           <section class="movie-card">
@@ -355,6 +425,52 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
               </article>
             `;
           })}
+        </div>
+      ` : null}
+
+      ${activeTab === 'previs' ? html`
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card">
+            <h3>Previs scene map</h3>
+            <div class="movie-previs-list">
+              ${screenplayScenes.length > 0
+                ? screenplayScenes.map((scene) => html`
+                  <article class="movie-previs-card" key=${scene.sceneId}>
+                    <div class="scene-head">
+                      <span class="movie-chip">${scene.sceneId}</span>
+                      <span class="movie-chip subtle">${scene.slugline}</span>
+                    </div>
+                    <p>${scene.action}</p>
+                    <p class="muted small">Previs angle: ${scene.shotList.join(' · ')}</p>
+                  </article>
+                `)
+                : html`<p class="muted small">No screenplay scenes yet.</p>`}
+            </div>
+          </section>
+          <section class="movie-card">
+            <h3>Timing notes</h3>
+            <div class="movie-previs-list">
+              ${sceneCueMap.length > 0
+                ? sceneCueMap.map((entry) => {
+                  const cue = cueForScene(entry.sceneId);
+                  return html`
+                    <article class="movie-previs-card" key=${entry.sceneId + entry.cueId}>
+                      <div class="scene-head">
+                        <span class="movie-chip">${entry.sceneId}</span>
+                        <span class="movie-chip subtle">${entry.timing}</span>
+                      </div>
+                      <p>${entry.purpose}</p>
+                      ${cue ? html`<p class="muted small">Music cue: ${cue.title}</p>` : null}
+                    </article>
+                  `;
+                })
+                : html`<p class="muted small">No cue timing yet.</p>`}
+            </div>
+            <div class="action-row" style="margin-top: .9rem;">
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStoryboardPackage}>Download storyboard package</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAnimaticTimeline}>Download animatic timeline</button>
+            </div>
+          </section>
         </div>
       ` : null}
 

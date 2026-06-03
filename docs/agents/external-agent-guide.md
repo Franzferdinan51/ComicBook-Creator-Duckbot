@@ -38,8 +38,8 @@ For the most actionable workflow, start with the repo playbook at
 - WebUI: the result panel exposes project, adaptation, music, and agent
   guidance downloads, plus a unified studio bundle for one-shot handoff. Start
   with the studio bundle first when resuming work.
-  The new Movie / Show tab is the fastest way to review story, script, shots,
-  timeline, music, and deliverables for a film/show pass.
+  The new Movie / Show tab is the fastest way to review pitch, story, script,
+  shots, previs, timeline, music, and deliverables for a film/show pass.
 - Library API: `createComic()` returns `project`, `storyBible`,
   `adaptationPackage`, `musicCuePackage`, `agentGuidancePackage`, and
   `projectPath`, `agentPlaybookPath`, plus `agentGuidancePath`.
