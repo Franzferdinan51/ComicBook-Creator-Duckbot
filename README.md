@@ -33,6 +33,17 @@ npm start
 | `songAudioPath` | Generated theme audio from the selected music provider |
 | `agentGuidancePath` | Markdown handoff so external agents keep working from the same project |
 
+## Project goals
+
+Choose a goal preset to steer the generated handoff toward the right studio workflow:
+
+| Goal | Best for |
+|------|----------|
+| `comic` | Comic-first pages and a readable issue flow |
+| `screen` | Show/movie storyboards and shot lists |
+| `music` | Song-first passes and soundtrack planning |
+| `studio` | Balanced comic, adaptation, and music handoff |
+
 ## Quick example
 
 ```ts
@@ -105,6 +116,7 @@ open start.command
 
 The WebUI gives you:
 - Story input + style/format/provider options
+- Project goal preset for comic / screen / music / studio workflows
 - Live job status and progress
 - PDF preview with page navigation and thumbnails
 - Download as PDF or CBZ, or grab all panel images as a ZIP
@@ -131,6 +143,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--image-provider=<name>` | `mock` | Image provider |
 | `--text-provider=<name>` | `mock` | Text/script provider |
 | `--music-provider=<name>` | `mock` | Music provider |
+| `--project-goal=<name>` | `comic` | `comic` \| `screen` \| `music` \| `studio` |
 | `--output-profile=<name>` | `comic-print` | Output profile |
 | `--output=<path>` | auto | Override output path |
 | `--json` | off | Print the full `ComicResult` JSON |

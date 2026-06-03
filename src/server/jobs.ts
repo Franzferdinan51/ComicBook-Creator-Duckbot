@@ -15,7 +15,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { ComicOptions, ComicResult } from '../types.js';
+import type { ComicOptions, ComicResult, StoryProject } from '../types.js';
 import { upsertHistoryEntry, type HistoryEntry } from './storage.js';
 
 export type JobStatus = 'pending' | 'done' | 'error';
@@ -154,6 +154,68 @@ class JobManager {
     // Build a minimal ComicResult shape. panelImagePaths can be
     // reconstructed by scanning the per-job images dir next to the
     // outputPath (we always write one file per panel there).
+    const projectGoal = entry.project?.projectGoal ?? 'comic';
+    const fallbackProject: StoryProject = {
+      id: jobId,
+      title: entry.scriptJson.title,
+      premise: entry.scriptJson.title,
+      artStyle: entry.scriptJson.artStyle,
+      projectGoal,
+      renderProfile: {
+        outputProfile: 'comic-print',
+        page: { width: 825, height: 1275, margin: 36, bleed: 18 },
+        panel: { aspectRatio: '2:3', targetWidth: 1024, targetHeight: 1536, fit: 'contain' },
+        cover: { width: 1536, height: 2304, aspectRatio: '2:3' },
+      },
+      storyBible: {
+        premise: entry.scriptJson.title,
+        synopsis: `${entry.scriptJson.title} recovered from history.`,
+        chapterOutline: [],
+        sceneBeats: [],
+      },
+      adaptationPackage: {
+        format: 'screen-outline',
+        sceneOutline: [],
+        screenplayScenes: [],
+        storyboardPrompts: [],
+      },
+      musicCuePackage: {
+        format: 'music-brief',
+        cues: [],
+        sceneCueMap: [],
+        songDraft: {
+          title: `${entry.scriptJson.title} Theme`,
+          genre: 'cinematic pop',
+          bpm: 96,
+          key: 'A minor',
+          sections: [],
+          lyrics: '',
+        },
+        themeSongPrompt: `Create a theme for "${entry.scriptJson.title}".`,
+        musicGenerationPrompt: `Generate a cinematic music theme for "${entry.scriptJson.title}" with instrumentation that supports the comic's adaptation scenes.`,
+      },
+      agentGuidancePackage: {
+        format: 'agent-guidance',
+        frameworks: {
+          hermesAgent: {
+            repository: 'https://github.com/nousresearch/hermes-agent',
+            role: 'Long-horizon creative planning, task routing, and multi-step operator orchestration.',
+          },
+          openClaw: {
+            repository: 'https://github.com/openclaw/openclaw',
+            role: 'Tool-connected execution layer for generation, external model access, and local workflow control.',
+          },
+        },
+        workflowSteps: [],
+        deliverables: [],
+        operatorChecklist: [],
+        externalInterfaces: ['cli', 'mcp', 'webui', 'external-agent'],
+        systemPrompt: `Support "${entry.scriptJson.title}" as a reusable studio project with a ${projectGoal} focus.`,
+      },
+    };
+    const project: StoryProject = entry.project
+      ? { ...entry.project, projectGoal: entry.project.projectGoal ?? projectGoal }
+      : fallbackProject;
     const result: ComicResult = {
       script: entry.scriptJson,
       outputPath: entry.outputPath,
@@ -161,63 +223,7 @@ class JobManager {
       cbzPath: entry.cbzPath ?? (entry.outputPath.endsWith('.cbz') ? entry.outputPath : null),
       coverImagePath: entry.coverImagePath ?? null,
       studioBundlePath: entry.studioBundlePath ?? `${entry.outputPath.replace(/\.[^./\\]+$/, '')}-studio-bundle.json`,
-      project: entry.project ?? {
-        id: jobId,
-        title: entry.scriptJson.title,
-        premise: entry.scriptJson.title,
-        artStyle: entry.scriptJson.artStyle,
-        renderProfile: {
-          outputProfile: 'comic-print',
-          page: { width: 825, height: 1275, margin: 36, bleed: 18 },
-          panel: { aspectRatio: '2:3', targetWidth: 1024, targetHeight: 1536, fit: 'contain' },
-          cover: { width: 1536, height: 2304, aspectRatio: '2:3' },
-        },
-        storyBible: {
-          premise: entry.scriptJson.title,
-          synopsis: `${entry.scriptJson.title} recovered from history.`,
-          chapterOutline: [],
-          sceneBeats: [],
-        },
-        adaptationPackage: {
-          format: 'screen-outline',
-          sceneOutline: [],
-          screenplayScenes: [],
-          storyboardPrompts: [],
-        },
-        musicCuePackage: {
-          format: 'music-brief',
-          cues: [],
-          sceneCueMap: [],
-          songDraft: {
-            title: `${entry.scriptJson.title} Theme`,
-            genre: 'cinematic pop',
-            bpm: 96,
-            key: 'A minor',
-            sections: [],
-            lyrics: '',
-          },
-          themeSongPrompt: `Create a theme for "${entry.scriptJson.title}".`,
-          musicGenerationPrompt: `Generate a cinematic music theme for "${entry.scriptJson.title}" with instrumentation that supports the comic's adaptation scenes.`,
-        },
-        agentGuidancePackage: {
-          format: 'agent-guidance',
-          frameworks: {
-            hermesAgent: {
-              repository: 'https://github.com/nousresearch/hermes-agent',
-              role: 'Long-horizon creative planning, task routing, and multi-step operator orchestration.',
-            },
-            openClaw: {
-              repository: 'https://github.com/openclaw/openclaw',
-              role: 'Tool-connected execution layer for generation, external model access, and local workflow control.',
-            },
-          },
-          workflowSteps: [],
-          deliverables: [],
-          operatorChecklist: [],
-          externalInterfaces: ['cli', 'mcp', 'webui', 'external-agent'],
-          systemPrompt: `Support "${entry.scriptJson.title}" as a reusable studio project.`,
-        },
-      },
+      project,
       projectPath: entry.projectPath ?? null,
       storyBible: entry.project?.storyBible ?? {
         premise: entry.scriptJson.title,

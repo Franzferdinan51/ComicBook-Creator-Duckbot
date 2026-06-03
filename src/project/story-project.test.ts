@@ -4,11 +4,12 @@ import { renderAgentGuidanceMarkdown } from './agent-guidance.js';
 
 const project = buildStoryProject('A small crew saves a floating city.', {
   artStyle: 'cinematic comic',
-  outputProfile: 'storyboard-widescreen',
+  projectGoal: 'screen',
 });
 
 assert.equal(project.premise, 'A small crew saves a floating city.');
 assert.equal(project.artStyle, 'cinematic comic');
+assert.equal(project.projectGoal, 'screen');
 assert.equal(project.renderProfile.outputProfile, 'storyboard-widescreen');
 assert.equal(project.storyBible.premise, 'A small crew saves a floating city.');
 assert.equal(project.adaptationPackage.sceneOutline.length > 0, true);
@@ -32,6 +33,7 @@ assert.equal(project.agentGuidancePackage.systemPrompt.includes(project.title), 
 const guidance = renderAgentGuidanceMarkdown(project);
 assert.equal(guidance.includes('Hermes + OpenClaw playbook'), true);
 assert.equal(guidance.includes('Show / Movie Handoff'), true);
+assert.equal(guidance.includes('Project goal: screen'), true);
 assert.equal(guidance.includes('song sheet and theme audio'), true);
 assert.equal(guidance.includes('Studio bundle path'), true);
 assert.equal(guidance.includes('Use the studio bundle to hand off the full project state'), true);

@@ -30,6 +30,13 @@ const OUTPUT_PROFILES = [
   { value: 'storyboard-widescreen', label: 'Storyboard Widescreen' },
 ];
 
+const PROJECT_GOALS = [
+  { value: 'comic', label: 'Comic-first' },
+  { value: 'screen', label: 'Screen / show' },
+  { value: 'music', label: 'Music-first' },
+  { value: 'studio', label: 'Studio balance' },
+];
+
 const PAGE_COUNT_MIN = 1;
 const PAGE_COUNT_MAX = 12;
 const PANELS_MIN = 1;
@@ -52,6 +59,7 @@ export function OptionsPanel({ options = {}, providers, onChange, disabled = fal
 
   const textProviders = providers?.text || [];
   const imageProviders = providers?.image || [];
+  const inferredOutputProfile = options.outputProfile || (options.projectGoal === 'screen' ? 'storyboard-widescreen' : 'comic-print');
   const noProviders =
     textProviders.length === 0 && imageProviders.length === 0;
 
@@ -141,10 +149,24 @@ export function OptionsPanel({ options = {}, providers, onChange, disabled = fal
         </div>
 
         <div class="field">
+          <label for="project-goal">Project goal</label>
+          <select
+            id="project-goal"
+            value=${options.projectGoal || 'comic'}
+            disabled=${disabled}
+            onChange=${(e) => set({ projectGoal: e.target.value })}
+          >
+            ${PROJECT_GOALS.map((goal) => html`
+              <option key=${goal.value} value=${goal.value}>${goal.label}</option>
+            `)}
+          </select>
+        </div>
+
+        <div class="field">
           <label for="output-profile">Output profile</label>
           <select
             id="output-profile"
-            value=${options.outputProfile || 'comic-print'}
+            value=${inferredOutputProfile}
             disabled=${disabled}
             onChange=${(e) => set({ outputProfile: e.target.value })}
           >

@@ -33,6 +33,7 @@ export type {
   AdaptationPackage,
   MusicCuePackage,
   AgentGuidancePackage,
+  ProjectGoal,
   OutputProfile,
 } from './types.js';
 
@@ -81,6 +82,7 @@ export async function createComic(
     imageProvider: options.imageProvider ?? 'mock',
     textProvider: options.textProvider ?? options.imageProvider ?? 'mock',
     musicProvider: options.musicProvider ?? 'mock',
+    projectGoal: options.projectGoal ?? 'comic',
     pageCount: options.pageCount ?? 4,
     panelsPerPage: options.panelsPerPage ?? 4,
     outputProfile: options.outputProfile ?? 'comic-print',
@@ -109,6 +111,7 @@ export async function createComic(
       pageCount: opts.pageCount,
       panelsPerPage: opts.panelsPerPage,
       artStyle: opts.artStyle,
+      projectGoal: opts.projectGoal,
       // Forward the text-model override so the LLM call uses the user's
       // choice. Providers that don't support per-call models ignore it.
       ...(opts.textModel ? { model: opts.textModel } : {}),

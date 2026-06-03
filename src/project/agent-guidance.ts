@@ -1,12 +1,21 @@
-import type { AgentGuidancePackage, StoryProject } from '../types.js';
+import type { AgentGuidancePackage, ProjectGoal, StoryProject } from '../types.js';
+
+const PROJECT_GOAL_LABELS: Record<ProjectGoal, string> = {
+  comic: 'comic-first production',
+  screen: 'screen/show handoff',
+  music: 'music-first soundtrack pass',
+  studio: 'balanced studio workflow',
+};
 
 export function buildAgentGuidancePackage(params: {
   title: string;
   premise: string;
   artStyle: string;
   outputProfile: string;
+  projectGoal: ProjectGoal;
 }): AgentGuidancePackage {
-  const { title, premise, artStyle, outputProfile } = params;
+  const { title, premise, artStyle, outputProfile, projectGoal } = params;
+  const goalLabel = PROJECT_GOAL_LABELS[projectGoal];
 
   return {
     format: 'agent-guidance',
@@ -21,28 +30,28 @@ export function buildAgentGuidancePackage(params: {
       },
     },
     workflowSteps: [
-      `Use Hermes Agent to break "${title}" into reusable story, screen adaptation, and soundtrack tasks.`,
+      `Use Hermes Agent to break "${title}" into reusable story, screen adaptation, and soundtrack tasks with a ${goalLabel} focus.`,
       `Use OpenClaw-connected tools to generate comic pages with the ${outputProfile} render profile and preserve reusable artifacts.`,
       'Promote approved story beats into screenplay scenes, storyboard prompts, cue maps, song drafts, and future external production tasks.',
       'Treat the project artifact as the source of truth and feed changes back into CLI, MCP, and external-agent workflows.',
-      'Use the generated storyboard package, animatic timeline, song sheet, and theme audio as production handoff assets for show/movie follow-through.',
+      `Use the generated storyboard package, animatic timeline, song sheet, and theme audio as production handoff assets for ${goalLabel} follow-through.`,
     ],
     deliverables: [
       'comic pages and export package',
       'screen adaptation outline with screenplay scenes and storyboard prompts',
       'music cue brief with scene mapping, song draft, and generation prompt',
       'agent handoff guidance for external production runs',
-      'show/movie handoff package with storyboard and animatic artifacts',
+      `show/movie handoff package with storyboard and animatic artifacts tuned for ${goalLabel}`,
     ],
     operatorChecklist: [
       'Keep character names, tone, and world details consistent across comic, screen, and music outputs.',
       'Prefer deterministic mock validation before using paid providers for large generation runs.',
       'Preserve aspect-ratio and output-profile intent through panel rendering, cover art, and final export.',
       'Treat the project artifact as the source of truth for future CLI, MCP, and external-agent workflows.',
-      'Re-read the generated handoff before each new production pass so Hermes and OpenClaw stay synchronized.',
+      `Bias the next production pass toward the ${goalLabel} while keeping the other handoff artifacts in sync.`,
     ],
     externalInterfaces: ['cli', 'mcp', 'webui', 'external-agent'],
-    systemPrompt: `You are the studio orchestration agent for "${title}". Work from the premise "${premise}" in a ${artStyle} style. Use Hermes Agent for planning and decomposition, use OpenClaw for connected execution, and always preserve continuity between comic pages, screen adaptation scenes, soundtrack concepts, and show/movie handoff artifacts.`,
+    systemPrompt: `You are the studio orchestration agent for "${title}". Work from the premise "${premise}" in a ${artStyle} style. Primary goal: ${goalLabel}. Use Hermes Agent for planning and decomposition, use OpenClaw for connected execution, and always preserve continuity between comic pages, screen adaptation scenes, soundtrack concepts, and show/movie handoff artifacts.`,
   };
 }
 
@@ -55,6 +64,7 @@ export function renderAgentGuidanceMarkdown(project: StoryProject): string {
 - Title: ${project.title}
 - Premise: ${project.premise}
 - Art style: ${project.artStyle}
+- Project goal: ${project.projectGoal}
 - Output profile: ${project.renderProfile.outputProfile}
 
 ## Framework Base

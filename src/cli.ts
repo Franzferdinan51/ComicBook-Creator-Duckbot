@@ -26,6 +26,7 @@ import {
   buildStudioBundle,
   type ComicOptions,
   type ComicResult,
+  type ProjectGoal,
   type OutputProfile,
   type PageLayout,
 } from './index.js';
@@ -56,12 +57,14 @@ interface ParsedArgs {
   textProvider: string;
   imageProvider: string;
   musicProvider: string;
+  projectGoal: ProjectGoal;
   textModel: string | null;
   imageModel: string | null;
   imageAspectRatio: string | null;
   imagePromptOptimizer: boolean;
   imageAigcWatermark: boolean;
   outputProfile: OutputProfile;
+  outputProfileExplicit: boolean;
   output: string | null;
   seed: number;
   json: boolean;
@@ -85,6 +88,7 @@ Options:
   --text-provider=<name>    Text-generation provider. Default: mock
   --image-provider=<name>   Image-generation provider. Default: mock
   --music-provider=<name>   Music-generation provider for theme WAV. Default: mock
+  --project-goal=<name>     comic | screen | music | studio. Default: comic
   --text-model=<id>         Override the text model id (e.g. openai/gpt-4o-mini, MiniMax-M3). Default: provider's configured default
   --image-model=<id>        Override the image model id (e.g. black-forest-labs/flux.1-schnell, image-01, sdxl). Default: provider's configured default
   --image-aspect-ratio=<r>  Aspect ratio for image gen (e.g. 16:9, 1:1, 4:3). Default: 1:1. Equivalent to the MiniMax CLI's --aspect-ratio.
@@ -116,12 +120,14 @@ function defaultArgs(): ParsedArgs {
     textProvider: 'mock',
     imageProvider: 'mock',
     musicProvider: 'mock',
+    projectGoal: 'comic',
     textModel: null,
     imageModel: null,
     imageAspectRatio: null,
     imagePromptOptimizer: false,
     imageAigcWatermark: false,
     outputProfile: 'comic-print',
+    outputProfileExplicit: false,
     output: null,
     seed: 0,
     json: false,
@@ -170,6 +176,12 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
     case 'music-provider':
       args.musicProvider = value;
       break;
+    case 'project-goal':
+      if (value !== 'comic' && value !== 'screen' && value !== 'music' && value !== 'studio') {
+        throw new Error(`--project-goal must be one of comic|screen|music|studio, got "${value}"`);
+      }
+      args.projectGoal = value;
+      break;
     case 'text-model':
       args.textModel = value;
       break;
@@ -195,6 +207,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
         throw new Error(`--output-profile must be one of comic-print|digital-portrait|storyboard-widescreen, got "${value}"`);
       }
       args.outputProfile = value;
+      args.outputProfileExplicit = true;
       break;
     case 'output':
       args.output = value;
@@ -307,13 +320,15 @@ export async function runCli(
     artStyle: args.style,
     pageCount: args.pages,
     panelsPerPage,
-    outputProfile: args.outputProfile,
+    ...(args.outputProfileExplicit ? { outputProfile: args.outputProfile } : {}),
+    projectGoal: args.projectGoal,
   });
 
   const opts: ComicOptions = {
     artStyle: args.style,
     imageProvider: args.imageProvider,
     musicProvider: args.musicProvider,
+    projectGoal: args.projectGoal,
     textProvider: args.textProvider,
     pageCount: args.pages,
     panelsPerPage,
@@ -333,6 +348,7 @@ export async function runCli(
     `comic-creator: text=${args.textProvider}${args.textModel ? ` (${args.textModel})` : ''} ` +
     `image=${args.imageProvider}${args.imageModel ? ` (${args.imageModel})` : ''} ` +
     `music=${args.musicProvider} ` +
+    `goal=${args.projectGoal} ` +
     (args.imageAspectRatio ? `aspect=${args.imageAspectRatio} ` : '') +
     `format=${args.format} seed=${args.seed}`
   );
@@ -348,6 +364,7 @@ export async function runCli(
       pageCount: opts.pageCount,
       panelsPerPage: opts.panelsPerPage,
       artStyle: opts.artStyle,
+      projectGoal: args.projectGoal,
     },
     textProvider
   );

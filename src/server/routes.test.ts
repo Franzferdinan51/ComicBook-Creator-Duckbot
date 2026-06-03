@@ -29,14 +29,15 @@ const entry: HistoryEntry = {
   storyboardPackagePath: '/tmp/history-job-storyboard-package.json',
   animaticTimelinePath: '/tmp/history-job-animatic-timeline.json',
   studioBundlePath: '/tmp/history-job-studio-bundle.json',
-  project: {
-    id: 'project-1',
-    title: 'History Project',
-    premise: 'History project premise',
-    artStyle: 'manga',
-    renderProfile: {
-      outputProfile: 'storyboard-widescreen',
-      page: { width: 1600, height: 900, margin: 48, bleed: 0 },
+    project: {
+      id: 'project-1',
+      title: 'History Project',
+      premise: 'History project premise',
+      artStyle: 'manga',
+      projectGoal: 'screen',
+      renderProfile: {
+        outputProfile: 'storyboard-widescreen',
+        page: { width: 1600, height: 900, margin: 48, bleed: 0 },
       panel: { aspectRatio: '16:9', targetWidth: 1536, targetHeight: 864, fit: 'contain' },
       cover: { width: 1600, height: 900, aspectRatio: '16:9' },
     },
@@ -153,6 +154,7 @@ try {
   assert.equal(resolved?.status, 'done');
   assert.equal(resolved?.fromHistory, true);
   assert.equal(resolved?.result.project.renderProfile.outputProfile, 'storyboard-widescreen');
+  assert.equal(resolved?.result.project.projectGoal, 'screen');
   assert.equal(Array.isArray(resolved?.result.adaptationPackage.sceneOutline), true);
   assert.equal(Array.isArray(resolved?.result.adaptationPackage.screenplayScenes), true);
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.cues), true);
@@ -184,6 +186,42 @@ try {
     assert.equal(bundle.availability.storyboardPackage, true);
     assert.equal(bundle.availability.animaticTimeline, true);
     assert.equal(bundle.availability.studioBundle, true);
+
+    const createRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        story: 'A test comic becomes a screen-ready pilot.',
+        options: {
+          artStyle: 'manga',
+          projectGoal: 'screen',
+          textProvider: 'mock',
+          imageProvider: 'mock',
+          musicProvider: 'mock',
+          pageCount: 1,
+          panelsPerPage: 3,
+        },
+      }),
+    });
+    assert.equal(createRes.status, 202);
+    const { jobId } = await createRes.json() as { jobId: string };
+    let generated: Record<string, unknown> | null = null;
+    for (let i = 0; i < 25; i++) {
+      const pollRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/${jobId}`);
+      assert.equal(pollRes.ok, true);
+      const body = await pollRes.json() as Record<string, unknown>;
+      if (body.status === 'done') {
+        generated = body;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(generated, 'expected the generated job to finish');
+    const generatedResult = generated?.result as {
+      project?: { projectGoal?: string; renderProfile?: { outputProfile?: string } };
+    };
+    assert.equal(generatedResult.project?.projectGoal, 'screen');
+    assert.equal(generatedResult.project?.renderProfile?.outputProfile, 'storyboard-widescreen');
   } finally {
     await handle.close();
   }

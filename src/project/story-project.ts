@@ -1,7 +1,28 @@
 import { randomUUID } from 'node:crypto';
-import type { ComicOptions, StoryProject } from '../types.js';
+import type { ComicOptions, ProjectGoal, StoryProject } from '../types.js';
 import { normalizeRenderProfile } from './render-profile.js';
 import { buildAgentGuidancePackage } from './agent-guidance.js';
+
+const PROJECT_GOAL_LABELS: Record<ProjectGoal, string> = {
+  comic: 'comic-first production',
+  screen: 'screen/show handoff',
+  music: 'music-first soundtrack pass',
+  studio: 'balanced studio workflow',
+};
+
+function goalSummary(goal: ProjectGoal): string {
+  switch (goal) {
+    case 'screen':
+      return 'The structure emphasizes shot-ready scenes, motion-friendly transitions, and storyboard clarity.';
+    case 'music':
+      return 'The structure emphasizes cueable moments, lyrical motifs, and soundtrack-ready pacing.';
+    case 'studio':
+      return 'The structure balances comic readability, screen adaptation assets, and music handoff artifacts.';
+    case 'comic':
+    default:
+      return 'The structure prioritizes readable comic pages and a clean narrative arc.';
+  }
+}
 
 function inferTitle(story: string): string {
   const firstSentence = story.split(/[.!?]/)[0]?.trim();
@@ -17,12 +38,17 @@ export function buildStoryProject(
 ): StoryProject {
   const title = inferTitle(story);
   const artStyle = options.artStyle ?? 'manga';
-  const renderProfile = normalizeRenderProfile(options);
+  const projectGoal = options.projectGoal ?? 'comic';
+  const renderProfile = normalizeRenderProfile({
+    ...options,
+    outputProfile: options.outputProfile ?? (projectGoal === 'screen' ? 'storyboard-widescreen' : 'comic-print'),
+  });
   const agentGuidancePackage = buildAgentGuidancePackage({
     title,
     premise: story,
     artStyle,
     outputProfile: renderProfile.outputProfile,
+    projectGoal,
   });
 
   return {
@@ -30,10 +56,11 @@ export function buildStoryProject(
     title,
     premise: story,
     artStyle,
+    projectGoal,
     renderProfile,
     storyBible: {
       premise: story,
-      synopsis: `${title} develops into a multi-scene illustrated narrative ready for comics and later adaptation.`,
+      synopsis: `${title} develops into a multi-scene illustrated narrative ready for comics and later adaptation. ${goalSummary(projectGoal)}`,
       chapterOutline: ['Opening', 'Escalation', 'Climax', 'Resolution'],
       sceneBeats: [
         'Introduce the core world and cast.',
@@ -95,17 +122,19 @@ export function buildStoryProject(
       storyboardPrompts: [
         {
           sceneId: 'scene-1',
-          prompt: `${artStyle} cinematic storyboard frame for "${title}", opening world, strong silhouette, clear story hook.`,
-          cameraLanguage: 'wide establishing frame with readable foreground, midground, and background.',
+          prompt: `${artStyle} cinematic storyboard frame for "${title}", opening world, strong silhouette, clear story hook, optimized for ${PROJECT_GOAL_LABELS[projectGoal]}.`,
+          cameraLanguage: projectGoal === 'screen'
+            ? 'wide establishing frame with readable foreground, midground, and background.'
+            : 'wide establishing frame with readable foreground, midground, and background.',
         },
         {
           sceneId: 'scene-2',
-          prompt: `${artStyle} storyboard action frame for "${title}", escalating conflict, expressive character staging.`,
+          prompt: `${artStyle} storyboard action frame for "${title}", escalating conflict, expressive character staging, optimized for ${PROJECT_GOAL_LABELS[projectGoal]}.`,
           cameraLanguage: 'moving camera energy, diagonal composition, high contrast focal point.',
         },
         {
           sceneId: 'scene-3',
-          prompt: `${artStyle} final storyboard frame for "${title}", emotional resolution with sequel hook.`,
+          prompt: `${artStyle} final storyboard frame for "${title}", emotional resolution with sequel hook, optimized for ${PROJECT_GOAL_LABELS[projectGoal]}.`,
           cameraLanguage: 'slow push-in feeling, centered hero image, clean negative space for title or lyrics.',
         },
       ],
@@ -174,7 +203,7 @@ export function buildStoryProject(
         ].join('\n'),
       },
       themeSongPrompt: `Write a theme song concept for "${title}" with a ${artStyle} tone and cinematic momentum.`,
-      musicGenerationPrompt: `Generate a cinematic pop theme for "${title}" with instrumentation based on hybrid strings, synth pulse, cinematic percussion, and a lead motif. Use the scene cue map to shape dynamics from opening tension to final hook.`,
+      musicGenerationPrompt: `Generate a cinematic pop theme for "${title}" with instrumentation based on hybrid strings, synth pulse, cinematic percussion, and a lead motif. Use the scene cue map to shape dynamics from opening tension to final hook, and bias the arrangement toward the ${PROJECT_GOAL_LABELS[projectGoal]}.`,
     },
     agentGuidancePackage,
   };

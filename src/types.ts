@@ -35,6 +35,8 @@ export interface ComicScript {
 
 export type OutputProfile = 'comic-print' | 'digital-portrait' | 'storyboard-widescreen';
 
+export type ProjectGoal = 'comic' | 'screen' | 'music' | 'studio';
+
 export interface RenderProfile {
   outputProfile: OutputProfile;
   page: {
@@ -136,6 +138,7 @@ export interface StoryProject {
   title: string;
   premise: string;
   artStyle: string;
+  projectGoal: ProjectGoal;
   renderProfile: RenderProfile;
   storyBible: StoryBible;
   adaptationPackage: AdaptationPackage;
@@ -151,6 +154,8 @@ export interface ComicOptions {
   textProvider?: string;
   /** "mock" | future music provider names — default "mock" */
   musicProvider?: string;
+  /** High-level creative goal for the run. Default: "comic". */
+  projectGoal?: ProjectGoal;
   /**
    * Override the image-generation model id for this comic. Falls back to the
    * provider's configured default. Set to "" (empty) to clear.

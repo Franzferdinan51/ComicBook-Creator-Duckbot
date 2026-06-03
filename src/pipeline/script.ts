@@ -20,13 +20,14 @@
  *        - sane per-panel `description` (fall back to a placeholder)
  */
 
-import type { ComicScript, Page, PageLayout, Panel } from '../types.js';
+import type { ComicScript, Page, PageLayout, Panel, ProjectGoal } from '../types.js';
 import type { TextProvider } from '../providers/index.js';
 
 export interface ScriptGeneratorOptions {
   pageCount?: number; // default 4
   panelsPerPage?: number; // default 4
   artStyle?: string; // default 'manga'
+  projectGoal?: ProjectGoal; // default 'comic'
   /**
    * Optional model override forwarded to the text provider. Empty
    * string is treated the same as unset. Falls back to the provider's
@@ -77,6 +78,7 @@ function buildScriptPrompt(story: string, opts: Required<ScriptGeneratorOptions>
     '',
     `Produce a ${opts.pageCount}-page comic script with exactly ${opts.panelsPerPage} panels per page (suggested layout: "${layoutHint}").`,
     `Art style: ${opts.artStyle}.`,
+    `Project goal: ${opts.projectGoal ?? 'comic'}.`,
     '',
     'Constraints:',
     `- Exactly ${opts.pageCount} entries in the "pages" array.`,
@@ -307,6 +309,7 @@ export async function generateScript(
     pageCount: options.pageCount ?? 4,
     panelsPerPage: options.panelsPerPage ?? 4,
     artStyle: options.artStyle ?? 'manga',
+    projectGoal: options.projectGoal ?? 'comic',
     model: options.model ?? '',
   };
 

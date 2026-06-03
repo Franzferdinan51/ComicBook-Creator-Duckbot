@@ -8,14 +8,14 @@ import { parseArgs, runCli } from './cli.js';
 const execFileAsync = promisify(execFile);
 
 const parsed = parseArgs([
-  '--output-profile=storyboard-widescreen',
+  '--project-goal=screen',
   '--music-provider=mock',
   '--pages=1',
   '--panels=3',
   'A crew turns a comic into a pilot episode.',
 ]);
 
-assert.equal(parsed.outputProfile, 'storyboard-widescreen');
+assert.equal(parsed.projectGoal, 'screen');
 assert.equal(parsed.musicProvider, 'mock');
 assert.equal(parseArgs(['--json', 'A JSON story']).json, true);
 
@@ -36,6 +36,7 @@ const result = await runCli({
 }, () => undefined);
 
 assert.equal(result.project.renderProfile.outputProfile, 'storyboard-widescreen');
+assert.equal(result.project.projectGoal, 'screen');
 assert.equal(result.musicProvider, 'mock');
 assert.equal(result.agentGuidancePackage.externalInterfaces.includes('cli'), true);
 assert.equal(result.projectPath, outputPath.replace(/\.pdf$/, '-project.json'));

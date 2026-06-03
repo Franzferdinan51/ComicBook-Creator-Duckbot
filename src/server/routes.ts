@@ -718,6 +718,17 @@ export function buildRouter(): Router {
       if (options.outputFormat === 'pdf' || options.outputFormat === 'cbz') {
         safeOptions.outputFormat = options.outputFormat;
       }
+      if (options.projectGoal != null) {
+        if (
+          options.projectGoal !== 'comic' &&
+          options.projectGoal !== 'screen' &&
+          options.projectGoal !== 'music' &&
+          options.projectGoal !== 'studio'
+        ) {
+          return res.status(400).json({ error: 'projectGoal must be "comic", "screen", "music", or "studio"' });
+        }
+        safeOptions.projectGoal = options.projectGoal;
+      }
       // Model overrides — free-text strings, but bounded to 128 chars
       // and stripped of control chars so a client can't smuggle HTML or
       // break the request to the upstream provider.

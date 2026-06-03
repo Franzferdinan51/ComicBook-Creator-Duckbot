@@ -125,6 +125,10 @@ export function buildMcpServer(): McpServer {
             .enum(['mock', 'minimax'])
             .optional()
             .describe('Music provider for the generated theme audio. Default: "mock".'),
+          projectGoal: z
+            .enum(['comic', 'screen', 'music', 'studio'])
+            .optional()
+            .describe('High-level project goal. Default: "comic".'),
           pageCount: z.number().int().min(1).max(50).optional().describe('Pages. Default: 4.'),
           panelsPerPage: z.number().int().min(1).max(12).optional().describe('Panels per page. Default: 4.'),
           outputProfile: z
@@ -179,6 +183,10 @@ export function buildMcpServer(): McpServer {
             .enum(['mock', 'minimax'])
             .optional()
             .describe('Music provider override.'),
+          projectGoal: z
+            .enum(['comic', 'screen', 'music', 'studio'])
+            .optional()
+            .describe('High-level project goal override.'),
           pageCount: z.number().int().min(1).max(50).optional().describe('Pages.'),
           panelsPerPage: z.number().int().min(1).max(12).optional().describe('Panels per page.'),
           outputProfile: z

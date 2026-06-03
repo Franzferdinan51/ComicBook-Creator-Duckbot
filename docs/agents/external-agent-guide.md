@@ -22,7 +22,9 @@ For the most actionable workflow, start with the repo playbook at
 - CLI: `comic-creator` generates the comic and writes a sibling
   `*-agent-guidance.md` handoff file next to the output. Use
   `--music-provider=mock` for deterministic output or `--music-provider=minimax`
-  for MiniMax-generated theme audio.
+  for MiniMax-generated theme audio. Use `--project-goal=screen` when the
+  next pass should emphasize show/movie handoff artifacts, `--project-goal=music`
+  for soundtrack-focused work, or `--project-goal=studio` for a balanced run.
   Use `--agent-playbook` to print the repo-level Hermes/OpenClaw playbook
   directly from the CLI. Use `--json` when an external agent needs a
   machine-readable result payload. Use `--studio-bundle` when the agent wants
@@ -39,6 +41,8 @@ For the most actionable workflow, start with the repo playbook at
 - Library API: `createComic()` returns `project`, `storyBible`,
   `adaptationPackage`, `musicCuePackage`, `agentGuidancePackage`, and
   `projectPath` plus `agentGuidancePath`.
+  The `projectGoal` field records the high-level creative focus used to shape
+  the generated defaults and handoff language.
   `adaptationPackage` includes screenplay scenes and storyboard prompts.
   `storyboardPackagePath` and `animaticTimelinePath` point to generated
   production handoff JSON files.
