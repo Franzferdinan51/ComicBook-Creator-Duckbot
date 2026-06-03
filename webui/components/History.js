@@ -40,11 +40,53 @@ export function History({ onOpen }) {
         }
       } catch { /* job may have been GC'd from in-memory map — fall through */ }
 
+      if (!result) {
+        try {
+          const bundle = await api(`/api/comic/${entry.jobId}/studio-bundle`);
+          if (bundle && bundle.format === 'studio-bundle') {
+            result = {
+              script: entry.scriptJson,
+              outputPath: bundle.artifactPaths?.outputPath || entry.outputPath,
+              pdfPath: bundle.artifactPaths?.pdfPath ?? null,
+              cbzPath: bundle.artifactPaths?.cbzPath ?? null,
+              coverImagePath: bundle.artifactPaths?.coverImagePath ?? null,
+              project: bundle.project,
+              projectPath: bundle.artifactPaths?.projectPath ?? null,
+              storyBible: bundle.storyBible,
+              adaptationPackage: bundle.adaptationPackage,
+              musicCuePackage: bundle.musicCuePackage,
+              agentGuidancePackage: bundle.agentGuidancePackage,
+              agentGuidancePath: bundle.artifactPaths?.agentGuidancePath ?? null,
+              songSheetPath: bundle.artifactPaths?.songSheetPath ?? null,
+              songAudioPath: bundle.artifactPaths?.songAudioPath ?? null,
+              musicProvider: bundle.musicProvider || entry.musicProvider || 'mock',
+              storyboardPackagePath: bundle.artifactPaths?.storyboardPackagePath ?? null,
+              animaticTimelinePath: bundle.artifactPaths?.animaticTimelinePath ?? null,
+              studioBundlePath: bundle.artifactPaths?.studioBundlePath ?? entry.studioBundlePath ?? null,
+              pages: [],
+            };
+          }
+        } catch { /* studio bundle may be unavailable — fall through */ }
+      }
+
       if (!result && entry.scriptJson) {
         // Reconstruct a result-shaped object from the persisted history.
         result = {
           script: entry.scriptJson,
           outputPath: entry.outputPath,
+          project: entry.project || null,
+          projectPath: entry.projectPath || null,
+          storyBible: entry.storyBible || null,
+          adaptationPackage: entry.adaptationPackage || null,
+          musicCuePackage: entry.musicCuePackage || null,
+          agentGuidancePackage: entry.agentGuidancePackage || null,
+          agentGuidancePath: entry.agentGuidancePath || null,
+          songSheetPath: entry.songSheetPath || null,
+          songAudioPath: entry.songAudioPath || null,
+          musicProvider: entry.musicProvider || 'mock',
+          storyboardPackagePath: entry.storyboardPackagePath || null,
+          animaticTimelinePath: entry.animaticTimelinePath || null,
+          studioBundlePath: entry.studioBundlePath || null,
           pages: [],
         };
       }
