@@ -48,8 +48,10 @@ assert.equal(historyPanel.includes('bundle.artifactPaths?.projectPath ?? null'),
 assert.equal(historyPanel.includes('bundle.format === \'studio-bundle\''), true);
 assert.equal(optionsPanel.includes('Project goal'), true);
 assert.equal(optionsPanel.includes('project-goal'), true);
+assert.equal(optionsPanel.includes('Screen projects default to the storyboard widescreen profile'), true);
 assert.equal(settingsPanel.includes('Default project goal'), true);
 assert.equal(settingsPanel.includes('default-project-goal'), true);
+assert.equal(settingsPanel.includes('Use this to bias new runs'), true);
 assert.equal(appJs.includes('defaultProjectGoal'), true);
 assert.equal(resultPanel.includes('Download agent playbook'), true);
 assert.equal(resultPanel.includes('Download studio bundle'), true);

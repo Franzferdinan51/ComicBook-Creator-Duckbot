@@ -217,6 +217,7 @@ export function Settings() {
               <option key=${goal.value} value=${goal.value}>${goal.label}</option>
             `)}
           </select>
+          <div class="muted small">Use this to bias new runs toward comics, show/movie handoffs, or soundtrack-first work.</div>
         </div>
       </div>
 

@@ -160,6 +160,7 @@ export function OptionsPanel({ options = {}, providers, onChange, disabled = fal
               <option key=${goal.value} value=${goal.value}>${goal.label}</option>
             `)}
           </select>
+          <div class="muted small">Screen projects default to the storyboard widescreen profile unless you override the output profile below.</div>
         </div>
 
         <div class="field">
