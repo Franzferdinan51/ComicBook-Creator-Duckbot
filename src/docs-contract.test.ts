@@ -9,6 +9,7 @@ const debugHtml = await readFile('webui/__test__.html', 'utf8');
 const generateButton = await readFile('webui/components/GenerateButton.js', 'utf8');
 const historyPanel = await readFile('webui/components/History.js', 'utf8');
 const resultPanel = await readFile('webui/components/ResultPanel.js', 'utf8');
+const cliSource = await readFile('src/cli.ts', 'utf8');
 const playbook = await readFile('docs/agents/hermes-openclaw-playbook.md', 'utf8');
 const mcpServer = await readFile('src/mcp/server.ts', 'utf8');
 
@@ -41,6 +42,7 @@ assert.equal(historyPanel.includes('bundle.format === \'studio-bundle\''), true)
 assert.equal(resultPanel.includes('Download agent playbook'), true);
 assert.equal(resultPanel.includes('Download studio bundle'), true);
 assert.equal(resultPanel.includes('Download theme audio'), true);
+assert.equal(cliSource.includes('renderProfile: project.renderProfile'), true);
 
 const toolNames = [...mcpServer.matchAll(/server\.tool\(\s*['"]([^'"]+)['"]/g)].map((match) => match[1]);
 const toolsLine = readme.split('\n').find((line) => line.startsWith('Tools: ')) ?? '';

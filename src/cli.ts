@@ -358,7 +358,11 @@ export async function runCli(
   log('comic-creator: [2/3] generating panel images...');
   const images = await generatePanelImages(
     script,
-    { artStyle: opts.artStyle, seed: opts.seed },
+    {
+      artStyle: opts.artStyle,
+      renderProfile: project.renderProfile,
+      seed: opts.seed,
+    },
     imageProvider
   );
   log(`comic-creator:         ${images.size} panel image(s) ready`);
@@ -367,6 +371,7 @@ export async function runCli(
   const finalPath = await assembleComic(script, images, {
     outputPath,
     format: args.format,
+    renderProfile: project.renderProfile,
   });
   log(`comic-creator:         wrote ${finalPath}`);
 
