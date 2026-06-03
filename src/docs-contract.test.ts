@@ -8,6 +8,7 @@ const readme = await readFile('README.md', 'utf8');
 const debugHtml = await readFile('webui/__test__.html', 'utf8');
 const generateButton = await readFile('webui/components/GenerateButton.js', 'utf8');
 const resultPanel = await readFile('webui/components/ResultPanel.js', 'utf8');
+const playbook = await readFile('docs/agents/hermes-openclaw-playbook.md', 'utf8');
 const mcpServer = await readFile('src/mcp/server.ts', 'utf8');
 
 assert.equal(pkg.scripts?.start, 'tsx src/server/index.ts');
@@ -20,6 +21,9 @@ assert.equal(readme.includes('Markdown handoff'), true);
 assert.equal(readme.includes('docs/agents/hermes-openclaw-playbook.md'), true);
 assert.equal(readme.includes('get_agent_playbook'), true);
 assert.equal(readme.includes('--agent-playbook'), true);
+assert.equal(playbook.includes('## Task Routing'), true);
+assert.equal(playbook.includes('## Agent Loop'), true);
+assert.equal(playbook.includes('minimax'), true);
 assert.equal(debugHtml.includes('Array.isArray(b.music)'), true);
 assert.equal(generateButton.includes('Timed out waiting for comic to finish.'), false);
 assert.equal(resultPanel.includes('Download agent playbook'), true);
