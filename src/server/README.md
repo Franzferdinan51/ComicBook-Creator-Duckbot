@@ -254,6 +254,7 @@ a future version).
     "artStyle": "manga",
     "pageCount": 4,
     "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
+    "studioBundlePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-studio-bundle.json",
     "scriptJson": { "title": "...", "artStyle": "manga", "pages": [ ... ] }
   }
 ]

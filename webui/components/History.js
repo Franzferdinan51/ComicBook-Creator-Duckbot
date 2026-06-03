@@ -75,6 +75,17 @@ export function History({ onOpen }) {
     }
   }
 
+  function handleDownloadStudioBundle(entry, e) {
+    e.stopPropagation();
+    const a = document.createElement('a');
+    a.href = `/api/comic/${entry.jobId}/studio-bundle`;
+    a.download = `${(entry.title || entry.jobId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-studio-bundle.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Studio bundle downloaded.', 'success');
+  }
+
   if (loading) {
     return html`
       <section class="panel" aria-labelledby="history-title">
@@ -163,6 +174,11 @@ export function History({ onOpen }) {
                   type="button"
                   onClick=${(e) => { e.stopPropagation(); handleOpen(entry); }}
                 >Open</button>
+                <button
+                  type="button"
+                  onClick=${(e) => handleDownloadStudioBundle(entry, e)}
+                  title="Download the unified studio bundle for this history item"
+                >Bundle</button>
                 <button
                   type="button"
                   class="delete"

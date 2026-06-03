@@ -7,6 +7,7 @@ const pkg = JSON.parse(await readFile('package.json', 'utf8')) as {
 const readme = await readFile('README.md', 'utf8');
 const debugHtml = await readFile('webui/__test__.html', 'utf8');
 const generateButton = await readFile('webui/components/GenerateButton.js', 'utf8');
+const historyPanel = await readFile('webui/components/History.js', 'utf8');
 const resultPanel = await readFile('webui/components/ResultPanel.js', 'utf8');
 const playbook = await readFile('docs/agents/hermes-openclaw-playbook.md', 'utf8');
 const mcpServer = await readFile('src/mcp/server.ts', 'utf8');
@@ -33,6 +34,7 @@ assert.equal(playbook.includes('studioBundlePath'), true);
 assert.equal(playbook.includes('minimax'), true);
 assert.equal(debugHtml.includes('Array.isArray(b.music)'), true);
 assert.equal(generateButton.includes('Timed out waiting for comic to finish.'), false);
+assert.equal(historyPanel.includes('Download the unified studio bundle for this history item'), true);
 assert.equal(resultPanel.includes('Download agent playbook'), true);
 assert.equal(resultPanel.includes('Download studio bundle'), true);
 assert.equal(resultPanel.includes('Download theme audio'), true);
