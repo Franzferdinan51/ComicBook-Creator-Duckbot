@@ -102,6 +102,23 @@ export function History({ onOpen }) {
     `;
   }
 
+  // Map art styles to background gradients for history thumbnails
+  const ART_GRADIENTS = {
+    manga: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
+    anime: 'linear-gradient(135deg, #0ea5e9 0%, #7dd3fc 100%)',
+    noir: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+    cartoon: 'linear-gradient(135deg, #f59e0b 0%, #fcd34d 100%)',
+    watercolor: 'linear-gradient(135deg, #10b981 0%, #6ee7b7 100%)',
+    cyberpunk: 'linear-gradient(135deg, #dc2626 0%, #f472b6 100%)',
+    fantasy: 'linear-gradient(135deg, #7c3aed 0%, #fbbf24 100%)',
+    'pixel art': 'linear-gradient(135deg, #0891b2 0%, #22d3ee 100%)',
+    storyboard: 'linear-gradient(135deg, #475569 0%, #94a3b8 100%)',
+  };
+  function thumbGradient(style) {
+    const key = (style || '').toLowerCase();
+    return ART_GRADIENTS[key] || 'linear-gradient(135deg, var(--bg-2), var(--surface-2))';
+  }
+
   return html`
     <section class="panel" aria-labelledby="history-title">
       <header class="panel-title">
@@ -126,8 +143,12 @@ export function History({ onOpen }) {
               tabIndex="0"
               onKeyDown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleOpen(entry); } }}
             >
-              <div class="history-thumb">
-                <span>${entry.artStyle || '—'}</span>
+              <div
+                class="history-thumb"
+                style=${{ background: thumbGradient(entry.artStyle) }}
+              >
+                <span class="history-thumb-label">${entry.artStyle || '—'}</span>
+                <span class="history-thumb-pages">${entry.pageCount || '?'}p</span>
               </div>
               <div class="history-info">
                 <h3 class="history-title" title=${entry.title || ''}>${entry.title || 'Untitled'}</h3>

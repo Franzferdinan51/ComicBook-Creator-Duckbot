@@ -135,6 +135,8 @@ textarea:focus-visible,
 
 .status-bar .err { color: var(--error); }
 .status-bar strong { color: var(--text); font-weight: 600; }
+.status-bar-warn { border-bottom-color: var(--warning); }
+.warn-badge { color: var(--warning); font-weight: 600; font-size: .72rem; }
 
 /* =========================================================
    Main
@@ -712,8 +714,24 @@ button.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.1); }
   min-height: 320px;
   max-height: 75vh;
   overflow: auto;
+  position: relative;
 }
 .pdf-canvas-wrap canvas { max-width: 100%; height: auto; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+.pdf-canvas-wrap.can-scroll .page-hint {
+  position: sticky;
+  bottom: 0.5rem;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: rgba(0,0,0,.6);
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  pointer-events: none;
+  margin: 0 auto;
+  width: fit-content;
+}
+.page-hint { display: none; }
+.pdf-canvas-wrap.can-scroll .page-hint { display: block; }
 
 .page-nav {
   display: flex;
@@ -932,13 +950,31 @@ button.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.1); }
   object-fit: cover;
   background: linear-gradient(135deg, var(--bg-2), var(--surface-2));
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: rgba(255,255,255,.7);
   font-size: .85rem;
   text-transform: uppercase;
   letter-spacing: .08em;
   font-weight: 600;
+  gap: .4rem;
+  position: relative;
+  overflow: hidden;
+}
+.history-thumb-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+.history-thumb-pages {
+  font-size: .7rem;
+  font-weight: 400;
+  background: rgba(0,0,0,.4);
+  padding: .15rem .5rem;
+  border-radius: 10px;
+  color: rgba(255,255,255,.85);
 }
 .history-info { padding: .75rem; flex: 1; }
 .history-title {

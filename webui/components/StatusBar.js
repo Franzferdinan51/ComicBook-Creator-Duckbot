@@ -46,8 +46,13 @@ export function StatusBar({ activeTextProvider, activeImageProvider }) {
   const textProvider = providers.text.find((p) => p.name === activeTextProvider);
   const imageProvider = providers.image.find((p) => p.name === activeImageProvider);
 
+  // Warn if the selected provider is unavailable
+  const textUnavailable = textProvider && !textProvider.available;
+  const imageUnavailable = imageProvider && !imageProvider.available;
+  const anyUnavailable = textUnavailable || imageUnavailable;
+
   return html`
-    <div class="status-bar" role="status" aria-live="polite">
+    <div class=${'status-bar' + (anyUnavailable ? ' status-bar-warn' : '')} role="status" aria-live="polite">
       <span class="status-item">
         <span class=${'dot ' + dotClass} aria-hidden="true"></span>
         ${ok
@@ -70,6 +75,11 @@ export function StatusBar({ activeTextProvider, activeImageProvider }) {
           ${imageProvider.available
             ? html`<span class="muted">· ${imageProvider.model || 'ok'}</span>`
             : html`<span class="err">· unavailable</span>`}
+        </span>
+      ` : null}
+      ${anyUnavailable ? html`
+        <span class="status-item warn-badge">
+          ⚠️ provider${textUnavailable && imageUnavailable ? 's' : ''} down — check Settings
         </span>
       ` : null}
       ${lastUpdated ? html`

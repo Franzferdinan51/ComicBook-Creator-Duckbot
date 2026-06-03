@@ -199,9 +199,9 @@ function App() {
         ${page === 'history' ? html`<${History} onOpen=${handleOpenHistory} />` : null}
       </main>
 
-      <footer class="app-footer">
+<footer class="app-footer">
         <span class="muted small">
-          ${viewingTitle ? `Viewing “${viewingTitle}”` : 'Comic Creator · keyboard: ⌘+Enter to generate, Esc to stop watching.'}
+          ${viewingTitle ? `Viewing "${viewingTitle}" · ← → arrow keys to flip pages` : 'Comic Creator · ⌘+Enter to generate, Esc to stop watching.'}
         </span>
       </footer>
     </div>

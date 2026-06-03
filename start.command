@@ -35,13 +35,24 @@ if [ ! -d "node_modules" ]; then
   fi
 fi
 
-# Start the server
+# Compile TypeScript if dist/ is missing or stale
+if [ ! -f "dist/server/index.js" ]; then
+  echo "Compiling TypeScript…"
+  node_modules/.bin/tsc --project tsconfig.json
+  if [ $? -ne 0 ]; then
+    echo "Error: TypeScript compilation failed."
+    read -p "Press Enter to exit…"
+    exit 1
+  fi
+fi
+
+# Start the server (use compiled output for compatibility)
 echo ""
 echo "🚀 Starting Comic Studio…"
 echo "   Opening http://localhost:3008"
 echo "   Press Ctrl+C to stop"
 echo ""
-node --import=tsx/esm src/server/index.ts
+node dist/server/index.js
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then

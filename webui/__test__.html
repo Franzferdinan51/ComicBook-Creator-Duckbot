@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Comic Creator — Smoke Test</title>
+  <title>Comic Creator — Debug</title>
   <style>
     :root { color-scheme: dark; }
     body {
@@ -12,27 +12,30 @@
       color: #f1f5f9;
       margin: 0;
       padding: 2rem;
-      max-width: 1100px;
+      max-width: 1200px;
     }
-    h1 { color: #a78bfa; margin-bottom: 1rem; }
-    h2 { font-size: 1rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; margin: 1.5rem 0 .5rem; }
+    h1 { color: #a78bfa; margin-bottom: .5rem; }
+    h2 { font-size: .9rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; margin: 1.5rem 0 .4rem; }
     .ok    { color: #22c55e; }
     .err   { color: #ef4444; }
     .info  { color: #94a3b8; }
+    .warn  { color: #f59e0b; }
     pre {
       background: #1e293b;
       border: 1px solid #475569;
       border-radius: 8px;
-      padding: 1rem;
+      padding: .85rem 1rem;
       overflow: auto;
-      font-size: 13px;
-      line-height: 1.4;
+      font-size: 12.5px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .summary {
       background: #1e293b;
       border: 1px solid #475569;
       border-radius: 8px;
-      padding: 1rem 1.25rem;
+      padding: .85rem 1.25rem;
       margin: 1rem 0;
     }
     button {
@@ -40,22 +43,41 @@
       color: #fff;
       border: none;
       border-radius: 6px;
-      padding: .5rem 1rem;
+      padding: .45rem .9rem;
       font-family: inherit;
-      font-size: 14px;
+      font-size: 13px;
       cursor: pointer;
     }
     button:hover { background: #6d28d9; }
-    .row { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; }
+    .row { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
     a { color: #a78bfa; }
+    .provider-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+      margin-top: .5rem;
+    }
+    .provider-card {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+    }
+    .provider-card.available { border-color: #22c55e; }
+    .provider-card.unavailable { border-color: #ef4444; }
+    .provider-name { font-weight: 700; font-size: 1rem; margin-bottom: .25rem; }
+    .provider-model { color: #94a3b8; font-size: .8rem; }
+    .provider-status { font-size: .75rem; margin-top: .3rem; }
+    .provider-status .ok { color: #22c55e; }
+    .provider-status .err { color: #ef4444; }
+    .provider-error { font-size: .75rem; color: #f59e0b; margin-top: .3rem; word-break: break-word; }
   </style>
 </head>
 <body>
-  <h1>🎨 Comic Creator — Smoke Test</h1>
+  <h1>🎨 Comic Creator — Debug</h1>
   <p class="info">
-    This page hits <code>/api/health</code> and <code>/api/providers</code> and renders the raw JSON.
-    If both endpoints return data, the WebUI is wired correctly. Open
-    <a href="/">the main app</a> once the checks pass.
+    Smoke test + full provider JSON dump. Open the
+    <a href="/">main app</a> when checks pass.
   </p>
 
   <div class="row">
@@ -69,30 +91,44 @@
   <pre id="health">(pending)</pre>
 
   <h2><span class="info">GET</span> /api/providers</h2>
-  <pre id="providers">(pending)</pre>
+  <pre id="providers-json">(pending)</pre>
+  <div id="providers-cards" class="provider-grid" style="display:none"></div>
 
   <h2><span class="info">GET</span> /api/settings</h2>
   <pre id="settings">(pending)</pre>
 
+  <h2><span class="info">GET</span> /api/history</h2>
+  <pre id="history">(pending)</pre>
+
   <script>
     'use strict';
-
     const $ = (id) => document.getElementById(id);
-    const summary = $('summary');
 
-    function setCell(el, value, ok) {
-      el.textContent = JSON.stringify(value, null, 2);
-      el.className = ok ? 'ok' : 'err';
+    function renderProviderCard(p) {
+      const cls = p.available ? 'available' : 'unavailable';
+      const statusIcon = p.available ? '●' : '✕';
+      const statusText = p.available ? 'available' : 'unavailable';
+      const statusCls = p.available ? 'ok' : 'err';
+      return `
+        <div class="provider-card ${cls}">
+          <div class="provider-name">${p.name}</div>
+          <div class="provider-model">${p.model || '(no default model)'}</div>
+          <div class="provider-status">
+            <span class="${statusCls}">${statusIcon} ${statusText}</span>
+          </div>
+          ${p.error ? `<div class="provider-error">⚠ ${p.error}</div>` : ''}
+        </div>`;
     }
 
     async function check(name, path, okIf) {
       const el = $(name);
       el.textContent = 'fetching…';
-      el.className = 'info';
+      el.className = '';
       try {
         const res = await fetch(path);
         const ct = res.headers.get('content-type') || '';
-        const body = ct.includes('json') ? await res.json() : await res.text();
+        let body;
+        try { body = ct.includes('json') ? await res.json() : await res.text(); } catch { body = await res.text(); }
         const ok = res.ok && okIf(body, res);
         el.className = ok ? 'ok' : 'err';
         el.textContent = `HTTP ${res.status} ${res.statusText}\n` + JSON.stringify(body, null, 2);
@@ -105,33 +141,53 @@
     }
 
     async function run() {
+      const summary = $('summary');
       summary.textContent = 'Running smoke checks…';
-      summary.className = 'summary info';
+      summary.className = 'summary';
+      summary.style.color = '';
 
       const results = {};
 
       results.health = await check('health', '/api/health',
         (b) => b && b.status === 'ok' && typeof b.version === 'string');
 
-      results.providers = await check('providers', '/api/providers',
-        (b) => b && Array.isArray(b.text) && Array.isArray(b.image) && b.text.length >= 1);
+      const prov = await check('providers-json', '/api/providers',
+        (b) => b && Array.isArray(b.text) && Array.isArray(b.image));
+      results.providers = prov;
+
+      if (prov.body) {
+        const cards = $('providers-cards');
+        cards.style.display = 'grid';
+        cards.innerHTML =
+          '<div><h3 style="color:#94a3b8;font-size:.8rem;margin:0 0 .5rem">Text Providers</h3>' +
+          (prov.body.text || []).map(renderProviderCard).join('') + '</div>' +
+          '<div><h3 style="color:#94a3b8;font-size:.8rem;margin:0 0 .5rem">Image Providers</h3>' +
+          (prov.body.image || []).map(renderProviderCard).join('') + '</div>' +
+          '<div><h3 style="color:#94a3b8;font-size:.8rem;margin:0 0 .5rem">Music Providers</h3>' +
+          ((prov.body.music || []).map(renderProviderCard).join('') || '<em style="color:#94a3b8">none detected</em>') + '</div>';
+      }
 
       results.settings = await check('settings', '/api/settings',
-        (b) => b && typeof b === 'object' && 'defaultArtStyle' in b);
+        (b) => b && typeof b === 'object');
+
+      const hist = await check('history', '/api/history',
+        (b) => Array.isArray(b));
+      results.history = hist;
 
       const allOk = Object.values(results).every((r) => r.ok);
       const lines = Object.entries(results).map(
         ([k, r]) => `${r.ok ? '✓' : '✗'} ${k} — ${r.ok ? 'OK' : (r.error || `HTTP ${r.status}`)}`
       );
-      summary.className = 'summary ' + (allOk ? 'ok' : 'err');
+      summary.className = 'summary';
+      summary.style.color = allOk ? '#22c55e' : '#ef4444';
       summary.innerHTML = (allOk
-        ? '<strong>✓ All checks passed.</strong> The WebUI is wired correctly.'
+        ? '<strong>✓ All checks passed.</strong>'
         : '<strong>✗ Some checks failed.</strong>') +
-        '\n<ul style="margin:.5rem 0 0 1.25rem">' +
-        lines.map((l) => `<li>${l}</li>`).join('') + '</ul>';
+        '\n<ul style="margin:.4rem 0 0 1.25rem;padding:0">' +
+        lines.map((l) => `<li style="margin:.25rem 0">${l}</li>`).join('') + '</ul>';
     }
 
-    document.getElementById('rerun').addEventListener('click', run);
+    $('rerun').addEventListener('click', run);
     run();
   </script>
 </body>

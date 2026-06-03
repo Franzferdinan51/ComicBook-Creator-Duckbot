@@ -208,7 +208,16 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, jobId, reloadKey]);
 
-  // Re-render when the user flips pages.
+  // Add keyboard nav for pages once totalPages is known.
+  useEffect(() => {
+    if (totalPages <= 1) return;
+    function onKey(e) {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); setPage((p) => Math.max(1, p - 1)); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); setPage((p) => Math.min(totalPages, p + 1)); }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [totalPages]);
   useEffect(() => {
     if (!result || !jobId || totalPages === 0) return;
     let cancelled = false;
@@ -501,6 +510,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
         <span>${pageCount} pages</span>
         <span>${panelCount} panels</span>
         <span>${outputProfile}</span>
+        ${result.fromHistory ? html`<span class="badge warn-badge" title="Loaded from history — cannot regenerate">📜 from history</span>` : null}
       </div>
 
       <div class="result-actions result-actions-top" role="group" aria-label="Download and share">
@@ -551,13 +561,20 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
         <button
           class="btn btn-ghost"
           type="button"
-          disabled=${regenLoading}
+          disabled=${regenLoading || !!result.fromHistory}
           onClick=${handleRegenerate}
         >
           ${regenLoading
             ? html`<span class="spinner" aria-hidden="true"></span> Starting…`
-            : '↻ Regenerate with new options'}
+            : (result.fromHistory
+                ? html`<span class="muted small">↻ Cannot regenerate — job loaded from history</span>`
+                : '↻ Regenerate with new options')}
         </button>
+        ${result.fromHistory ? html`
+          <span class="badge warn-badge" title="This comic was loaded from history — the live server job expired. You can still download the PDF but cannot regenerate it.">
+            📜 from history
+          </span>
+        ` : null}
       </div>
 
       ${pdfError ? html`

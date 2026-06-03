@@ -1165,11 +1165,18 @@ export function buildRouter(): Router {
    * Re-runs createComic() with the same story and the new options merged
    * on top of the previous ones. The new job has a fresh jobId.
    */
-  router.post('/comic/:jobId/regenerate', (req: Request<{ jobId: string }>, res: Response) => {
+  router.post('/comic/:jobId/regenerate', async (req: Request<{ jobId: string }>, res: Response) => {
     const jobId = req.params.jobId;
+    // Use resolve() to also hit on-disk history (gives a 404 for unknown IDs).
+    // Then get() to access story/options — those are only on live JobRecords.
+    const resolved = await jobs.resolve(jobId);
+    if (!resolved) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
     const record = jobs.get(jobId);
     if (!record) {
-      return res.status(404).json({ error: `job ${jobId} not found` });
+      // Exists in history but not in memory — can't regenerate without story/options.
+      return res.status(409).json({ error: 'job expired from memory, cannot regenerate' });
     }
     const body = (req.body ?? {}) as { options?: ComicOptions };
     const merged: ComicOptions = { ...record.options, ...(body.options ?? {}) };
@@ -1183,16 +1190,20 @@ export function buildRouter(): Router {
    * history entries are kept (the user can still see what was attempted).
    * → { ok: true } | { ok: false, error }
    */
-  router.delete('/comic/:jobId', (req: Request<{ jobId: string }>, res: Response) => {
+  router.delete('/comic/:jobId', async (req: Request<{ jobId: string }>, res: Response) => {
     const jobId = req.params.jobId;
-    const record = jobs.get(jobId);
-    if (!record) {
+    // Use resolve() to give a 404 for unknown IDs; get() for live-only actions.
+    const resolved = await jobs.resolve(jobId);
+    if (!resolved) {
       return res.status(404).json({ ok: false, error: `job ${jobId} not found` });
     }
-    if (record.status === 'pending') {
-      jobs.cancel(jobId);
+const record = jobs.get(jobId);
+    if (record) {
+      if (record.status === 'pending') {
+        jobs.cancel(jobId);
+      }
+      jobs.delete(jobId);
     }
-    jobs.delete(jobId);
     res.json({ ok: true });
   });
 

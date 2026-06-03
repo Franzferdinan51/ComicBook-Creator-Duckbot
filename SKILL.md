@@ -227,7 +227,20 @@ Should print `PASS` and produce a valid PDF at `/tmp/assembler-test.pdf`.
 
 ## WebUI
 
-Start the WebUI HTTP server and open the browser:
+### Quick start
+
+```bash
+cd /Users/duckets/Desktop/ComicBook-Creator-Duckbot-main
+./start.command   # double-clickable on macOS, or: bash start.command
+```
+
+Or from any Mavis session:
+
+```
++webui
+```
+
+This starts the server on port 3008, compiles TypeScript if needed, and opens the browser.
 
 ```bash
 cd ~/.openclaw/workspace/skills/comic-creator
