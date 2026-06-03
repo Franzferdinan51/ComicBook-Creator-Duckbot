@@ -70,6 +70,18 @@ export interface AdaptationPackage {
     summary: string;
     visualGoal: string;
   }>;
+  screenplayScenes: Array<{
+    sceneId: string;
+    slugline: string;
+    action: string;
+    dialogueSample: string[];
+    shotList: string[];
+  }>;
+  storyboardPrompts: Array<{
+    sceneId: string;
+    prompt: string;
+    cameraLanguage: string;
+  }>;
 }
 
 export interface MusicCuePackage {
@@ -79,8 +91,25 @@ export interface MusicCuePackage {
     title: string;
     mood: string;
     placement: string;
+    sceneId?: string;
+    instrumentation?: string[];
   }>;
+  sceneCueMap: Array<{
+    sceneId: string;
+    cueId: string;
+    timing: string;
+    purpose: string;
+  }>;
+  songDraft: {
+    title: string;
+    genre: string;
+    bpm: number;
+    key: string;
+    sections: string[];
+    lyrics: string;
+  };
   themeSongPrompt: string;
+  musicGenerationPrompt: string;
 }
 
 export interface AgentGuidancePackage {

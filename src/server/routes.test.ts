@@ -41,21 +41,65 @@ const entry: HistoryEntry = {
     adaptationPackage: {
       format: 'screen-outline',
       sceneOutline: [{ sceneId: 'scene-1', summary: 'Scene summary', visualGoal: 'Goal' }],
+      screenplayScenes: [{
+        sceneId: 'scene-1',
+        slugline: 'INT./EXT. HISTORY SPACE - DAY',
+        action: 'History action',
+        dialogueSample: ['LEAD: History line.'],
+        shotList: ['wide shot'],
+      }],
+      storyboardPrompts: [{
+        sceneId: 'scene-1',
+        prompt: 'History storyboard prompt',
+        cameraLanguage: 'wide frame',
+      }],
     },
     musicCuePackage: {
       format: 'music-brief',
-      cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening' }],
+      cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
+      sceneCueMap: [{ sceneId: 'scene-1', cueId: 'cue-1', timing: '00:00-00:30', purpose: 'History purpose' }],
+      songDraft: {
+        title: 'History Theme',
+        genre: 'cinematic pop',
+        bpm: 96,
+        key: 'A minor',
+        sections: ['verse', 'chorus'],
+        lyrics: 'History Project chorus',
+      },
       themeSongPrompt: 'Theme prompt',
+      musicGenerationPrompt: 'Generate music with instrumentation for History Project.',
     },
   },
   adaptationPackage: {
     format: 'screen-outline',
     sceneOutline: [{ sceneId: 'scene-1', summary: 'Scene summary', visualGoal: 'Goal' }],
+    screenplayScenes: [{
+      sceneId: 'scene-1',
+      slugline: 'INT./EXT. HISTORY SPACE - DAY',
+      action: 'History action',
+      dialogueSample: ['LEAD: History line.'],
+      shotList: ['wide shot'],
+    }],
+    storyboardPrompts: [{
+      sceneId: 'scene-1',
+      prompt: 'History storyboard prompt',
+      cameraLanguage: 'wide frame',
+    }],
   },
   musicCuePackage: {
     format: 'music-brief',
-    cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening' }],
+    cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
+    sceneCueMap: [{ sceneId: 'scene-1', cueId: 'cue-1', timing: '00:00-00:30', purpose: 'History purpose' }],
+    songDraft: {
+      title: 'History Theme',
+      genre: 'cinematic pop',
+      bpm: 96,
+      key: 'A minor',
+      sections: ['verse', 'chorus'],
+      lyrics: 'History Project chorus',
+    },
     themeSongPrompt: 'Theme prompt',
+    musicGenerationPrompt: 'Generate music with instrumentation for History Project.',
   },
   scriptJson: {
     title: 'History Project',
@@ -71,7 +115,9 @@ try {
   assert.equal(resolved?.fromHistory, true);
   assert.equal(resolved?.result.project.renderProfile.outputProfile, 'storyboard-widescreen');
   assert.equal(Array.isArray(resolved?.result.adaptationPackage.sceneOutline), true);
+  assert.equal(Array.isArray(resolved?.result.adaptationPackage.screenplayScenes), true);
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.cues), true);
+  assert.equal(Array.isArray(resolved?.result.musicCuePackage.sceneCueMap), true);
   console.log('PASS routes');
 } finally {
   await rm(storageDir, { recursive: true, force: true });

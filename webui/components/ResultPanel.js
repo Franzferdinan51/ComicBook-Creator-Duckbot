@@ -576,7 +576,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
 
         <section class="panel artifact-panel">
           <h3>Adaptation</h3>
-          <p>${result.adaptationPackage?.sceneOutline?.length || 0} screen scenes prepared.</p>
+          <p>${result.adaptationPackage?.screenplayScenes?.length || result.adaptationPackage?.sceneOutline?.length || 0} screenplay scenes prepared.</p>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAdaptation}>
             Download adaptation JSON
           </button>
@@ -584,7 +584,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
 
         <section class="panel artifact-panel">
           <h3>Music</h3>
-          <p>${result.musicCuePackage?.cues?.length || 0} cue ideas prepared.</p>
+          <p>${result.musicCuePackage?.songDraft?.sections?.length || 0} song sections and ${result.musicCuePackage?.cues?.length || 0} cues prepared.</p>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadMusic}>
             Download music brief
           </button>

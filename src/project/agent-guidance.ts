@@ -23,12 +23,12 @@ export function buildAgentGuidancePackage(params: {
     workflowSteps: [
       `Use Hermes Agent to break "${title}" into reusable story, screen adaptation, and soundtrack tasks.`,
       `Use OpenClaw-connected tools to generate comic pages with the ${outputProfile} render profile and preserve reusable artifacts.`,
-      'Promote approved story beats into screen scenes, storyboard notes, music cues, and future external production tasks.',
+      'Promote approved story beats into screenplay scenes, storyboard prompts, cue maps, song drafts, and future external production tasks.',
     ],
     deliverables: [
       'comic pages and export package',
-      'screen adaptation outline',
-      'music cue brief and theme-song prompt',
+      'screen adaptation outline with screenplay scenes and storyboard prompts',
+      'music cue brief with scene mapping, song draft, and generation prompt',
       'agent handoff guidance for external production runs',
     ],
     operatorChecklist: [
@@ -67,6 +67,25 @@ ${guidance.workflowSteps.map((step, index) => `${index + 1}. ${step}`).join('\n'
 ## Deliverables
 
 ${guidance.deliverables.map((item) => `- ${item}`).join('\n')}
+
+## Screen Adaptation Assets
+
+${project.adaptationPackage.screenplayScenes.map((scene) => [
+  `### ${scene.sceneId}: ${scene.slugline}`,
+  scene.action,
+  `Dialogue sample: ${scene.dialogueSample.join(' / ')}`,
+  `Shots: ${scene.shotList.join(', ')}`,
+].join('\n')).join('\n\n')}
+
+## Music And Song Assets
+
+- Song title: ${project.musicCuePackage.songDraft.title}
+- Genre: ${project.musicCuePackage.songDraft.genre}
+- BPM: ${project.musicCuePackage.songDraft.bpm}
+- Key: ${project.musicCuePackage.songDraft.key}
+- Sections: ${project.musicCuePackage.songDraft.sections.join(', ')}
+
+${project.musicCuePackage.songDraft.lyrics}
 
 ## Operator Checklist
 

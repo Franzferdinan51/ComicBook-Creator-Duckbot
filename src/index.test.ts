@@ -22,7 +22,11 @@ async function main(): Promise<void> {
   assert.equal(result.script.pages.length, 1);
   assert.equal(result.script.pages[0]?.panels.length, 3);
   assert.equal(result.adaptationPackage.sceneOutline.length > 0, true);
+  assert.equal(result.adaptationPackage.screenplayScenes.length >= 3, true);
+  assert.equal(result.adaptationPackage.storyboardPrompts.length >= 3, true);
   assert.equal(result.musicCuePackage.cues.length > 0, true);
+  assert.equal(result.musicCuePackage.songDraft.lyrics.includes(result.project.title), true);
+  assert.equal(result.musicCuePackage.sceneCueMap.length >= 3, true);
   assert.equal(result.agentGuidancePackage.workflowSteps.length >= 3, true);
   assert.equal(result.agentGuidancePath?.endsWith('-agent-guidance.md'), true);
   assert.equal(result.agentGuidancePath != null, true);

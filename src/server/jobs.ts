@@ -177,11 +177,26 @@ class JobManager {
           chapterOutline: [],
           sceneBeats: [],
         },
-        adaptationPackage: { format: 'screen-outline', sceneOutline: [] },
+        adaptationPackage: {
+          format: 'screen-outline',
+          sceneOutline: [],
+          screenplayScenes: [],
+          storyboardPrompts: [],
+        },
         musicCuePackage: {
           format: 'music-brief',
           cues: [],
+          sceneCueMap: [],
+          songDraft: {
+            title: `${entry.scriptJson.title} Theme`,
+            genre: 'cinematic pop',
+            bpm: 96,
+            key: 'A minor',
+            sections: [],
+            lyrics: '',
+          },
           themeSongPrompt: `Create a theme for "${entry.scriptJson.title}".`,
+          musicGenerationPrompt: `Generate a cinematic music theme for "${entry.scriptJson.title}" with instrumentation that supports the comic's adaptation scenes.`,
         },
         agentGuidancePackage: {
           format: 'agent-guidance',
@@ -211,11 +226,23 @@ class JobManager {
       adaptationPackage: entry.adaptationPackage ?? entry.project?.adaptationPackage ?? {
         format: 'screen-outline',
         sceneOutline: [],
+        screenplayScenes: [],
+        storyboardPrompts: [],
       },
       musicCuePackage: entry.musicCuePackage ?? entry.project?.musicCuePackage ?? {
         format: 'music-brief',
         cues: [],
+        sceneCueMap: [],
+        songDraft: {
+          title: `${entry.scriptJson.title} Theme`,
+          genre: 'cinematic pop',
+          bpm: 96,
+          key: 'A minor',
+          sections: [],
+          lyrics: '',
+        },
         themeSongPrompt: `Create a theme for "${entry.scriptJson.title}".`,
+        musicGenerationPrompt: `Generate a cinematic music theme for "${entry.scriptJson.title}" with instrumentation that supports the comic's adaptation scenes.`,
       },
       agentGuidancePackage: entry.agentGuidancePackage ?? entry.project?.agentGuidancePackage ?? {
         format: 'agent-guidance',
