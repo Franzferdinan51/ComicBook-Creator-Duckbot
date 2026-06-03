@@ -17,6 +17,7 @@ assert.equal(readme.includes('| `songSheetPath` |'), true);
 assert.equal(readme.includes('| `songAudioPath` |'), true);
 assert.equal(readme.includes('Markdown handoff'), true);
 assert.equal(readme.includes('docs/agents/hermes-openclaw-playbook.md'), true);
+assert.equal(readme.includes('get_agent_playbook'), true);
 assert.equal(debugHtml.includes('Array.isArray(b.music)'), true);
 assert.equal(generateButton.includes('Timed out waiting for comic to finish.'), false);
 

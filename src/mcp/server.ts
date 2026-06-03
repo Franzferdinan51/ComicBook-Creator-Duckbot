@@ -8,6 +8,7 @@
  *   - get_comic_image     — fetch a single panel PNG as base64
  *   - get_project         — fetch the full project JSON for external agents
  *   - get_agent_guidance  — fetch the Hermes/OpenClaw markdown handoff
+ *   - get_agent_playbook  — fetch the repository-level Hermes/OpenClaw playbook
  *   - get_comic_cover     — fetch the cover/title image as base64
  *   - list_providers      — discover available text + image + music providers
  *   - get_history         — recent comics (persisted on disk)
@@ -253,6 +254,39 @@ export function buildMcpServer(): McpServer {
         };
       } catch (e) {
         return errResult(`get_agent_guidance failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
+    'get_agent_playbook',
+    'Fetch the repository-level Hermes/OpenClaw playbook for external agents.',
+    {},
+    async () => {
+      try {
+        const path = join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md');
+        if (!existsSync(path)) {
+          return errResult('agent playbook not available');
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: 'comic://playbook.hermes-openclaw.md',
+                mimeType: 'text/markdown',
+                text,
+              },
+            },
+            {
+              type: 'text' as const,
+              text,
+            },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_agent_playbook failed: ${(e as Error).message}`);
       }
     }
   );
