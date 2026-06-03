@@ -10,6 +10,7 @@
  *   - get_project         — fetch the full project JSON for external agents
  *   - get_agent_guidance  — fetch the Hermes/OpenClaw markdown handoff
  *   - get_agent_playbook  — fetch the repository-level Hermes/OpenClaw playbook
+ *   - get_studio_bundle   — fetch the unified project/adaptation/music bundle
  *   - get_comic_cover     — fetch the cover/title image as base64
  *   - list_providers      — discover available text + image + music providers
  *   - get_history         — recent comics (persisted on disk)
@@ -42,6 +43,7 @@ import {
 import {
   audioExtensionForPath,
   audioMimeTypeForPath,
+  buildStudioBundle,
 } from '../project/index.js';
 import type { ComicOptions } from '../types.js';
 
@@ -347,6 +349,29 @@ export function buildMcpServer(): McpServer {
         };
       } catch (e) {
         return errResult(`get_agent_playbook failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // get_studio_bundle
+  // -------------------------------------------------------------------------
+  server.tool(
+    'get_studio_bundle',
+    'Fetch a unified JSON bundle with project, adaptation, music, and artifact path data.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        return jsonResult(buildStudioBundle(jobId, record.result));
+      } catch (e) {
+        return errResult(`get_studio_bundle failed: ${(e as Error).message}`);
       }
     }
   );

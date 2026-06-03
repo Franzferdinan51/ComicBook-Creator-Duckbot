@@ -17,6 +17,7 @@ assert.equal(audioMimeTypeForPath('/tmp/theme.wav'), 'audio/wav');
 
 const registeredTools = Object.keys(buildMcpServer()._registeredTools);
 assert.equal(registeredTools.includes('regenerate_comic'), true);
+assert.equal(registeredTools.includes('get_studio_bundle'), true);
 
 const playbook = await readFile(new URL('../../docs/agents/hermes-openclaw-playbook.md', import.meta.url), 'utf8');
 assert.equal(playbook.includes('Hermes + OpenClaw Playbook'), true);

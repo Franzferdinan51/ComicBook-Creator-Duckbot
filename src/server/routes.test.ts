@@ -140,6 +140,16 @@ try {
     const text = await res.text();
     assert.equal(text.includes('Hermes + OpenClaw Playbook'), true);
     assert.equal(text.includes('Music Handoff'), true);
+
+    const bundleRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/studio-bundle`);
+    assert.equal(bundleRes.ok, true);
+    assert.equal(bundleRes.headers.get('content-type')?.includes('application/json'), true);
+    const bundle = await bundleRes.json();
+    assert.equal(bundle.format, 'studio-bundle');
+    assert.equal(bundle.jobId, 'history-job');
+    assert.equal(bundle.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
+    assert.equal(bundle.availability.storyboardPackage, true);
+    assert.equal(bundle.availability.animaticTimeline, true);
   } finally {
     await handle.close();
   }

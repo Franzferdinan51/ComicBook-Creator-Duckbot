@@ -449,6 +449,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     showToast('Animatic timeline downloaded.', 'success');
   }
 
+  function handleDownloadStudioBundle() {
+    if (!result?.project) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/studio-bundle`;
+    a.download = `${localSlug(result.script?.title)}-studio-bundle.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Studio bundle downloaded.', 'success');
+  }
+
   function handleDownloadAgentGuidance() {
     if (result?.agentGuidancePath) {
       const a = document.createElement('a');
@@ -648,6 +659,9 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
           <p>${result.storyBible?.chapterOutline?.length || 0} outline beats prepared.</p>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProject}>
             Download project JSON
+          </button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>
+            Download studio bundle
           </button>
         </section>
 

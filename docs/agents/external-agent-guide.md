@@ -28,12 +28,12 @@ For the most actionable workflow, start with the repo playbook at
   machine-readable result payload.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `regenerate_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
-  `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_song_sheet`,
+  `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_song_sheet`,
   and `get_theme_audio` for complete agent workflows. Use
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
 - WebUI: the result panel exposes project, adaptation, music, and agent
-  guidance downloads.
+  guidance downloads, plus a unified studio bundle for one-shot handoff.
 - Library API: `createComic()` returns `project`, `storyBible`,
   `adaptationPackage`, `musicCuePackage`, `agentGuidancePackage`, and
   `projectPath` plus `agentGuidancePath`.

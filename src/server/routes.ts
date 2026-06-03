@@ -19,6 +19,7 @@
  *   GET    /api/comic/:jobId/pdf       — stream the PDF (Content-Type: application/pdf)
  *   GET    /api/comic/:jobId/images/:panelId — single panel PNG/JPEG
  *   GET    /api/comic/:jobId/cover           — cover/title-page image (if generated)
+ *   GET    /api/comic/:jobId/studio-bundle    — unified project/adaptation/music JSON
  *   GET    /api/agent-playbook       — repo-level Hermes/OpenClaw playbook
  *   POST   /api/comic/:jobId/regenerate — re-run with new options
  *   GET    /api/history                — list recent jobs
@@ -70,7 +71,7 @@ import {
   type XAILoginProgress,
 } from './openclaw-auth.js';
 import type { ComicOptions, ComicResult } from '../types.js';
-import { audioExtensionForPath, audioMimeTypeForPath } from '../project/index.js';
+import { audioExtensionForPath, audioMimeTypeForPath, buildStudioBundle } from '../project/index.js';
 
 /** Names of the providers that the user can configure through the UI. */
 const CONFIGURABLE_PROVIDERS = new Set(['openrouter', 'lmstudio', 'minimax', 'xai', 'gemini', 'comfyui']);
@@ -1086,6 +1087,31 @@ export function buildRouter(): Router {
     res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-animatic-timeline.json"`);
     const buf = await readFile(animaticTimelinePath, 'utf8');
     res.end(buf);
+  });
+
+  /**
+   * GET /api/comic/:jobId/studio-bundle
+   * Returns a unified JSON bundle for external agents and downstream tools.
+   */
+  router.get('/comic/:jobId/studio-bundle', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const bundle = buildStudioBundle(jobId, record.result);
+    const body = JSON.stringify(bundle, null, 2);
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', String(Buffer.byteLength(body)));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-studio-bundle.json"`);
+    res.end(body);
   });
 
   /**
