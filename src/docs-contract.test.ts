@@ -6,6 +6,7 @@ const pkg = JSON.parse(await readFile('package.json', 'utf8')) as {
 };
 const readme = await readFile('README.md', 'utf8');
 const debugHtml = await readFile('webui/__test__.html', 'utf8');
+const generateButton = await readFile('webui/components/GenerateButton.js', 'utf8');
 const mcpServer = await readFile('src/mcp/server.ts', 'utf8');
 
 assert.equal(pkg.scripts?.start, 'tsx src/server/index.ts');
@@ -16,6 +17,7 @@ assert.equal(readme.includes('| `songSheetPath` |'), true);
 assert.equal(readme.includes('| `songAudioPath` |'), true);
 assert.equal(readme.includes('Markdown handoff'), true);
 assert.equal(debugHtml.includes('Array.isArray(b.music)'), true);
+assert.equal(generateButton.includes('Timed out waiting for comic to finish.'), false);
 
 const toolNames = [...mcpServer.matchAll(/server\.tool\(\s*['"]([^'"]+)['"]/g)].map((match) => match[1]);
 const toolsLine = readme.split('\n').find((line) => line.startsWith('Tools: ')) ?? '';

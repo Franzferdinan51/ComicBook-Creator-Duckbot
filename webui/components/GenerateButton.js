@@ -14,7 +14,7 @@ import { useState, useEffect, useRef } from 'https://esm.sh/preact@10/hooks';
 import { html, api, sleep, showToast } from './_lib.js';
 
 const POLL_INTERVAL_MS = 1000;
-const POLL_MAX_TICKS = 180;     // 3 minutes
+const STALE_PROGRESS_TICKS = 180; // after this, keep polling but stop advancing progress
 const STAGES = [
   'Generating script',
   'Creating panel art',
@@ -53,7 +53,7 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
     setStageIdx(0);
 
     let lastUpdate = 0;
-    for (let i = 0; i < POLL_MAX_TICKS; i++) {
+    for (let i = 0; !cancelRef.current; i++) {
       if (cancelRef.current) return;
       await sleep(POLL_INTERVAL_MS);
       if (cancelRef.current) return;
@@ -86,8 +86,11 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
 
       // While pending, advance a stage every ~6 seconds (18 ticks / 3 stages).
       const stage = Math.min(Math.floor(i / 6), STAGES.length - 1);
-      // Bump progress smoothly between 0-95% while pending; jump to 100 on done.
-      const pct = Math.min(95, Math.round((i / POLL_MAX_TICKS) * 100));
+      // Bump progress smoothly between 0-95% while pending; after a few
+      // minutes stop advancing the bar, but keep polling until the job ends.
+      const pct = i >= STALE_PROGRESS_TICKS
+        ? 95
+        : Math.min(95, Math.round((i / STALE_PROGRESS_TICKS) * 100));
       const now = Date.now();
       if (now - lastUpdate > 200) {        // throttle state updates
         setStageIdx(stage);
@@ -95,11 +98,6 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
         lastUpdate = now;
       }
     }
-
-    const err = new Error('Timed out waiting for comic to finish.');
-    setError(err.message);
-    setLoading(false);
-    onError && onError(err);
   }
 
   async function handleGenerate() {
