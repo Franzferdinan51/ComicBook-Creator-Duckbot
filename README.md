@@ -44,6 +44,8 @@ Choose a goal preset to steer the generated handoff toward the right studio work
 | `music` | Song-first passes and soundtrack planning |
 | `studio` | Balanced comic, adaptation, and music handoff |
 
+You can also save a default project goal in the WebUI Settings page so new runs start with your preferred workflow.
+
 ## Quick example
 
 ```ts

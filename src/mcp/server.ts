@@ -735,6 +735,7 @@ export function buildMcpServer(): McpServer {
       defaultArtStyle: z.string().optional(),
       defaultPageCount: z.number().int().min(1).max(50).optional(),
       defaultOutputFormat: z.enum(['pdf', 'cbz']).optional(),
+      defaultProjectGoal: z.enum(['comic', 'screen', 'music', 'studio']).optional(),
     },
     async (patch) => {
       try {

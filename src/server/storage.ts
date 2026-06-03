@@ -21,6 +21,7 @@ import type {
   AgentGuidancePackage,
   ComicScript,
   MusicCuePackage,
+  ProjectGoal,
   StoryProject,
 } from '../types.js';
 
@@ -81,6 +82,7 @@ export interface Settings {
   defaultArtStyle: string;
   defaultPageCount: number;
   defaultOutputFormat: 'pdf' | 'cbz';
+  defaultProjectGoal: ProjectGoal;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -90,6 +92,7 @@ const DEFAULT_SETTINGS: Settings = {
   defaultArtStyle: 'manga',
   defaultPageCount: 4,
   defaultOutputFormat: 'pdf',
+  defaultProjectGoal: 'comic',
 };
 
 /**

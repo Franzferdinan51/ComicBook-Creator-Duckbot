@@ -17,6 +17,13 @@ const ART_STYLES = [
   'anime', 'cyberpunk', 'fantasy', 'pixel art', 'storyboard',
 ];
 
+const PROJECT_GOALS = [
+  { value: 'comic', label: 'Comic-first' },
+  { value: 'screen', label: 'Screen / show' },
+  { value: 'music', label: 'Music-first' },
+  { value: 'studio', label: 'Studio balance' },
+];
+
 const DEBOUNCE_MS = 350;
 const PROVIDER_NAMES = ['openrouter', 'lmstudio', 'minimax', 'xai', 'gemini', 'comfyui'];
 const CUSTOM_NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/;
@@ -196,6 +203,19 @@ export function Settings() {
           >
             <option value="pdf">PDF</option>
             <option value="cbz">CBZ (zipped)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="default-project-goal">Default project goal</label>
+          <select
+            id="default-project-goal"
+            value=${settings.defaultProjectGoal || 'comic'}
+            onChange=${(e) => update({ defaultProjectGoal: e.target.value })}
+          >
+            ${PROJECT_GOALS.map((goal) => html`
+              <option key=${goal.value} value=${goal.value}>${goal.label}</option>
+            `)}
           </select>
         </div>
       </div>

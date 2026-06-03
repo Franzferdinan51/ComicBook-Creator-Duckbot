@@ -6,11 +6,14 @@ const pkg = JSON.parse(await readFile('package.json', 'utf8')) as {
 };
 const readme = await readFile('README.md', 'utf8');
 const debugHtml = await readFile('webui/__test__.html', 'utf8');
+const appJs = await readFile('webui/app.js', 'utf8');
 const generateButton = await readFile('webui/components/GenerateButton.js', 'utf8');
 const historyPanel = await readFile('webui/components/History.js', 'utf8');
 const optionsPanel = await readFile('webui/components/OptionsPanel.js', 'utf8');
+const settingsPanel = await readFile('webui/components/Settings.js', 'utf8');
 const resultPanel = await readFile('webui/components/ResultPanel.js', 'utf8');
 const cliSource = await readFile('src/cli.ts', 'utf8');
+const serverReadme = await readFile('src/server/README.md', 'utf8');
 const playbook = await readFile('docs/agents/hermes-openclaw-playbook.md', 'utf8');
 const mcpServer = await readFile('src/mcp/server.ts', 'utf8');
 
@@ -29,6 +32,7 @@ assert.equal(readme.includes('--agent-playbook'), true);
 assert.equal(readme.includes('--json'), true);
 assert.equal(readme.includes('--studio-bundle'), true);
 assert.equal(readme.includes('--project-goal'), true);
+assert.equal(readme.includes('save a default project goal'), true);
 assert.equal(readme.includes('unified studio bundle'), true);
 assert.equal(readme.includes('External agents should start from the studio bundle first'), true);
 assert.equal(playbook.includes('## Task Routing'), true);
@@ -43,12 +47,16 @@ assert.equal(historyPanel.includes('bundle.artifactPaths?.projectPath ?? null'),
 assert.equal(historyPanel.includes('bundle.format === \'studio-bundle\''), true);
 assert.equal(optionsPanel.includes('Project goal'), true);
 assert.equal(optionsPanel.includes('project-goal'), true);
+assert.equal(settingsPanel.includes('Default project goal'), true);
+assert.equal(settingsPanel.includes('default-project-goal'), true);
+assert.equal(appJs.includes('defaultProjectGoal'), true);
 assert.equal(resultPanel.includes('Download agent playbook'), true);
 assert.equal(resultPanel.includes('Download studio bundle'), true);
 assert.equal(resultPanel.includes('Download theme audio'), true);
 assert.equal(cliSource.includes('--project-goal=<name>'), true);
 assert.equal(cliSource.includes('renderProfile: project.renderProfile'), true);
 assert.equal(mcpServer.includes("projectGoal: z"), true);
+assert.equal(serverReadme.includes('defaultProjectGoal'), true);
 
 const toolNames = [...mcpServer.matchAll(/server\.tool\(\s*['"]([^'"]+)['"]/g)].map((match) => match[1]);
 const toolsLine = readme.split('\n').find((line) => line.startsWith('Tools: ')) ?? '';

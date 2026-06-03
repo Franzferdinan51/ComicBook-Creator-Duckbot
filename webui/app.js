@@ -55,6 +55,7 @@ function App() {
           artStyle: prev.artStyle ?? s.defaultArtStyle,
           pageCount: prev.pageCount ?? s.defaultPageCount,
           outputFormat: prev.outputFormat ?? s.defaultOutputFormat,
+          projectGoal: prev.projectGoal ?? s.defaultProjectGoal,
           textProvider: prev.textProvider ?? s.defaultTextProvider,
           imageProvider: prev.imageProvider ?? s.defaultImageProvider,
         }));

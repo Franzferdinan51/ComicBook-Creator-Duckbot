@@ -296,6 +296,16 @@ export function buildRouter(): Router {
       }
       patch.defaultPageCount = n;
     }
+    if (patch.defaultProjectGoal != null) {
+      if (
+        patch.defaultProjectGoal !== 'comic' &&
+        patch.defaultProjectGoal !== 'screen' &&
+        patch.defaultProjectGoal !== 'music' &&
+        patch.defaultProjectGoal !== 'studio'
+      ) {
+        return res.status(400).json({ error: 'defaultProjectGoal must be "comic", "screen", "music", or "studio"' });
+      }
+    }
     // Validate provider names against the live registry. Without this, a
     // client could persist a name pointing at a deleted custom provider
     // and the next /api/comic call would crash with "Unknown text provider".

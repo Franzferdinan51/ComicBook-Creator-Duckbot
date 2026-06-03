@@ -92,7 +92,8 @@ The `mock` provider is always available.
   "defaultImageProvider": "mock",
   "defaultArtStyle": "manga",
   "defaultPageCount": 4,
-  "defaultOutputFormat": "pdf"
+  "defaultOutputFormat": "pdf",
+  "defaultProjectGoal": "comic"
 }
 ```
 
@@ -100,13 +101,14 @@ The `mock` provider is always available.
 
 **Body** (any subset of the fields above):
 ```json
-{ "defaultArtStyle": "noir", "defaultPageCount": 6 }
+{ "defaultArtStyle": "noir", "defaultPageCount": 6, "defaultProjectGoal": "screen" }
 ```
 
 **Response 200** — the full merged settings object.
 
 **400** on invalid `defaultOutputFormat` (must be `"pdf"` or `"cbz"`) or
-`defaultPageCount` (must be integer 1-50).
+`defaultPageCount` (must be integer 1-50), or `defaultProjectGoal` (must be
+`"comic"`, `"screen"`, `"music"`, or `"studio"`).
 
 ---
 

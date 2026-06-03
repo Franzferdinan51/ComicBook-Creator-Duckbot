@@ -168,6 +168,20 @@ try {
 
   const handle = await startWebUI({ port: 0, webuiDir: join(process.cwd(), 'webui') });
   try {
+    const settingsRes = await fetch(`http://127.0.0.1:${handle.port}/api/settings`);
+    assert.equal(settingsRes.ok, true);
+    const settings = await settingsRes.json() as { defaultProjectGoal?: string };
+    assert.equal(settings.defaultProjectGoal, 'comic');
+
+    const updateSettingsRes = await fetch(`http://127.0.0.1:${handle.port}/api/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ defaultProjectGoal: 'studio' }),
+    });
+    assert.equal(updateSettingsRes.ok, true);
+    const updatedSettings = await updateSettingsRes.json() as { defaultProjectGoal?: string };
+    assert.equal(updatedSettings.defaultProjectGoal, 'studio');
+
     const res = await fetch(`http://127.0.0.1:${handle.port}/api/agent-playbook`);
     assert.equal(res.ok, true);
     assert.equal(res.headers.get('content-type')?.includes('text/markdown'), true);
