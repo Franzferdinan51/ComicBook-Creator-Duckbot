@@ -43,6 +43,7 @@ import {
 } from './image.js';
 import {
   MockMusic,
+  MiniMaxMusic,
   type MusicProvider,
 } from './music.js';
 import {
@@ -88,6 +89,7 @@ const builtInImageProviders: Record<string, ImageProvider> = {
 /** Built-in music providers — always registered. */
 const builtInMusicProviders: Record<string, MusicProvider> = {
   mock: new MockMusic(),
+  minimax: new MiniMaxMusic(),
 };
 
 /** User-defined custom providers, keyed by name. Rebuilt by

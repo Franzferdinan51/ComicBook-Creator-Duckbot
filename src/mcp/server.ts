@@ -114,9 +114,9 @@ export function buildMcpServer(): McpServer {
             .optional()
             .describe('Text provider. Default: same as imageProvider.'),
           musicProvider: z
-            .enum(['mock'])
+            .enum(['mock', 'minimax'])
             .optional()
-            .describe('Music provider for the generated theme WAV. Default: "mock".'),
+            .describe('Music provider for the generated theme audio. Default: "mock".'),
           pageCount: z.number().int().min(1).max(50).optional().describe('Pages. Default: 4.'),
           panelsPerPage: z.number().int().min(1).max(12).optional().describe('Panels per page. Default: 4.'),
           outputProfile: z

@@ -101,6 +101,13 @@ function isConfigurableProvider(name: string): boolean {
   return CONFIGURABLE_PROVIDERS.has(name);
 }
 
+function audioMimeTypeForPath(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase();
+  if (ext === 'mp3') return 'audio/mpeg';
+  if (ext === 'wav') return 'audio/wav';
+  return 'application/octet-stream';
+}
+
 /** Refresh the custom-provider caches and the live registry from disk state. */
 function refreshCustomCachesAndRegistry(all: import('./provider-overrides.js').OverridesFile): void {
   const customCache: Record<string, { apiKey?: string; baseUrl?: string; model?: string }> = {};
@@ -1120,10 +1127,11 @@ export function buildRouter(): Router {
     }
     const size = statSync(songAudioPath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
-    res.setHeader('Content-Type', 'audio/wav');
+    res.setHeader('Content-Type', audioMimeTypeForPath(songAudioPath));
     res.setHeader('Content-Length', String(size));
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-theme.wav"`);
+    const audioExt = songAudioPath.split('.').pop() || 'wav';
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-theme.${audioExt}"`);
     const buf = await readFile(songAudioPath);
     res.end(buf);
   });

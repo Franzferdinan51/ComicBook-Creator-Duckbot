@@ -222,7 +222,7 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   const projectPath = `${stem}-project.json`;
   const agentGuidancePath = `${stem}-agent-guidance.md`;
   const songSheetPath = `${stem}-song-sheet.md`;
-  const songAudioPath = `${stem}-theme.wav`;
+  const songAudioPath = `${stem}-theme.${musicProvider.outputExtension}`;
   const storyboardPackagePath = `${stem}-storyboard-package.json`;
   const animaticTimelinePath = `${stem}-animatic-timeline.json`;
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');

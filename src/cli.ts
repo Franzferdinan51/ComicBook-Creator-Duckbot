@@ -352,7 +352,7 @@ export async function runCli(
   const projectPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-project.json`;
   const agentGuidancePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-guidance.md`;
   const songSheetPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-song-sheet.md`;
-  const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.wav`;
+  const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.${musicProvider.outputExtension}`;
   const storyboardPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-storyboard-package.json`;
   const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');

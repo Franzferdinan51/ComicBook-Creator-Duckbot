@@ -29,7 +29,7 @@ npm start
 | `storyboardPackagePath` | Shot-by-shot show/movie storyboard package |
 | `animaticTimelinePath` | Video/audio timing timeline for rough animatics |
 | `songSheetPath` | Markdown song sheet for music follow-up |
-| `songAudioPath` | Generated theme WAV from the selected music provider |
+| `songAudioPath` | Generated theme audio from the selected music provider |
 | `agentGuidancePath` | Markdown handoff so external agents keep working from the same project |
 
 ## Quick example
@@ -91,9 +91,9 @@ console.log('Adaptation scenes:', result.adaptationPackage.sceneOutline);
 | `xai` | `grok-2-latest` |
 | `gemini` | `gemini-2.0-flash` |
 
-### Music (placeholder — surface ready)
+### Music
 
-`mock` provider ships today with a WAV placeholder. Real audio generation plugs into the same `MusicProvider` interface.
+`mock` provider ships today with a deterministic WAV placeholder. `minimax` runs the MiniMax music CLI and writes MP3 theme audio. Real audio generation plugs into the same `MusicProvider` interface.
 
 ## WebUI
 
