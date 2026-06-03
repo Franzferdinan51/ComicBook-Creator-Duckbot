@@ -134,6 +134,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--output-profile=<name>` | `comic-print` | Output profile |
 | `--output=<path>` | auto | Override output path |
 | `--json` | off | Print the full `ComicResult` JSON |
+| `--studio-bundle` | off | Print the unified studio bundle JSON |
 | `--agent-playbook` | off | Print the repo-level Hermes/OpenClaw playbook |
 
 ## MCP server

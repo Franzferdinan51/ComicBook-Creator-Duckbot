@@ -25,7 +25,8 @@ For the most actionable workflow, start with the repo playbook at
   for MiniMax-generated theme audio.
   Use `--agent-playbook` to print the repo-level Hermes/OpenClaw playbook
   directly from the CLI. Use `--json` when an external agent needs a
-  machine-readable result payload.
+  machine-readable result payload. Use `--studio-bundle` when the agent wants
+  the unified bundle JSON directly from the CLI.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `regenerate_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
   `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_song_sheet`,

@@ -65,6 +65,7 @@ interface ParsedArgs {
   output: string | null;
   seed: number;
   json: boolean;
+  studioBundle: boolean;
   help: boolean;
   version: boolean;
   agentPlaybook: boolean;
@@ -93,6 +94,7 @@ Options:
   --output=<path>           Output file path. Default: ~/.openclaw/workspace/output/comics/<title>-<ts>.<format>
   --seed=<n>                Deterministic seed (mock provider). Default: 0
   --json                    Print the full ComicResult JSON and exit
+  --studio-bundle           Print the unified studio bundle JSON and exit
   --agent-playbook          Print the repo-level Hermes/OpenClaw playbook and exit
   --help                    Print this help and exit
   --version                 Print version and exit
@@ -123,6 +125,7 @@ function defaultArgs(): ParsedArgs {
     output: null,
     seed: 0,
     json: false,
+    studioBundle: false,
     help: false,
     version: false,
     agentPlaybook: false,
@@ -209,7 +212,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
 
 /**
  * Minimal arg parser: --key=value flags, then positional <story>.
- * Recognises --help / --version / --json / --agent-playbook (and -h / -V).
+ * Recognises --help / --version / --json / --studio-bundle / --agent-playbook (and -h / -V).
  */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = defaultArgs();
@@ -222,6 +225,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.version = true;
     } else if (arg === '--json') {
       args.json = true;
+    } else if (arg === '--studio-bundle') {
+      args.studioBundle = true;
     } else if (arg === '--agent-playbook') {
       args.agentPlaybook = true;
     } else if (arg.startsWith('--') && arg.includes('=')) {
@@ -498,6 +503,10 @@ async function main(): Promise<void> {
 
   try {
     const result = await runCli(args);
+    if (args.studioBundle) {
+      process.stdout.write(await readFile(result.studioBundlePath!, 'utf8'));
+      return;
+    }
     if (args.json) {
       process.stdout.write(JSON.stringify(result, null, 2) + '\n');
     } else {

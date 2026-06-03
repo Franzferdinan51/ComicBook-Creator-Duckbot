@@ -73,6 +73,14 @@ const jsonResult = JSON.parse(jsonProbe.stdout);
 assert.equal(jsonResult.outputPath.endsWith('.pdf'), true);
 assert.equal(jsonResult.agentGuidancePath.endsWith('-agent-guidance.md'), true);
 
+const bundleProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--studio-bundle', '--pages=1', '--panels=3', 'A Studio bundle story'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+const bundleResult = JSON.parse(bundleProbe.stdout);
+assert.equal(bundleResult.format, 'studio-bundle');
+assert.equal(bundleResult.artifactPaths.studioBundlePath.endsWith('-studio-bundle.json'), true);
+
 const stem = outputPath.replace(/\.[^./\\]+$/, '');
 await rm(outputPath, { force: true });
 if (result.cbzPath) await rm(result.cbzPath, { force: true });
