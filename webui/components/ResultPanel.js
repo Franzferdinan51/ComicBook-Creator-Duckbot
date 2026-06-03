@@ -475,6 +475,16 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     showToast('Agent guidance downloaded.', 'success');
   }
 
+  function handleDownloadAgentPlaybook() {
+    const a = document.createElement('a');
+    a.href = '/api/agent-playbook';
+    a.download = 'hermes-openclaw-playbook.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Agent playbook downloaded.', 'success');
+  }
+
   if (!result) return null;
 
   const title = result.script?.title || 'Comic ready';
@@ -673,6 +683,9 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
         <section class="panel artifact-panel">
           <h3>Agents</h3>
           <p>${result.agentGuidancePackage?.externalInterfaces?.length || 0} agent interfaces prepared.</p>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>
+            Download agent playbook
+          </button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>
             Download agent guidance
           </button>

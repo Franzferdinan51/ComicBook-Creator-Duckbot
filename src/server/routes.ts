@@ -19,6 +19,7 @@
  *   GET    /api/comic/:jobId/pdf       — stream the PDF (Content-Type: application/pdf)
  *   GET    /api/comic/:jobId/images/:panelId — single panel PNG/JPEG
  *   GET    /api/comic/:jobId/cover           — cover/title-page image (if generated)
+ *   GET    /api/agent-playbook       — repo-level Hermes/OpenClaw playbook
  *   POST   /api/comic/:jobId/regenerate — re-run with new options
  *   GET    /api/history                — list recent jobs
  *   DELETE /api/history/:jobId         — remove a job from history
@@ -243,6 +244,24 @@ export function buildRouter(): Router {
     const image = allImageProviderNames().map(describeProvider);
     const music = allMusicProviderNames().map(describeProvider);
     res.json({ text, image, music });
+  });
+
+  /**
+   * GET /api/agent-playbook
+   * Returns the repository-level Hermes/OpenClaw playbook markdown.
+   */
+  router.get('/agent-playbook', async (_req: Request, res: Response) => {
+    const path = join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md');
+    if (!existsSync(path)) {
+      return res.status(404).json({ error: 'agent playbook not available' });
+    }
+    const size = statSync(path).size;
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', 'attachment; filename="hermes-openclaw-playbook.md"');
+    const buf = await readFile(path, 'utf8');
+    res.end(buf);
   });
 
   // -------------------------------------------------------------------------

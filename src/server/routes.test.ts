@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { _resetJobManager, getJobManager } from './jobs.js';
 import { setStorageDir, upsertHistoryEntry } from './storage.js';
 import type { HistoryEntry } from './storage.js';
+import { startWebUI } from './index.js';
 
 const storageDir = await mkdtemp(join(tmpdir(), 'comic-routes-test-'));
 setStorageDir(storageDir);
@@ -130,6 +131,18 @@ try {
   assert.equal(resolved?.result.musicProvider, 'mock');
   assert.equal(resolved?.result.storyboardPackagePath, '/tmp/history-job-storyboard-package.json');
   assert.equal(resolved?.result.animaticTimelinePath, '/tmp/history-job-animatic-timeline.json');
+
+  const handle = await startWebUI({ port: 0, webuiDir: join(process.cwd(), 'webui') });
+  try {
+    const res = await fetch(`http://127.0.0.1:${handle.port}/api/agent-playbook`);
+    assert.equal(res.ok, true);
+    assert.equal(res.headers.get('content-type')?.includes('text/markdown'), true);
+    const text = await res.text();
+    assert.equal(text.includes('Hermes + OpenClaw Playbook'), true);
+    assert.equal(text.includes('Music Handoff'), true);
+  } finally {
+    await handle.close();
+  }
   console.log('PASS routes');
 } finally {
   await rm(storageDir, { recursive: true, force: true });
