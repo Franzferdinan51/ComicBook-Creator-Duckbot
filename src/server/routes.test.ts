@@ -28,6 +28,7 @@ const entry: HistoryEntry = {
   songAudioPath: '/tmp/history-job-theme.wav',
   musicProvider: 'mock',
   storyboardPackagePath: '/tmp/history-job-storyboard-package.json',
+  trailerPackagePath: '/tmp/history-job-trailer-package.json',
   animaticTimelinePath: '/tmp/history-job-animatic-timeline.json',
   studioBundlePath: '/tmp/history-job-studio-bundle.json',
     project: {
@@ -64,6 +65,16 @@ const entry: HistoryEntry = {
         cameraLanguage: 'wide frame',
       }],
     },
+    trailerPackage: {
+      format: 'trailer-package',
+      logline: 'History Project becomes a screen-ready comic adaptation.',
+      hook: 'History project premise',
+      teaserBeats: [{ beatId: 'beat-1', title: 'Hook', description: 'Hook beat', sourceSceneId: 'scene-1' }],
+      voiceOver: ['From the world of History Project.'],
+      cutList: [{ shotId: 'cut-1', shotType: 'wide establishing shot', purpose: 'Open the trailer', sourceSceneId: 'scene-1' }],
+      endCard: 'History Project ends on the final hook.',
+      durationSeconds: 75,
+    },
     musicCuePackage: {
       format: 'music-brief',
       cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
@@ -95,6 +106,16 @@ const entry: HistoryEntry = {
       prompt: 'History storyboard prompt',
       cameraLanguage: 'wide frame',
     }],
+  },
+  trailerPackage: {
+    format: 'trailer-package',
+    logline: 'History Project becomes a screen-ready comic adaptation.',
+    hook: 'History project premise',
+    teaserBeats: [{ beatId: 'beat-1', title: 'Hook', description: 'Hook beat', sourceSceneId: 'scene-1' }],
+    voiceOver: ['From the world of History Project.'],
+    cutList: [{ shotId: 'cut-1', shotType: 'wide establishing shot', purpose: 'Open the trailer', sourceSceneId: 'scene-1' }],
+    endCard: 'History Project ends on the final hook.',
+    durationSeconds: 75,
   },
   musicCuePackage: {
     format: 'music-brief',
@@ -134,6 +155,7 @@ try {
       songSheetPath: entry.songSheetPath,
       songAudioPath: entry.songAudioPath,
       storyboardPackagePath: entry.storyboardPackagePath,
+      trailerPackagePath: entry.trailerPackagePath,
       animaticTimelinePath: entry.animaticTimelinePath,
       studioBundlePath: entry.studioBundlePath,
       agentPlaybookPath: entry.agentPlaybookPath,
@@ -147,6 +169,7 @@ try {
       songSheet: true,
       songAudio: true,
       storyboardPackage: true,
+      trailerPackage: true,
       animaticTimeline: true,
       studioBundle: true,
     },
@@ -199,10 +222,19 @@ try {
     assert.equal(bundle.jobId, 'history-job');
     assert.equal(bundle.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
     assert.equal(bundle.artifactPaths.studioBundlePath, entry.studioBundlePath);
+    assert.equal(bundle.artifactPaths.trailerPackagePath, entry.trailerPackagePath);
     assert.equal(bundle.availability.agentPlaybook, true);
     assert.equal(bundle.availability.storyboardPackage, true);
+    assert.equal(bundle.availability.trailerPackage, true);
     assert.equal(bundle.availability.animaticTimeline, true);
     assert.equal(bundle.availability.studioBundle, true);
+
+    const trailerRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/trailer-package`);
+    assert.equal(trailerRes.ok, true);
+    assert.equal(trailerRes.headers.get('content-type')?.includes('application/json'), true);
+    const trailerPackage = await trailerRes.json();
+    assert.equal(trailerPackage.format, 'trailer-package');
+    assert.equal(trailerPackage.logline.includes('History Project'), true);
 
     const createRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic`, {
       method: 'POST',

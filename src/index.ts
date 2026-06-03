@@ -31,6 +31,7 @@ export type {
   StoryProject,
   StoryBible,
   AdaptationPackage,
+  TrailerPackage,
   MusicCuePackage,
   AgentGuidancePackage,
   ProjectGoal,
@@ -229,6 +230,7 @@ export async function createComic(
   const songSheetPath = `${stemFromOutput}-song-sheet.md`;
   const songAudioPath = `${stemFromOutput}-theme.${musicProvider.outputExtension}`;
   const storyboardPackagePath = `${stemFromOutput}-storyboard-package.json`;
+  const trailerPackagePath = `${stemFromOutput}-trailer-package.json`;
   const animaticTimelinePath = `${stemFromOutput}-animatic-timeline.json`;
   const studioBundlePath = `${stemFromOutput}-studio-bundle.json`;
   const agentPlaybookPath = join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md');
@@ -263,6 +265,7 @@ export async function createComic(
     JSON.stringify(buildStoryboardPackage({ project, pages: pageImages, songAudioPath }), null, 2),
     'utf8'
   );
+  await writeFile(trailerPackagePath, JSON.stringify(project.trailerPackage, null, 2), 'utf8');
   await writeFile(
     animaticTimelinePath,
     JSON.stringify(buildAnimaticTimeline({ project, pages: pageImages, songAudioPath }), null, 2),
@@ -278,6 +281,7 @@ export async function createComic(
     projectPath,
     storyBible: project.storyBible,
     adaptationPackage: project.adaptationPackage,
+    trailerPackage: project.trailerPackage,
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
@@ -286,6 +290,7 @@ export async function createComic(
     songAudioPath,
     musicProvider: musicProvider.name,
     storyboardPackagePath,
+    trailerPackagePath,
     animaticTimelinePath,
     studioBundlePath,
     pages: pageImages,

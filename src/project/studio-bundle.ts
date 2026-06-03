@@ -8,6 +8,7 @@ export interface StudioBundle {
   script: ComicResult['script'];
   storyBible: ComicResult['storyBible'];
   adaptationPackage: ComicResult['adaptationPackage'];
+  trailerPackage: ComicResult['trailerPackage'];
   musicCuePackage: ComicResult['musicCuePackage'];
   agentGuidancePackage: ComicResult['agentGuidancePackage'];
   musicProvider: string;
@@ -22,6 +23,7 @@ export interface StudioBundle {
     songSheetPath: string | null;
     songAudioPath: string | null;
     storyboardPackagePath: string | null;
+    trailerPackagePath: string | null;
     animaticTimelinePath: string | null;
     studioBundlePath: string | null;
   };
@@ -35,6 +37,7 @@ export interface StudioBundle {
     songSheet: boolean;
     songAudio: boolean;
     storyboardPackage: boolean;
+    trailerPackage: boolean;
     animaticTimeline: boolean;
     studioBundle: boolean;
   };
@@ -49,6 +52,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
     script: result.script,
     storyBible: result.storyBible,
     adaptationPackage: result.adaptationPackage,
+    trailerPackage: result.trailerPackage,
     musicCuePackage: result.musicCuePackage,
     agentGuidancePackage: result.agentGuidancePackage,
     musicProvider: result.musicProvider,
@@ -63,6 +67,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       songSheetPath: result.songSheetPath,
       songAudioPath: result.songAudioPath,
       storyboardPackagePath: result.storyboardPackagePath,
+      trailerPackagePath: result.trailerPackagePath,
       animaticTimelinePath: result.animaticTimelinePath,
       studioBundlePath: result.studioBundlePath,
     },
@@ -76,6 +81,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       songSheet: Boolean(result.songSheetPath),
       songAudio: Boolean(result.songAudioPath),
       storyboardPackage: Boolean(result.storyboardPackagePath),
+      trailerPackage: Boolean(result.trailerPackagePath),
       animaticTimeline: Boolean(result.animaticTimelinePath),
       studioBundle: Boolean(result.studioBundlePath),
     },

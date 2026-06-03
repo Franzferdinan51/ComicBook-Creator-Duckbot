@@ -12,6 +12,7 @@ import { html, showToast, navTo } from './_lib.js';
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'pitch', label: 'Pitch' },
+  { id: 'trailer', label: 'Trailer' },
   { id: 'story', label: 'Story' },
   { id: 'script', label: 'Script' },
   { id: 'shots', label: 'Shots' },
@@ -95,6 +96,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
   const chapterOutline = result.storyBible?.chapterOutline || [];
   const sceneBeats = result.storyBible?.sceneBeats || [];
   const songSections = result.musicCuePackage?.songDraft?.sections || [];
+  const trailerPackage = result.trailerPackage;
   const trailerBeats = [
     {
       label: 'Hook',
@@ -118,6 +120,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
   const journeySteps = [
     { label: 'Comic pages', tab: 'overview' },
     { label: 'Pitch deck', tab: 'pitch' },
+    { label: 'Trailer', tab: 'trailer' },
     { label: 'Story bible', tab: 'story' },
     { label: 'Screenplay', tab: 'script' },
     { label: 'Storyboard', tab: 'shots' },
@@ -139,6 +142,12 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       href: jobId ? `/api/comic/${jobId}/storyboard-package` : null,
       filename: `${localSlug(title)}-storyboard-package.json`,
       hint: 'Scene prompts for visual planning.',
+    },
+    {
+      label: 'Trailer package',
+      href: jobId ? `/api/comic/${jobId}/trailer-package` : null,
+      filename: `${localSlug(title)}-trailer-package.json`,
+      hint: 'Pitch beats and teaser structure for the screen version.',
     },
     {
       label: 'Animatic timeline',
@@ -352,6 +361,47 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         </div>
       ` : null}
 
+      ${activeTab === 'trailer' ? html`
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card movie-pitch-card">
+            <h3>Trailer package</h3>
+            <p class="movie-pitch-line">${trailerPackage?.logline || `${title} is ready for a screen teaser.`}</p>
+            <p class="muted small">${trailerPackage?.hook || 'The trailer package turns the adaptation into a pitchable teaser sequence.'}</p>
+          </section>
+          <section class="movie-card">
+            <h3>Duration</h3>
+            <p><strong>${trailerPackage?.durationSeconds || 0} seconds</strong></p>
+            <p class="muted small">The trailer package is short by design, so it can be handed to agents or editors as a teaser skeleton.</p>
+          </section>
+        </div>
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card">
+            <h3>Voice over</h3>
+            <ul class="movie-list">
+              ${(trailerPackage?.voiceOver || []).length > 0
+                ? trailerPackage.voiceOver.map((line) => html`<li key=${line}>${line}</li>`)
+                : html`<li>No voice over yet.</li>`}
+            </ul>
+          </section>
+          <section class="movie-card">
+            <h3>Cut list</h3>
+            <div class="movie-previs-list">
+              ${(trailerPackage?.cutList || []).length > 0
+                ? trailerPackage.cutList.map((cut) => html`
+                  <article class="movie-previs-card" key=${cut.shotId}>
+                    <div class="scene-head">
+                      <span class="movie-chip">${cut.shotId}</span>
+                      <span class="movie-chip subtle">${cut.shotType}</span>
+                    </div>
+                    <p>${cut.purpose}</p>
+                  </article>
+                `)
+                : html`<p class="muted small">No cut list yet.</p>`}
+            </div>
+          </section>
+        </div>
+      ` : null}
+
       ${activeTab === 'story' ? html`
         <div class="movie-grid movie-grid-two">
           <section class="movie-card">
@@ -547,7 +597,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
                     <p class="muted small">${item.hint}</p>
                   </div>
                   ${item.href ? html`
-                    <a class="btn btn-ghost btn-sm" href=${item.href} download=${item.filename}>Download</a>
+                    <a class="btn btn-ghost btn-sm" href=${item.href} download=${item.filename}>Download trailer package</a>
                   ` : html`
                     <span class="movie-deliverable-state">Missing</span>
                   `}

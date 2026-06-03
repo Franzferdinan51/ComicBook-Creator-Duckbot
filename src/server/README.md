@@ -257,6 +257,7 @@ a future version).
     "pageCount": 4,
     "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
     "agentPlaybookPath": "/Users/duckets/Desktop/ComicBook-Creator-Duckbot-main/docs/agents/hermes-openclaw-playbook.md",
+    "trailerPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-trailer-package.json",
     "studioBundlePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-studio-bundle.json",
     "scriptJson": { "title": "...", "artStyle": "manga", "pages": [ ... ] }
   }

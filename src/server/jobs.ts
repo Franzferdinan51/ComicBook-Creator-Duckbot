@@ -180,6 +180,16 @@ class JobManager {
         screenplayScenes: [],
         storyboardPrompts: [],
       },
+      trailerPackage: {
+        format: 'trailer-package',
+        logline: `${entry.scriptJson.title} becomes a screen-ready comic adaptation.`,
+        hook: entry.scriptJson.title,
+        teaserBeats: [],
+        voiceOver: [],
+        cutList: [],
+        endCard: entry.scriptJson.title,
+        durationSeconds: 0,
+      },
       musicCuePackage: {
         format: 'music-brief',
         cues: [],
@@ -215,7 +225,11 @@ class JobManager {
       },
     };
     const project: StoryProject = entry.project
-      ? { ...entry.project, projectGoal: entry.project.projectGoal ?? projectGoal }
+      ? {
+          ...entry.project,
+          projectGoal: entry.project.projectGoal ?? projectGoal,
+          trailerPackage: entry.project.trailerPackage ?? fallbackProject.trailerPackage,
+        }
       : fallbackProject;
     const result: ComicResult = {
       script: entry.scriptJson,
@@ -238,6 +252,16 @@ class JobManager {
         sceneOutline: [],
         screenplayScenes: [],
         storyboardPrompts: [],
+      },
+      trailerPackage: entry.trailerPackage ?? entry.project?.trailerPackage ?? {
+        format: 'trailer-package',
+        logline: `${entry.scriptJson.title} becomes a screen-ready comic adaptation.`,
+        hook: entry.scriptJson.title,
+        teaserBeats: [],
+        voiceOver: [],
+        cutList: [],
+        endCard: entry.scriptJson.title,
+        durationSeconds: 0,
       },
       musicCuePackage: entry.musicCuePackage ?? entry.project?.musicCuePackage ?? {
         format: 'music-brief',
@@ -277,6 +301,7 @@ class JobManager {
       songAudioPath: entry.songAudioPath ?? null,
       musicProvider: entry.musicProvider ?? 'mock',
       storyboardPackagePath: entry.storyboardPackagePath ?? null,
+      trailerPackagePath: entry.trailerPackagePath ?? null,
       animaticTimelinePath: entry.animaticTimelinePath ?? null,
       pages: await Promise.all(
         entry.scriptJson.pages.map(async (page) => {
@@ -361,6 +386,7 @@ class JobManager {
         projectPath: result.projectPath ?? undefined,
         agentPlaybookPath: result.agentPlaybookPath ?? undefined,
         adaptationPackage: result.adaptationPackage,
+        trailerPackage: result.trailerPackage,
         musicCuePackage: result.musicCuePackage,
         agentGuidancePackage: result.agentGuidancePackage,
         agentGuidancePath: result.agentGuidancePath ?? undefined,
@@ -368,6 +394,7 @@ class JobManager {
         songAudioPath: result.songAudioPath ?? undefined,
         musicProvider: result.musicProvider,
         storyboardPackagePath: result.storyboardPackagePath ?? undefined,
+        trailerPackagePath: result.trailerPackagePath ?? undefined,
         animaticTimelinePath: result.animaticTimelinePath ?? undefined,
         studioBundlePath: result.studioBundlePath ?? undefined,
         scriptJson: result.script,

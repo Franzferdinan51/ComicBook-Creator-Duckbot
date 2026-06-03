@@ -86,6 +86,27 @@ export interface AdaptationPackage {
   }>;
 }
 
+export interface TrailerPackage {
+  format: 'trailer-package';
+  logline: string;
+  hook: string;
+  teaserBeats: Array<{
+    beatId: string;
+    title: string;
+    description: string;
+    sourceSceneId?: string;
+  }>;
+  voiceOver: string[];
+  cutList: Array<{
+    shotId: string;
+    shotType: string;
+    purpose: string;
+    sourceSceneId?: string;
+  }>;
+  endCard: string;
+  durationSeconds: number;
+}
+
 export interface MusicCuePackage {
   format: 'music-brief';
   cues: Array<{
@@ -142,6 +163,7 @@ export interface StoryProject {
   renderProfile: RenderProfile;
   storyBible: StoryBible;
   adaptationPackage: AdaptationPackage;
+  trailerPackage: TrailerPackage;
   musicCuePackage: MusicCuePackage;
   agentGuidancePackage: AgentGuidancePackage;
 }
@@ -236,6 +258,8 @@ export interface ComicResult {
   storyBible: StoryBible;
   /** Convenience alias for `project.adaptationPackage`. */
   adaptationPackage: AdaptationPackage;
+  /** Convenience alias for `project.trailerPackage`. */
+  trailerPackage: TrailerPackage;
   /** Convenience alias for `project.musicCuePackage`. */
   musicCuePackage: MusicCuePackage;
   /** Convenience alias for `project.agentGuidancePackage`. */
@@ -252,6 +276,8 @@ export interface ComicResult {
   musicProvider: string;
   /** Absolute path to the generated storyboard package JSON, if written. */
   storyboardPackagePath: string | null;
+  /** Absolute path to the generated trailer package JSON, if written. */
+  trailerPackagePath: string | null;
   /** Absolute path to the generated animatic timeline JSON, if written. */
   animaticTimelinePath: string | null;
   /** Absolute path to the unified studio bundle JSON, if written. */

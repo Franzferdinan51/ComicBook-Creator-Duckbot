@@ -20,6 +20,7 @@
  *   GET    /api/comic/:jobId/images/:panelId — single panel PNG/JPEG
  *   GET    /api/comic/:jobId/cover           — cover/title-page image (if generated)
  *   GET    /api/comic/:jobId/studio-bundle    — unified project/adaptation/music JSON
+ *   GET    /api/comic/:jobId/trailer-package   — teaser / pitch trailer JSON
  *   GET    /api/agent-playbook       — repo-level Hermes/OpenClaw playbook
  *   POST   /api/comic/:jobId/regenerate — re-run with new options
  *   GET    /api/history                — list recent jobs
@@ -1078,6 +1079,35 @@ export function buildRouter(): Router {
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-storyboard-package.json"`);
     const buf = await readFile(storyboardPackagePath, 'utf8');
+    res.end(buf);
+  });
+
+  /**
+   * GET /api/comic/:jobId/trailer-package
+   * Returns the generated trailer / teaser package JSON.
+   */
+  router.get('/comic/:jobId/trailer-package', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const trailerPackagePath = record.result.trailerPackagePath;
+    if (!trailerPackagePath || !existsSync(trailerPackagePath)) {
+      return res.status(404).json({ error: 'no trailer package for this comic' });
+    }
+    const size = statSync(trailerPackagePath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-trailer-package.json"`);
+    const buf = await readFile(trailerPackagePath, 'utf8');
     res.end(buf);
   });
 

@@ -23,6 +23,7 @@ import type {
   MusicCuePackage,
   ProjectGoal,
   StoryProject,
+  TrailerPackage,
 } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -52,6 +53,8 @@ export interface HistoryEntry {
   projectPath?: string;
   /** Screen/show adaptation artifact for the project. */
   adaptationPackage?: AdaptationPackage;
+  /** Trailer / teaser artifact for the project. */
+  trailerPackage?: TrailerPackage;
   /** Music or song-development artifact for the project. */
   musicCuePackage?: MusicCuePackage;
   /** Agent orchestration guidance artifact for the project. */
@@ -68,6 +71,8 @@ export interface HistoryEntry {
   musicProvider?: string;
   /** Path to the generated storyboard package JSON. */
   storyboardPackagePath?: string;
+  /** Path to the generated trailer package JSON. */
+  trailerPackagePath?: string;
   /** Path to the generated animatic timeline JSON. */
   animaticTimelinePath?: string;
   /** Path to the generated unified studio bundle JSON. */

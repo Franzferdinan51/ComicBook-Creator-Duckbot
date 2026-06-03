@@ -45,6 +45,7 @@ assert.equal(result.agentGuidancePath, outputPath.replace(/\.pdf$/, '-agent-guid
 assert.equal(result.songSheetPath, outputPath.replace(/\.pdf$/, '-song-sheet.md'));
 assert.equal(result.songAudioPath, outputPath.replace(/\.pdf$/, '-theme.wav'));
 assert.equal(result.storyboardPackagePath, outputPath.replace(/\.pdf$/, '-storyboard-package.json'));
+assert.equal(result.trailerPackagePath, outputPath.replace(/\.pdf$/, '-trailer-package.json'));
 assert.equal(result.animaticTimelinePath, outputPath.replace(/\.pdf$/, '-animatic-timeline.json'));
 assert.equal(result.studioBundlePath, outputPath.replace(/\.pdf$/, '-studio-bundle.json'));
 await access(result.projectPath!);
@@ -53,6 +54,7 @@ await access(result.agentGuidancePath!);
 await access(result.songSheetPath!);
 await access(result.songAudioPath!);
 await access(result.storyboardPackagePath!);
+await access(result.trailerPackagePath!);
 await access(result.animaticTimelinePath!);
 await access(result.studioBundlePath!);
 const firstPanelPath = result.pages[0]?.panelImagePaths[0];
@@ -72,9 +74,12 @@ const wav = await readFile(result.songAudioPath!);
 assert.equal(wav.subarray(0, 4).toString('ascii'), 'RIFF');
 const timeline = JSON.parse(await readFile(result.animaticTimelinePath!, 'utf8'));
 assert.equal(timeline.tracks.audio[0].audioPath, result.songAudioPath);
+const trailer = JSON.parse(await readFile(result.trailerPackagePath!, 'utf8'));
+assert.equal(trailer.format, 'trailer-package');
 const studioBundle = JSON.parse(await readFile(result.studioBundlePath!, 'utf8'));
 assert.equal(studioBundle.format, 'studio-bundle');
 assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
+assert.equal(studioBundle.artifactPaths.trailerPackagePath, result.trailerPackagePath);
 
 const jsonProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--json', '--pages=1', '--panels=3', 'A JSON agent story'], {
   cwd: process.cwd(),
@@ -92,6 +97,7 @@ const bundleProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--stu
 const bundleResult = JSON.parse(bundleProbe.stdout);
 assert.equal(bundleResult.format, 'studio-bundle');
 assert.equal(bundleResult.artifactPaths.studioBundlePath.endsWith('-studio-bundle.json'), true);
+assert.equal(bundleResult.artifactPaths.trailerPackagePath.endsWith('-trailer-package.json'), true);
 assert.equal(bundleResult.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
 
 const stem = outputPath.replace(/\.[^./\\]+$/, '');
@@ -102,6 +108,7 @@ await rm(result.projectPath!, { force: true });
 await rm(result.songSheetPath!, { force: true });
 await rm(result.songAudioPath!, { force: true });
 await rm(result.storyboardPackagePath!, { force: true });
+await rm(result.trailerPackagePath!, { force: true });
 await rm(result.animaticTimelinePath!, { force: true });
 await rm(result.studioBundlePath!, { force: true });
 await rm(`${stem}.images`, { recursive: true, force: true });

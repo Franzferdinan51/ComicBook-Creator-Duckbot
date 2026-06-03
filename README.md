@@ -27,6 +27,7 @@ npm start
 | `coverImagePath` | AI-generated cover page image |
 | `storyBible` | Premise, synopsis, chapter outline, scene beats |
 | `adaptationPackage` | Per-scene screenplay summaries + visual goals |
+| `trailerPackagePath` | Pitch / teaser trailer package for show or movie handoff |
 | `musicCuePackage` | Mood cues, song draft, theme-prompt for audio tools |
 | `storyboardPackagePath` | Shot-by-shot show/movie storyboard package |
 | `animaticTimelinePath` | Video/audio timing timeline for rough animatics |
@@ -121,7 +122,7 @@ open start.command
 The WebUI gives you:
 - Story input + style/format/provider options
 - Project goal preset for comic / screen / music / studio workflows
-- Movie / Show tab with pitch, story, script, shots, previs, timeline, music, and deliverables tabs
+- Movie / Show tab with pitch, trailer, story, script, shots, previs, timeline, music, and deliverables tabs
 - Live job status and progress
 - PDF preview with page navigation and thumbnails
 - Download as PDF or CBZ, or grab all panel images as a ZIP

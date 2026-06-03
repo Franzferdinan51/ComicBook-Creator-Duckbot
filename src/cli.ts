@@ -403,6 +403,7 @@ export async function runCli(
   const songSheetPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-song-sheet.md`;
   const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.${musicProvider.outputExtension}`;
   const storyboardPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-storyboard-package.json`;
+  const trailerPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-trailer-package.json`;
   const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
   const studioBundlePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-studio-bundle.json`;
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
@@ -438,6 +439,7 @@ export async function runCli(
     JSON.stringify(buildStoryboardPackage({ project, pages, songAudioPath }), null, 2),
     'utf8'
   );
+  await writeFile(trailerPackagePath, JSON.stringify(project.trailerPackage, null, 2), 'utf8');
   await writeFile(
     animaticTimelinePath,
     JSON.stringify(buildAnimaticTimeline({ project, pages, songAudioPath }), null, 2),
@@ -479,6 +481,7 @@ export async function runCli(
     projectPath,
     storyBible: project.storyBible,
     adaptationPackage: project.adaptationPackage,
+    trailerPackage: project.trailerPackage,
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
@@ -487,6 +490,7 @@ export async function runCli(
     songAudioPath,
     musicProvider: musicProvider.name,
     storyboardPackagePath,
+    trailerPackagePath,
     animaticTimelinePath,
     studioBundlePath,
     pages,
