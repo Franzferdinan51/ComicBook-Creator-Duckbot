@@ -233,6 +233,10 @@ export interface ComicResult {
   agentGuidancePackage: AgentGuidancePackage;
   /** Absolute path to the generated agent guidance markdown handoff, if written. */
   agentGuidancePath: string | null;
+  /** Absolute path to the generated song sheet markdown handoff, if written. */
+  songSheetPath: string | null;
+  /** Absolute path to the generated mock theme WAV, if written. */
+  songAudioPath: string | null;
   pages: Array<{
     page: Page;
     /**

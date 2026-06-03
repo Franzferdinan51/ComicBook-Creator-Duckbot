@@ -19,6 +19,8 @@ import {
   getImageProvider,
   buildStoryProject,
   renderAgentGuidanceMarkdown,
+  renderSongSheetMarkdown,
+  generateMockThemeWav,
   type ComicOptions,
   type ComicResult,
   type OutputProfile,
@@ -337,7 +339,11 @@ export async function runCli(
   const imageDir = `${finalPath.replace(/\.[^./\\]+$/, '')}.images`;
   await mkdir(imageDir, { recursive: true });
   const agentGuidancePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-guidance.md`;
+  const songSheetPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-song-sheet.md`;
+  const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.wav`;
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
+  await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
+  await writeFile(songAudioPath, generateMockThemeWav(project));
   const pages: Array<{
     page: typeof script.pages[number];
     imagePath: string;
@@ -400,6 +406,8 @@ export async function runCli(
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
+    songSheetPath,
+    songAudioPath,
     pages,
   };
 }

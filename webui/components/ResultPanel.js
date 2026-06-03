@@ -397,6 +397,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     downloadJsonArtifact('music', result.musicCuePackage, 'Music brief downloaded.');
   }
 
+  function handleDownloadSongSheet() {
+    if (!result?.songSheetPath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/song-sheet`;
+    a.download = `${localSlug(result.script?.title)}-song-sheet.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Song sheet downloaded.', 'success');
+  }
+
   function handleDownloadAgentGuidance() {
     if (result?.agentGuidancePath) {
       const a = document.createElement('a');
@@ -588,6 +599,16 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadMusic}>
             Download music brief
           </button>
+          ${result.songSheetPath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSongSheet}>
+              Download song sheet
+            </button>
+          ` : null}
+          ${result.songAudioPath ? html`
+            <a class="btn btn-ghost btn-sm" href=${`/api/comic/${jobId}/theme-audio`} download=${`${titleSlug}-theme.wav`}>
+              Download theme WAV
+            </a>
+          ` : null}
         </section>
 
         <section class="panel artifact-panel">

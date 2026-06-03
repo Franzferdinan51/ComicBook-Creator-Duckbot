@@ -212,6 +212,80 @@ export function buildMcpServer(): McpServer {
   );
 
   server.tool(
+    'get_song_sheet',
+    'Fetch the generated song sheet markdown for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.songSheetPath;
+        if (!path || !existsSync(path)) {
+          return errResult(`song sheet not available for job ${jobId}`);
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.song-sheet.md`,
+                mimeType: 'text/markdown',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_song_sheet failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
+    'get_theme_audio',
+    'Fetch the generated mock theme WAV for a completed comic, returned as base64.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.songAudioPath;
+        if (!path || !existsSync(path)) {
+          return errResult(`theme audio not available for job ${jobId}`);
+        }
+        const buf = await readFile(path);
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.theme.wav`,
+                mimeType: 'audio/wav',
+                blob: buf.toString('base64'),
+              },
+            },
+            { type: 'text' as const, text: `Theme WAV size: ${buf.length} bytes` },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_theme_audio failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
     'get_comic_pdf',
     'Fetch the generated PDF for a completed job, returned as base64.',
     {

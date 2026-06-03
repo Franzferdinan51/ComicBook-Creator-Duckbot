@@ -19,7 +19,8 @@ studio project, not just a PDF job.
   `*-agent-guidance.md` handoff file next to the output.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
-  `get_agent_guidance` for complete agent workflows.
+  `get_agent_guidance`, `get_song_sheet`, and `get_theme_audio` for complete
+  agent workflows.
 - WebUI: the result panel exposes project, adaptation, music, and agent
   guidance downloads.
 - Library API: `createComic()` returns `project`, `storyBible`,
@@ -27,7 +28,8 @@ studio project, not just a PDF job.
   `agentGuidancePath`.
   `adaptationPackage` includes screenplay scenes and storyboard prompts.
   `musicCuePackage` includes cue mapping, a song draft, lyrics, and a
-  music-generation prompt.
+  music-generation prompt. `songSheetPath` and `songAudioPath` point to the
+  generated markdown sheet and deterministic WAV theme.
 
 ## Agent Contract
 

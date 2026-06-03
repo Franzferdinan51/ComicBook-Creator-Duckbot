@@ -21,6 +21,8 @@ const entry: HistoryEntry = {
   pdfPath: '/tmp/history-job.pdf',
   cbzPath: '/tmp/history-job.cbz',
   coverImagePath: '/tmp/history-job.images/cover.png',
+  songSheetPath: '/tmp/history-job-song-sheet.md',
+  songAudioPath: '/tmp/history-job-theme.wav',
   project: {
     id: 'project-1',
     title: 'History Project',
@@ -118,6 +120,8 @@ try {
   assert.equal(Array.isArray(resolved?.result.adaptationPackage.screenplayScenes), true);
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.cues), true);
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.sceneCueMap), true);
+  assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
+  assert.equal(resolved?.result.songAudioPath, '/tmp/history-job-theme.wav');
   console.log('PASS routes');
 } finally {
   await rm(storageDir, { recursive: true, force: true });

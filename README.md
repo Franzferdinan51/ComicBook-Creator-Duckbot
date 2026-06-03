@@ -32,7 +32,8 @@ artifacts so CLI tools, MCP hosts, and external agents can keep working from
 the same project foundation instead of starting over from the PDF.
 The adaptation package includes screenplay scenes and storyboard prompts; the
 music package includes cue mapping, a song draft, and a music-generation
-prompt for follow-up audio tools.
+prompt for follow-up audio tools. The default pipeline also writes a song
+sheet markdown file and a deterministic mock WAV theme beside the comic export.
 
 For external-agent workflows, see
 [`docs/agents/external-agent-guide.md`](./docs/agents/external-agent-guide.md).

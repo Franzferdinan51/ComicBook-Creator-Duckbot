@@ -55,6 +55,10 @@ export interface HistoryEntry {
   agentGuidancePackage?: AgentGuidancePackage;
   /** Path to the generated markdown handoff for external agents. */
   agentGuidancePath?: string;
+  /** Path to the generated song sheet markdown. */
+  songSheetPath?: string;
+  /** Path to the generated theme WAV. */
+  songAudioPath?: string;
   scriptJson: ComicScript;  // the full script (so the frontend can re-render)
   thumbnailPath?: string;   // optional — reserved for future
 }

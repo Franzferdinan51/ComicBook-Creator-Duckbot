@@ -263,6 +263,8 @@ class JobManager {
         systemPrompt: `Support "${entry.scriptJson.title}" as a reusable studio project.`,
       },
       agentGuidancePath: entry.agentGuidancePath ?? null,
+      songSheetPath: entry.songSheetPath ?? null,
+      songAudioPath: entry.songAudioPath ?? null,
       pages: await Promise.all(
         entry.scriptJson.pages.map(async (page) => {
           // The images dir is the outputPath with extension replaced
@@ -349,6 +351,8 @@ class JobManager {
         musicCuePackage: result.musicCuePackage,
         agentGuidancePackage: result.agentGuidancePackage,
         agentGuidancePath: result.agentGuidancePath ?? undefined,
+        songSheetPath: result.songSheetPath ?? undefined,
+        songAudioPath: result.songAudioPath ?? undefined,
         scriptJson: result.script,
       };
       try {
