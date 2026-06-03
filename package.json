@@ -15,10 +15,10 @@
     "README.md"
   ],
   "scripts": {
-    "test": "tsx src/project/render-profile.test.ts && tsx src/project/story-project.test.ts && tsx src/assembler/layouts.test.ts && tsx src/providers/music.test.ts && tsx src/cli.test.ts && tsx src/mcp/server.test.ts && tsx src/index.test.ts",
+    "test": "tsx src/project/render-profile.test.ts && tsx src/project/story-project.test.ts && tsx src/assembler/layouts.test.ts && tsx src/providers/music.test.ts && tsx src/docs-contract.test.ts && tsx src/cli.test.ts && tsx src/mcp/server.test.ts && tsx src/index.test.ts",
     "test:server": "tsx src/server/routes.test.ts",
     "test:mcp": "tsx src/mcp/server.test.ts",
-    "start": "tsx src/index.ts"
+    "start": "tsx src/server/index.ts"
   },
   "keywords": [
     "comic",

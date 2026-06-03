@@ -8,6 +8,7 @@
  *   - get_comic_image     — fetch a single panel PNG as base64
  *   - get_project         — fetch the full project JSON for external agents
  *   - get_agent_guidance  — fetch the Hermes/OpenClaw markdown handoff
+ *   - get_comic_cover     — fetch the cover/title image as base64
  *   - list_providers      — discover available text + image + music providers
  *   - get_history         — recent comics (persisted on disk)
  *   - get_settings        / update_settings — user preferences
@@ -434,6 +435,44 @@ export function buildMcpServer(): McpServer {
         };
       } catch (e) {
         return errResult(`get_comic_pdf failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
+    'get_comic_cover',
+    'Fetch the generated cover/title image for a completed job, returned as base64.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.coverImagePath;
+        if (!path || !existsSync(path)) {
+          return errResult(`cover image not available for job ${jobId}`);
+        }
+        const buf = await readFile(path);
+        const isJpg = path.endsWith('.jpg') || path.endsWith('.jpeg');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.cover.${isJpg ? 'jpg' : 'png'}`,
+                mimeType: isJpg ? 'image/jpeg' : 'image/png',
+                blob: buf.toString('base64'),
+              },
+            },
+            { type: 'text' as const, text: `Cover image size: ${buf.length} bytes` },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_comic_cover failed: ${(e as Error).message}`);
       }
     }
   );

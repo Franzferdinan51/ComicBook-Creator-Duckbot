@@ -152,7 +152,7 @@
         (b) => b && b.status === 'ok' && typeof b.version === 'string');
 
       const prov = await check('providers-json', '/api/providers',
-        (b) => b && Array.isArray(b.text) && Array.isArray(b.image));
+        (b) => b && Array.isArray(b.text) && Array.isArray(b.image) && Array.isArray(b.music));
       results.providers = prov;
 
       if (prov.body) {

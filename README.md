@@ -21,11 +21,16 @@ npm start
 | Artifact | Description |
 |----------|-------------|
 | `outputPath` | Comic PDF download |
+| `projectPath` | Full `*-project.json` source-of-truth handoff for external agents |
 | `coverImagePath` | AI-generated cover page image |
 | `storyBible` | Premise, synopsis, chapter outline, scene beats |
 | `adaptationPackage` | Per-scene screenplay summaries + visual goals |
 | `musicCuePackage` | Mood cues, song draft, theme-prompt for audio tools |
-| `agentGuidancePath` | JSON handoff so external agents keep working from the same project |
+| `storyboardPackagePath` | Shot-by-shot show/movie storyboard package |
+| `animaticTimelinePath` | Video/audio timing timeline for rough animatics |
+| `songSheetPath` | Markdown song sheet for music follow-up |
+| `songAudioPath` | Generated theme WAV from the selected music provider |
+| `agentGuidancePath` | Markdown handoff so external agents keep working from the same project |
 
 ## Quick example
 
@@ -135,7 +140,7 @@ External agents (OpenClaw, Claude Desktop, etc.) can invoke the pipeline via MCP
 comic-creator-mcp
 ```
 
-Tools: `create_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, `get_comic_cover`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
+Tools: `create_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
 
 ## Tests
 
