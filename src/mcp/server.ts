@@ -7,7 +7,7 @@
  *   - get_comic_pdf       — fetch PDF as base64
  *   - get_comic_image     — fetch a single panel PNG as base64
  *   - get_agent_guidance  — fetch the Hermes/OpenClaw markdown handoff
- *   - list_providers      — discover available text + image providers
+ *   - list_providers      — discover available text + image + music providers
  *   - get_history         — recent comics (persisted on disk)
  *   - get_settings        / update_settings — user preferences
  *
@@ -31,6 +31,7 @@ import {
 import {
   listTextProviders,
   listImageProviders,
+  listMusicProviders,
   getProviderConfig,
   isProviderConfigured,
 } from '../providers/index.js';
@@ -110,6 +111,10 @@ export function buildMcpServer(): McpServer {
             .enum(['mock', 'openrouter', 'lmstudio', 'minimax'])
             .optional()
             .describe('Text provider. Default: same as imageProvider.'),
+          musicProvider: z
+            .enum(['mock'])
+            .optional()
+            .describe('Music provider for the generated theme WAV. Default: "mock".'),
           pageCount: z.number().int().min(1).max(50).optional().describe('Pages. Default: 4.'),
           panelsPerPage: z.number().int().min(1).max(12).optional().describe('Panels per page. Default: 4.'),
           outputProfile: z
@@ -458,13 +463,14 @@ export function buildMcpServer(): McpServer {
   // -------------------------------------------------------------------------
   server.tool(
     'list_providers',
-    'List available text + image providers and whether each is configured.',
+    'List available text + image + music providers and whether each is configured.',
     {},
     async () => {
       try {
         return jsonResult({
           text: listTextProviders().map(describeProvider),
           image: listImageProviders().map(describeProvider),
+          music: listMusicProviders().map(describeProvider),
         });
       } catch (e) {
         return errResult(`list_providers failed: ${(e as Error).message}`);

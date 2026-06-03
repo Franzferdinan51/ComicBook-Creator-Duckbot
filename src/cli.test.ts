@@ -4,12 +4,14 @@ import { parseArgs, runCli } from './cli.js';
 
 const parsed = parseArgs([
   '--output-profile=storyboard-widescreen',
+  '--music-provider=mock',
   '--pages=1',
   '--panels=3',
   'A crew turns a comic into a pilot episode.',
 ]);
 
 assert.equal(parsed.outputProfile, 'storyboard-widescreen');
+assert.equal(parsed.musicProvider, 'mock');
 
 const outputPath = `/tmp/comic-creator-cli-${Date.now()}.pdf`;
 const result = await runCli({
@@ -21,6 +23,7 @@ const result = await runCli({
 }, () => undefined);
 
 assert.equal(result.project.renderProfile.outputProfile, 'storyboard-widescreen');
+assert.equal(result.musicProvider, 'mock');
 assert.equal(result.agentGuidancePackage.externalInterfaces.includes('cli'), true);
 assert.equal(result.agentGuidancePath, outputPath.replace(/\.pdf$/, '-agent-guidance.md'));
 assert.equal(result.songSheetPath, outputPath.replace(/\.pdf$/, '-song-sheet.md'));

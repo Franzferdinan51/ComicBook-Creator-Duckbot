@@ -23,6 +23,7 @@ const entry: HistoryEntry = {
   coverImagePath: '/tmp/history-job.images/cover.png',
   songSheetPath: '/tmp/history-job-song-sheet.md',
   songAudioPath: '/tmp/history-job-theme.wav',
+  musicProvider: 'mock',
   storyboardPackagePath: '/tmp/history-job-storyboard-package.json',
   animaticTimelinePath: '/tmp/history-job-animatic-timeline.json',
   project: {
@@ -124,6 +125,7 @@ try {
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.sceneCueMap), true);
   assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
   assert.equal(resolved?.result.songAudioPath, '/tmp/history-job-theme.wav');
+  assert.equal(resolved?.result.musicProvider, 'mock');
   assert.equal(resolved?.result.storyboardPackagePath, '/tmp/history-job-storyboard-package.json');
   assert.equal(resolved?.result.animaticTimelinePath, '/tmp/history-job-animatic-timeline.json');
   console.log('PASS routes');

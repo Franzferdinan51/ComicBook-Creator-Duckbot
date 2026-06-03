@@ -37,8 +37,8 @@ export type {
 } from './types.js';
 
 // Re-exports so users can import everything from one place
-export { getTextProvider, getImageProvider, listTextProviders, listImageProviders } from './providers/index.js';
-export type { TextProvider, ImageProvider } from './providers/index.js';
+export { getTextProvider, getImageProvider, getMusicProvider, listTextProviders, listImageProviders, listMusicProviders } from './providers/index.js';
+export type { TextProvider, ImageProvider, MusicProvider } from './providers/index.js';
 export { generateScript, generatePanelImages } from './pipeline/index.js';
 export type { ScriptGeneratorOptions, ImageGeneratorOptions } from './pipeline/index.js';
 export { assembleComic } from './assembler/index.js';
@@ -48,19 +48,17 @@ export {
   buildAgentGuidancePackage,
   renderAgentGuidanceMarkdown,
   renderSongSheetMarkdown,
-  generateMockThemeWav,
   buildStoryboardPackage,
   buildAnimaticTimeline,
 } from './project/index.js';
 
-import { getTextProvider, getImageProvider } from './providers/index.js';
+import { getTextProvider, getImageProvider, getMusicProvider } from './providers/index.js';
 import { generateScript, generatePanelImages } from './pipeline/index.js';
 import { assembleComic } from './assembler/index.js';
 import {
   buildStoryProject,
   renderAgentGuidanceMarkdown,
   renderSongSheetMarkdown,
-  generateMockThemeWav,
   buildStoryboardPackage,
   buildAnimaticTimeline,
 } from './project/index.js';
@@ -80,6 +78,7 @@ export async function createComic(
     artStyle: options.artStyle ?? 'manga',
     imageProvider: options.imageProvider ?? 'mock',
     textProvider: options.textProvider ?? options.imageProvider ?? 'mock',
+    musicProvider: options.musicProvider ?? 'mock',
     pageCount: options.pageCount ?? 4,
     panelsPerPage: options.panelsPerPage ?? 4,
     outputProfile: options.outputProfile ?? 'comic-print',
@@ -99,6 +98,7 @@ export async function createComic(
 
   const textProvider = getTextProvider(opts.textProvider);
   const imageProvider = getImageProvider(opts.imageProvider);
+  const musicProvider = getMusicProvider(opts.musicProvider);
   const project = buildStoryProject(story, opts);
 
   const script: ComicScript = await generateScript(
@@ -226,7 +226,7 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   const animaticTimelinePath = `${stem}-animatic-timeline.json`;
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
-  await writeFile(songAudioPath, generateMockThemeWav(project));
+  await writeFile(songAudioPath, await musicProvider.generate(project, { seed: opts.seed }));
   const pageImages: ComicResult['pages'] = [];
   for (const page of script.pages) {
     const panelImagePaths: string[] = [];
@@ -274,6 +274,7 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
     agentGuidancePath,
     songSheetPath,
     songAudioPath,
+    musicProvider: musicProvider.name,
     storyboardPackagePath,
     animaticTimelinePath,
     pages: pageImages,

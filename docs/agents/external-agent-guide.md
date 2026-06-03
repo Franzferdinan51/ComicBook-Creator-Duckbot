@@ -16,7 +16,8 @@ studio project, not just a PDF job.
 ## Supported Control Surfaces
 
 - CLI: `comic-creator` generates the comic and writes a sibling
-  `*-agent-guidance.md` handoff file next to the output.
+  `*-agent-guidance.md` handoff file next to the output. Use
+  `--music-provider=mock` to make the music provider explicit.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
   `get_agent_guidance`, `get_song_sheet`, and `get_theme_audio` for complete
@@ -32,7 +33,8 @@ studio project, not just a PDF job.
   production handoff JSON files.
   `musicCuePackage` includes cue mapping, a song draft, lyrics, and a
   music-generation prompt. `songSheetPath` and `songAudioPath` point to the
-  generated markdown sheet and deterministic WAV theme.
+  generated markdown sheet and provider-generated WAV theme. `musicProvider`
+  records the provider used for the audio artifact.
 
 ## Agent Contract
 

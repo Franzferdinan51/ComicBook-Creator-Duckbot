@@ -24,7 +24,7 @@ The user asks to "make a comic about X", "draw a manga of Y", or wants a multi-p
 
 1. Confirm the story prompt and any style preferences (manga, noir, cartoon, watercolor, etc.)
 2. Confirm page count (default 4) and panels per page (default 4, 2x2 grid)
-3. Confirm provider preference. The default auto-picks a configured real provider (`minimax` → `openrouter` → `lmstudio` → `mock`); override with `--text-provider` / `--image-provider` if the user wants a different one.
+3. Confirm provider preference. The default auto-picks a configured real text/image provider (`minimax` → `openrouter` → `lmstudio` → `mock`); override with `--text-provider` / `--image-provider` if the user wants a different one. Music defaults to `mock` and can be selected with `--music-provider`.
 4. Run `createComic(story, options)` from the skill entry
 5. Report the output PDF path; offer to show a preview
 
@@ -42,7 +42,7 @@ The user asks to "make a comic about X", "draw a manga of Y", or wants a multi-p
 
 ## Provider notes
 
-The comic creator supports seven built-in providers for both text and image
+The comic creator supports seven built-in providers for text and image
 generation. Resolution order is `process.env` → `~/.openclaw/openclaw.json`
 (`models.providers.<name>`) → built-in defaults. Visit `/api/providers` (or
 the Settings page in the WebUI) to see what's configured in your environment.
@@ -119,7 +119,7 @@ comic-creator/
 └── src/
     ├── index.ts          # main entry, exports createComic + startWebUI
     ├── types.ts          # shared types contract — do not change
-    ├── providers/        # text + image provider factories
+    ├── providers/        # text + image + music provider factories
     ├── pipeline/         # script gen + panel image gen
     ├── assembler/        # PDF/CBZ page assembly
     │   ├── index.ts
@@ -161,6 +161,7 @@ After `npm install -g .` (or `npm link` from the skill dir) the
 | `--format=<pdf\|cbz>` | `pdf` | Output container |
 | `--text-provider=<name>` | `mock` | Script-generation provider |
 | `--image-provider=<name>` | `mock` | Panel-image provider |
+| `--music-provider=<name>` | `mock` | Theme-song/audio provider |
 | `--output-profile=<name>` | `comic-print` | `comic-print` \| `digital-portrait` \| `storyboard-widescreen` |
 | `--output=<path>` | auto | Override the output path (default: `~/.openclaw/workspace/output/comics/<title>-<ts>.pdf`) |
 | `--seed=<n>` | `0` | Deterministic seed (mock provider) |
@@ -180,8 +181,9 @@ After `npm install -g .` (or `npm link` from the skill dir) the
 Each CLI run also writes a sibling `*-agent-guidance.md` file next to the
 main export so Hermes/OpenClaw and other external agents can continue from
 the same project, adaptation, and music context.
-It also writes `*-song-sheet.md` and `*-theme.wav` so music follow-up agents
-have both a human-readable song plan and a playable audio placeholder.
+It also writes `*-song-sheet.md` and `*-theme.wav` through the selected music
+provider so music follow-up agents have both a human-readable song plan and a
+playable audio placeholder.
 For show/movie handoff, it writes `*-storyboard-package.json` and
 `*-animatic-timeline.json` beside the comic export.
 
@@ -255,7 +257,7 @@ frontend from the same origin. Key endpoints:
 - `GET  /api/comic/:jobId/pdf` — stream the generated PDF
 - `GET  /api/comic/:jobId/images/:panelId` — stream a single panel PNG
 - `GET  /api/history` — list recent comics (persisted to disk)
-- `GET  /api/providers` — list available text + image providers
+- `GET  /api/providers` — list available text + image + music providers
 - `GET  /api/settings` / `PUT /api/settings` — user preferences (persisted)
 
 ### State

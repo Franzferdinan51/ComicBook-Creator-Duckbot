@@ -18,6 +18,7 @@ const result = await createComic('A shy robot discovers a garden on Mars', {
   artStyle: 'manga',
   imageProvider: 'mock',     // or 'openrouter', 'lmstudio', 'minimax'
   textProvider: 'mock',
+  musicProvider: 'mock',
   pageCount: 4,
   panelsPerPage: 4,
   outputFormat: 'pdf',
@@ -33,7 +34,8 @@ the same project foundation instead of starting over from the PDF.
 The adaptation package includes screenplay scenes and storyboard prompts; the
 music package includes cue mapping, a song draft, and a music-generation
 prompt for follow-up audio tools. The default pipeline also writes a song
-sheet markdown file and a deterministic mock WAV theme beside the comic export.
+sheet markdown file and a theme WAV through the selected music provider
+(`mock` today, with the provider surface ready for real audio engines).
 For show/movie workflows, it also writes a storyboard package JSON and an
 animatic timeline JSON tied to the generated panel images and temporary theme.
 
@@ -47,7 +49,7 @@ For external-agent workflows, see
 - `strip-3` — 3 panels in a single row
 - `custom` — auto-arrange N panels into a roughly square grid
 
-## Providers (text + image)
+## Providers (text + image + music)
 
 - `mock` — deterministic, no API calls (best for testing and dry runs)
 - `openrouter` — routes to FLUX, DALL-E, etc. via OpenRouter (best quality)
@@ -56,6 +58,10 @@ For external-agent workflows, see
 
 The `mock` provider generates a deterministic color grid PNG based on the panel
 id and seed — perfect for end-to-end smoke tests without burning API credits.
+Music currently ships with the deterministic `mock` provider, which writes a
+playable WAV placeholder from the generated song draft. Pass
+`musicProvider: 'mock'` in code or `--music-provider=mock` in the CLI; future
+music backends plug into the same provider contract.
 
 ## Test
 

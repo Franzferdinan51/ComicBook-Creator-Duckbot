@@ -149,6 +149,8 @@ export interface ComicOptions {
   imageProvider?: string;
   /** defaults to the value of imageProvider if not set */
   textProvider?: string;
+  /** "mock" | future music provider names — default "mock" */
+  musicProvider?: string;
   /**
    * Override the image-generation model id for this comic. Falls back to the
    * provider's configured default. Set to "" (empty) to clear.
@@ -237,6 +239,8 @@ export interface ComicResult {
   songSheetPath: string | null;
   /** Absolute path to the generated mock theme WAV, if written. */
   songAudioPath: string | null;
+  /** Music-generation provider used for the song audio artifact. */
+  musicProvider: string;
   /** Absolute path to the generated storyboard package JSON, if written. */
   storyboardPackagePath: string | null;
   /** Absolute path to the generated animatic timeline JSON, if written. */

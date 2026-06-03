@@ -265,6 +265,7 @@ class JobManager {
       agentGuidancePath: entry.agentGuidancePath ?? null,
       songSheetPath: entry.songSheetPath ?? null,
       songAudioPath: entry.songAudioPath ?? null,
+      musicProvider: entry.musicProvider ?? 'mock',
       storyboardPackagePath: entry.storyboardPackagePath ?? null,
       animaticTimelinePath: entry.animaticTimelinePath ?? null,
       pages: await Promise.all(
@@ -355,6 +356,7 @@ class JobManager {
         agentGuidancePath: result.agentGuidancePath ?? undefined,
         songSheetPath: result.songSheetPath ?? undefined,
         songAudioPath: result.songAudioPath ?? undefined,
+        musicProvider: result.musicProvider,
         storyboardPackagePath: result.storyboardPackagePath ?? undefined,
         animaticTimelinePath: result.animaticTimelinePath ?? undefined,
         scriptJson: result.script,

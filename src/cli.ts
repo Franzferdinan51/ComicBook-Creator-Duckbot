@@ -17,10 +17,10 @@ import {
   assembleComic,
   getTextProvider,
   getImageProvider,
+  getMusicProvider,
   buildStoryProject,
   renderAgentGuidanceMarkdown,
   renderSongSheetMarkdown,
-  generateMockThemeWav,
   buildStoryboardPackage,
   buildAnimaticTimeline,
   type ComicOptions,
@@ -47,6 +47,7 @@ interface ParsedArgs {
   format: Format;
   textProvider: string;
   imageProvider: string;
+  musicProvider: string;
   textModel: string | null;
   imageModel: string | null;
   imageAspectRatio: string | null;
@@ -72,6 +73,7 @@ Options:
   --format=<pdf|cbz>        Output format. Default: pdf
   --text-provider=<name>    Text-generation provider. Default: mock
   --image-provider=<name>   Image-generation provider. Default: mock
+  --music-provider=<name>   Music-generation provider for theme WAV. Default: mock
   --text-model=<id>         Override the text model id (e.g. openai/gpt-4o-mini, MiniMax-M3). Default: provider's configured default
   --image-model=<id>        Override the image model id (e.g. black-forest-labs/flux.1-schnell, image-01, sdxl). Default: provider's configured default
   --image-aspect-ratio=<r>  Aspect ratio for image gen (e.g. 16:9, 1:1, 4:3). Default: 1:1. Equivalent to the MiniMax CLI's --aspect-ratio.
@@ -99,6 +101,7 @@ function defaultArgs(): ParsedArgs {
     format: 'pdf',
     textProvider: 'mock',
     imageProvider: 'mock',
+    musicProvider: 'mock',
     textModel: null,
     imageModel: null,
     imageAspectRatio: null,
@@ -146,6 +149,9 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
       break;
     case 'image-provider':
       args.imageProvider = value;
+      break;
+    case 'music-provider':
+      args.musicProvider = value;
       break;
     case 'text-model':
       args.textModel = value;
@@ -280,6 +286,7 @@ export async function runCli(
   const opts: ComicOptions = {
     artStyle: args.style,
     imageProvider: args.imageProvider,
+    musicProvider: args.musicProvider,
     textProvider: args.textProvider,
     pageCount: args.pages,
     panelsPerPage,
@@ -298,12 +305,14 @@ export async function runCli(
   log(
     `comic-creator: text=${args.textProvider}${args.textModel ? ` (${args.textModel})` : ''} ` +
     `image=${args.imageProvider}${args.imageModel ? ` (${args.imageModel})` : ''} ` +
+    `music=${args.musicProvider} ` +
     (args.imageAspectRatio ? `aspect=${args.imageAspectRatio} ` : '') +
     `format=${args.format} seed=${args.seed}`
   );
 
   const textProvider = getTextProvider(args.textProvider);
   const imageProvider = getImageProvider(args.imageProvider);
+  const musicProvider = getMusicProvider(args.musicProvider);
 
   log('comic-creator: [1/3] generating script...');
   const script = await generateScript(
@@ -347,7 +356,7 @@ export async function runCli(
   const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
-  await writeFile(songAudioPath, generateMockThemeWav(project));
+  await writeFile(songAudioPath, await musicProvider.generate(project, { seed: args.seed }));
   const pages: Array<{
     page: typeof script.pages[number];
     imagePath: string;
@@ -422,6 +431,7 @@ export async function runCli(
     agentGuidancePath,
     songSheetPath,
     songAudioPath,
+    musicProvider: musicProvider.name,
     storyboardPackagePath,
     animaticTimelinePath,
     pages,

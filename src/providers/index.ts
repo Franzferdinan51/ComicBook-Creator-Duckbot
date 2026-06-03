@@ -20,6 +20,7 @@
 
 export * from './text.js';
 export * from './image.js';
+export * from './music.js';
 export * from './custom.js';
 export * from './xai.js';
 export * from './gemini.js';
@@ -40,6 +41,10 @@ import {
   MockImage,
   type ImageProvider,
 } from './image.js';
+import {
+  MockMusic,
+  type MusicProvider,
+} from './music.js';
 import {
   XAIText,
   XAIImage,
@@ -80,6 +85,11 @@ const builtInImageProviders: Record<string, ImageProvider> = {
   mock: new MockImage(),
 };
 
+/** Built-in music providers — always registered. */
+const builtInMusicProviders: Record<string, MusicProvider> = {
+  mock: new MockMusic(),
+};
+
 /** User-defined custom providers, keyed by name. Rebuilt by
  *  `setCustomProviderRegistry()` whenever the user adds/removes one. */
 let _customTextProviders: Record<string, TextProvider> = {};
@@ -107,6 +117,17 @@ export function getImageProvider(name: string): ImageProvider {
   return p;
 }
 
+/** Look up a music provider by name. Throws if the name is unknown. */
+export function getMusicProvider(name: string): MusicProvider {
+  const p = builtInMusicProviders[name];
+  if (!p) {
+    throw new Error(
+      `Unknown music provider: ${name}. Available: ${allMusicProviderNames().join(', ')}`
+    );
+  }
+  return p;
+}
+
 /** Built-in text provider names. */
 export function listTextProviders(): string[] {
   return Object.keys(builtInTextProviders);
@@ -117,6 +138,11 @@ export function listImageProviders(): string[] {
   return Object.keys(builtInImageProviders);
 }
 
+/** Built-in music provider names. */
+export function listMusicProviders(): string[] {
+  return Object.keys(builtInMusicProviders);
+}
+
 /** Built-in + custom text provider names. */
 export function allTextProviderNames(): string[] {
   return [...Object.keys(builtInTextProviders), ...Object.keys(_customTextProviders)];
@@ -125,6 +151,11 @@ export function allTextProviderNames(): string[] {
 /** Built-in + custom image provider names. */
 export function allImageProviderNames(): string[] {
   return [...Object.keys(builtInImageProviders), ...Object.keys(_customImageProviders)];
+}
+
+/** Built-in music provider names. */
+export function allMusicProviderNames(): string[] {
+  return Object.keys(builtInMusicProviders);
 }
 
 /**

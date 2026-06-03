@@ -11,6 +11,7 @@ async function main(): Promise<void> {
     panelsPerPage: 3,
     outputFormat: 'pdf',
     outputProfile: 'storyboard-widescreen',
+    musicProvider: 'mock',
     generateCover: true,
   });
 
@@ -27,6 +28,7 @@ async function main(): Promise<void> {
   assert.equal(result.musicCuePackage.cues.length > 0, true);
   assert.equal(result.musicCuePackage.songDraft.lyrics.includes(result.project.title), true);
   assert.equal(result.musicCuePackage.sceneCueMap.length >= 3, true);
+  assert.equal(result.musicProvider, 'mock');
   assert.equal(result.agentGuidancePackage.workflowSteps.length >= 3, true);
   assert.equal(result.agentGuidancePath?.endsWith('-agent-guidance.md'), true);
   assert.equal(result.agentGuidancePath != null, true);

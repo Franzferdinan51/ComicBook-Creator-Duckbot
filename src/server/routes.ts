@@ -233,14 +233,15 @@ export function buildRouter(): Router {
 
   /**
    * GET /api/providers
-   * → { text: ProviderInfo[], image: ProviderInfo[] }
+   * → { text: ProviderInfo[], image: ProviderInfo[], music: ProviderInfo[] }
    * Includes both built-in providers and any user-defined custom endpoints.
    */
   router.get('/providers', async (_req: Request, res: Response) => {
-    const { allTextProviderNames, allImageProviderNames } = await import('../providers/index.js');
+    const { allTextProviderNames, allImageProviderNames, allMusicProviderNames } = await import('../providers/index.js');
     const text = allTextProviderNames().map(describeProvider);
     const image = allImageProviderNames().map(describeProvider);
-    res.json({ text, image });
+    const music = allMusicProviderNames().map(describeProvider);
+    res.json({ text, image, music });
   });
 
   // -------------------------------------------------------------------------
@@ -720,9 +721,10 @@ export function buildRouter(): Router {
       // Validate provider names against the live registry (built-in + custom).
       // ESM import — top-of-file import is fine; this is a small per-request
       // cost. Lazy-load the registry functions here.
-      const { allTextProviderNames, allImageProviderNames } = await import('../providers/index.js');
+      const { allTextProviderNames, allImageProviderNames, allMusicProviderNames } = await import('../providers/index.js');
       const textNames = new Set(allTextProviderNames());
       const imageNames = new Set(allImageProviderNames());
+      const musicNames = new Set(allMusicProviderNames());
       if (options.textProvider != null) {
         if (typeof options.textProvider !== 'string' || (!textNames.has(options.textProvider) && !imageNames.has(options.textProvider))) {
           return res.status(400).json({ error: `textProvider "${options.textProvider}" is not a registered provider` });
@@ -734,6 +736,12 @@ export function buildRouter(): Router {
           return res.status(400).json({ error: `imageProvider "${options.imageProvider}" is not a registered provider` });
         }
         safeOptions.imageProvider = options.imageProvider;
+      }
+      if (options.musicProvider != null) {
+        if (typeof options.musicProvider !== 'string' || !musicNames.has(options.musicProvider)) {
+          return res.status(400).json({ error: `musicProvider "${options.musicProvider}" is not a registered provider` });
+        }
+        safeOptions.musicProvider = options.musicProvider;
       }
       if (Number.isInteger(options.seed)) {
         safeOptions.seed = options.seed as number;
