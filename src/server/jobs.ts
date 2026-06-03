@@ -343,8 +343,6 @@ class JobManager {
       const { createComic } = await import('../index.js');
       const result = await createComic(record.story, record.options ?? {});
       record.result = result;
-      record.status = 'done';
-      record.updatedAt = new Date().toISOString();
 
       // Best-effort: append to history. If disk is broken, log and continue.
       const entry: HistoryEntry = {
@@ -378,6 +376,8 @@ class JobManager {
           `[jobs] failed to persist history for ${record.jobId}: ${(err as Error).message}`
         );
       }
+      record.status = 'done';
+      record.updatedAt = new Date().toISOString();
     } catch (err) {
       console.error(`[jobs] run failed for ${record.jobId}:`, err);
       record.status = 'error';
