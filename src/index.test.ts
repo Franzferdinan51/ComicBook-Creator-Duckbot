@@ -29,6 +29,7 @@ async function main(): Promise<void> {
   assert.equal(result.musicCuePackage.songDraft.lyrics.includes(result.project.title), true);
   assert.equal(result.musicCuePackage.sceneCueMap.length >= 3, true);
   assert.equal(result.musicProvider, 'mock');
+  assert.equal(result.projectPath?.endsWith('-project.json'), true);
   assert.equal(result.agentGuidancePackage.workflowSteps.length >= 3, true);
   assert.equal(result.agentGuidancePath?.endsWith('-agent-guidance.md'), true);
   assert.equal(result.agentGuidancePath != null, true);
@@ -43,6 +44,7 @@ async function main(): Promise<void> {
   assert.equal(!!result.coverImagePath, true);
   await access(result.coverImagePath!);
   await access(result.agentGuidancePath!);
+  await access(result.projectPath!);
   await access(result.songSheetPath!);
   await access(result.songAudioPath!);
   await access(result.storyboardPackagePath!);
@@ -65,6 +67,10 @@ async function main(): Promise<void> {
   assert.equal(guidance.includes('Hermes Agent'), true);
   assert.equal(guidance.includes('OpenClaw'), true);
   assert.equal(guidance.includes(result.project.title), true);
+  const projectJson = JSON.parse(await readFile(result.projectPath!, 'utf8'));
+  assert.equal(projectJson.title, result.project.title);
+  assert.equal(projectJson.agentGuidancePackage.frameworks.hermesAgent.repository, 'https://github.com/nousresearch/hermes-agent');
+  assert.equal(projectJson.agentGuidancePackage.frameworks.openClaw.repository, 'https://github.com/openclaw/openclaw');
   const songSheet = await readFile(result.songSheetPath!, 'utf8');
   assert.equal(songSheet.includes(result.musicCuePackage.songDraft.lyrics), true);
   const wav = await readFile(result.songAudioPath!);
@@ -83,6 +89,7 @@ async function main(): Promise<void> {
   await rm(result.outputPath, { force: true });
   if (result.cbzPath) await rm(result.cbzPath, { force: true });
   await rm(result.agentGuidancePath!, { force: true });
+  await rm(result.projectPath!, { force: true });
   await rm(result.songSheetPath!, { force: true });
   await rm(result.songAudioPath!, { force: true });
   await rm(result.storyboardPackagePath!, { force: true });

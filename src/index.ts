@@ -219,11 +219,13 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   const stem = outputPath.replace(/\.[^./\\]+$/, '');
   const imageDir = `${stem}.images`;
   await mkdir(imageDir, { recursive: true });
+  const projectPath = `${stem}-project.json`;
   const agentGuidancePath = `${stem}-agent-guidance.md`;
   const songSheetPath = `${stem}-song-sheet.md`;
   const songAudioPath = `${stem}-theme.wav`;
   const storyboardPackagePath = `${stem}-storyboard-package.json`;
   const animaticTimelinePath = `${stem}-animatic-timeline.json`;
+  await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(songAudioPath, await musicProvider.generate(project, { seed: opts.seed }));
@@ -267,6 +269,7 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
     cbzPath,
     coverImagePath,
     project,
+    projectPath,
     storyBible: project.storyBible,
     adaptationPackage: project.adaptationPackage,
     musicCuePackage: project.musicCuePackage,

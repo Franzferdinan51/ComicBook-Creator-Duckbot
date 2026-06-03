@@ -217,6 +217,7 @@ class JobManager {
           systemPrompt: `Support "${entry.scriptJson.title}" as a reusable studio project.`,
         },
       },
+      projectPath: entry.projectPath ?? null,
       storyBible: entry.project?.storyBible ?? {
         premise: entry.scriptJson.title,
         synopsis: `${entry.scriptJson.title} recovered from history.`,
@@ -350,6 +351,7 @@ class JobManager {
         cbzPath: result.cbzPath ?? undefined,
         coverImagePath: result.coverImagePath ?? undefined,
         project: result.project,
+        projectPath: result.projectPath ?? undefined,
         adaptationPackage: result.adaptationPackage,
         musicCuePackage: result.musicCuePackage,
         agentGuidancePackage: result.agentGuidancePackage,

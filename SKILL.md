@@ -181,9 +181,9 @@ After `npm install -g .` (or `npm link` from the skill dir) the
 Each CLI run also writes a sibling `*-agent-guidance.md` file next to the
 main export so Hermes/OpenClaw and other external agents can continue from
 the same project, adaptation, and music context.
-It also writes `*-song-sheet.md` and `*-theme.wav` through the selected music
-provider so music follow-up agents have both a human-readable song plan and a
-playable audio placeholder.
+It also writes `*-project.json`, `*-song-sheet.md`, and `*-theme.wav` through
+the selected music provider so follow-up agents have the full project source
+of truth, a human-readable song plan, and a playable audio placeholder.
 For show/movie handoff, it writes `*-storyboard-package.json` and
 `*-animatic-timeline.json` beside the comic export.
 
@@ -291,9 +291,9 @@ comic-creator-mcp
 ```
 
 The `comic-creator-mcp` binary speaks JSON-RPC over stdio and registers
-eleven tools: `create_comic`, `get_comic`, `get_comic_pdf`,
-`get_comic_image`, `get_agent_guidance`, `get_song_sheet`, `get_theme_audio`,
-`get_storyboard_package`, `get_animatic_timeline`, `list_providers`,
+fourteen tools: `create_comic`, `get_comic`, `get_comic_pdf`,
+`get_comic_image`, `get_project`, `get_agent_guidance`, `get_song_sheet`,
+`get_theme_audio`, `get_storyboard_package`, `get_animatic_timeline`, `list_providers`,
 `get_history`, `get_settings`, `update_settings`.
 
 Point your MCP host at the `comic-creator-mcp` binary. Example config

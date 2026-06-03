@@ -6,6 +6,7 @@
  *   - get_comic           — poll job status
  *   - get_comic_pdf       — fetch PDF as base64
  *   - get_comic_image     — fetch a single panel PNG as base64
+ *   - get_project         — fetch the full project JSON for external agents
  *   - get_agent_guidance  — fetch the Hermes/OpenClaw markdown handoff
  *   - list_providers      — discover available text + image + music providers
  *   - get_history         — recent comics (persisted on disk)
@@ -176,6 +177,41 @@ export function buildMcpServer(): McpServer {
   // -------------------------------------------------------------------------
   // get_comic_pdf
   // -------------------------------------------------------------------------
+  server.tool(
+    'get_project',
+    'Fetch the generated full project JSON for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const text = record.result.projectPath && existsSync(record.result.projectPath)
+          ? await readFile(record.result.projectPath, 'utf8')
+          : JSON.stringify(record.result.project, null, 2);
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.project.json`,
+                mimeType: 'application/json',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_project failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
   server.tool(
     'get_agent_guidance',
     'Fetch the generated Hermes/OpenClaw agent guidance markdown for a completed comic.',

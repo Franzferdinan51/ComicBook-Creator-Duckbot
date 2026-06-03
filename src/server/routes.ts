@@ -946,6 +946,38 @@ export function buildRouter(): Router {
   });
 
   /**
+   * GET /api/comic/:jobId/project
+   * Returns the generated full project JSON for external agents.
+   */
+  router.get('/comic/:jobId/project', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    if (record.result.projectPath && existsSync(record.result.projectPath)) {
+      const size = statSync(record.result.projectPath).size;
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Content-Length', String(size));
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-project.json"`);
+      const buf = await readFile(record.result.projectPath, 'utf8');
+      res.end(buf);
+      return;
+    }
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-project.json"`);
+    res.end(JSON.stringify(record.result.project, null, 2));
+  });
+
+  /**
    * GET /api/comic/:jobId/agent-guidance
    * Returns the generated markdown handoff for Hermes/OpenClaw/external agents.
    * Headers: Content-Type: text/markdown

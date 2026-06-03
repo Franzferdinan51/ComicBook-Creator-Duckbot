@@ -384,6 +384,16 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
 
   function handleDownloadProject() {
     if (!result?.project) return;
+    if (result?.projectPath) {
+      const a = document.createElement('a');
+      a.href = `/api/comic/${jobId}/project`;
+      a.download = `${localSlug(result.script?.title)}-project.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Project JSON downloaded.', 'success');
+      return;
+    }
     downloadJsonArtifact('project', result.project, 'Project JSON downloaded.');
   }
 

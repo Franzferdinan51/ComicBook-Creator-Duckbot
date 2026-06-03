@@ -349,11 +349,13 @@ export async function runCli(
   // real image providers.
   const imageDir = `${finalPath.replace(/\.[^./\\]+$/, '')}.images`;
   await mkdir(imageDir, { recursive: true });
+  const projectPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-project.json`;
   const agentGuidancePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-guidance.md`;
   const songSheetPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-song-sheet.md`;
   const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.wav`;
   const storyboardPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-storyboard-package.json`;
   const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
+  await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(songAudioPath, await musicProvider.generate(project, { seed: args.seed }));
@@ -424,6 +426,7 @@ export async function runCli(
     cbzPath,
     coverImagePath: null,
     project,
+    projectPath,
     storyBible: project.storyBible,
     adaptationPackage: project.adaptationPackage,
     musicCuePackage: project.musicCuePackage,

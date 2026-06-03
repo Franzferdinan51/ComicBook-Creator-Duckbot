@@ -21,6 +21,7 @@ const entry: HistoryEntry = {
   pdfPath: '/tmp/history-job.pdf',
   cbzPath: '/tmp/history-job.cbz',
   coverImagePath: '/tmp/history-job.images/cover.png',
+  projectPath: '/tmp/history-job-project.json',
   songSheetPath: '/tmp/history-job-song-sheet.md',
   songAudioPath: '/tmp/history-job-theme.wav',
   musicProvider: 'mock',
@@ -123,6 +124,7 @@ try {
   assert.equal(Array.isArray(resolved?.result.adaptationPackage.screenplayScenes), true);
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.cues), true);
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.sceneCueMap), true);
+  assert.equal(resolved?.result.projectPath, '/tmp/history-job-project.json');
   assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
   assert.equal(resolved?.result.songAudioPath, '/tmp/history-job-theme.wav');
   assert.equal(resolved?.result.musicProvider, 'mock');

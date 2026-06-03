@@ -225,6 +225,8 @@ export interface ComicResult {
   coverImagePath: string | null;
   /** Reusable structured project artifact backing this comic. */
   project: StoryProject;
+  /** Absolute path to the generated full project JSON artifact, if written. */
+  projectPath: string | null;
   /** Convenience alias for `project.storyBible`. */
   storyBible: StoryBible;
   /** Convenience alias for `project.adaptationPackage`. */

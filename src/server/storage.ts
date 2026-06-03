@@ -47,6 +47,8 @@ export interface HistoryEntry {
   coverImagePath?: string;
   /** Structured project artifact used to derive the comic. */
   project?: StoryProject;
+  /** Path to the generated full project JSON artifact. */
+  projectPath?: string;
   /** Screen/show adaptation artifact for the project. */
   adaptationPackage?: AdaptationPackage;
   /** Music or song-development artifact for the project. */

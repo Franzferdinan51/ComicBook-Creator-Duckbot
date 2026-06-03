@@ -20,14 +20,14 @@ studio project, not just a PDF job.
   `--music-provider=mock` to make the music provider explicit.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
-  `get_agent_guidance`, `get_song_sheet`, and `get_theme_audio` for complete
-  agent workflows. Use `get_storyboard_package` and `get_animatic_timeline`
-  for show/movie handoff files.
+  `get_project`, `get_agent_guidance`, `get_song_sheet`, and `get_theme_audio`
+  for complete agent workflows. Use `get_storyboard_package` and
+  `get_animatic_timeline` for show/movie handoff files.
 - WebUI: the result panel exposes project, adaptation, music, and agent
   guidance downloads.
 - Library API: `createComic()` returns `project`, `storyBible`,
   `adaptationPackage`, `musicCuePackage`, `agentGuidancePackage`, and
-  `agentGuidancePath`.
+  `projectPath` plus `agentGuidancePath`.
   `adaptationPackage` includes screenplay scenes and storyboard prompts.
   `storyboardPackagePath` and `animaticTimelinePath` point to generated
   production handoff JSON files.
