@@ -1104,8 +1104,10 @@ export function buildRouter(): Router {
         .status(409)
         .json({ error: `job ${jobId} not done (status: ${record.status})` });
     }
-    const bundle = buildStudioBundle(jobId, record.result);
-    const body = JSON.stringify(bundle, null, 2);
+    const bundlePath = record.result.studioBundlePath;
+    const body = bundlePath && existsSync(bundlePath)
+      ? await readFile(bundlePath, 'utf8')
+      : JSON.stringify(buildStudioBundle(jobId, record.result), null, 2);
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Length', String(Buffer.byteLength(body)));

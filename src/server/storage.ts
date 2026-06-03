@@ -67,6 +67,8 @@ export interface HistoryEntry {
   storyboardPackagePath?: string;
   /** Path to the generated animatic timeline JSON. */
   animaticTimelinePath?: string;
+  /** Path to the generated unified studio bundle JSON. */
+  studioBundlePath?: string;
   scriptJson: ComicScript;  // the full script (so the frontend can re-render)
   thumbnailPath?: string;   // optional — reserved for future
 }

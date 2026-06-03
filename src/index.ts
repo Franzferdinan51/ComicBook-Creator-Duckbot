@@ -50,6 +50,7 @@ export {
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
+  buildStudioBundle,
 } from './project/index.js';
 
 import { getTextProvider, getImageProvider, getMusicProvider } from './providers/index.js';
@@ -61,6 +62,7 @@ import {
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
+  buildStudioBundle,
 } from './project/index.js';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
@@ -225,6 +227,7 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   const songAudioPath = `${stem}-theme.${musicProvider.outputExtension}`;
   const storyboardPackagePath = `${stem}-storyboard-package.json`;
   const animaticTimelinePath = `${stem}-animatic-timeline.json`;
+  const studioBundlePath = `${stem}-studio-bundle.json`;
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
@@ -261,8 +264,7 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
     JSON.stringify(buildAnimaticTimeline({ project, pages: pageImages, songAudioPath }), null, 2),
     'utf8'
   );
-
-  return {
+  const result: ComicResult = {
     script,
     outputPath,
     pdfPath,
@@ -280,8 +282,12 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
     musicProvider: musicProvider.name,
     storyboardPackagePath,
     animaticTimelinePath,
+    studioBundlePath,
     pages: pageImages,
   };
+  await writeFile(studioBundlePath, JSON.stringify(buildStudioBundle(project.id, result), null, 2), 'utf8');
+
+  return result;
 }
 
 /** Detect image format from the first 3 bytes. Returns "png" or "jpg". */

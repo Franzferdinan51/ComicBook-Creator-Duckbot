@@ -23,6 +23,7 @@ export interface StudioBundle {
     songAudioPath: string | null;
     storyboardPackagePath: string | null;
     animaticTimelinePath: string | null;
+    studioBundlePath: string | null;
     agentPlaybookPath: string;
   };
   availability: {
@@ -35,6 +36,7 @@ export interface StudioBundle {
     songAudio: boolean;
     storyboardPackage: boolean;
     animaticTimeline: boolean;
+    studioBundle: boolean;
   };
 }
 
@@ -61,6 +63,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       songAudioPath: result.songAudioPath,
       storyboardPackagePath: result.storyboardPackagePath,
       animaticTimelinePath: result.animaticTimelinePath,
+      studioBundlePath: result.studioBundlePath,
       agentPlaybookPath: join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md'),
     },
     availability: {
@@ -73,6 +76,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       songAudio: Boolean(result.songAudioPath),
       storyboardPackage: Boolean(result.storyboardPackagePath),
       animaticTimeline: Boolean(result.animaticTimelinePath),
+      studioBundle: Boolean(result.studioBundlePath),
     },
   };
 }

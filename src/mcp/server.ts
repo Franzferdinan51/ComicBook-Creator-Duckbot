@@ -369,6 +369,10 @@ export function buildMcpServer(): McpServer {
         if (record.status !== 'done' || !record.result) {
           return errResult(`job ${jobId} not done (status: ${record.status})`);
         }
+        const bundlePath = record.result.studioBundlePath;
+        if (bundlePath && existsSync(bundlePath)) {
+          return jsonResult(JSON.parse(await readFile(bundlePath, 'utf8')));
+        }
         return jsonResult(buildStudioBundle(jobId, record.result));
       } catch (e) {
         return errResult(`get_studio_bundle failed: ${(e as Error).message}`);

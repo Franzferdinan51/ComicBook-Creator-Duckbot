@@ -37,6 +37,7 @@ async function main(): Promise<void> {
   assert.equal(result.songAudioPath?.endsWith('-theme.wav'), true);
   assert.equal(result.storyboardPackagePath?.endsWith('-storyboard-package.json'), true);
   assert.equal(result.animaticTimelinePath?.endsWith('-animatic-timeline.json'), true);
+  assert.equal(result.studioBundlePath?.endsWith('-studio-bundle.json'), true);
 
   await access(result.outputPath);
   assert.equal(!!result.cbzPath, true);
@@ -49,6 +50,7 @@ async function main(): Promise<void> {
   await access(result.songAudioPath!);
   await access(result.storyboardPackagePath!);
   await access(result.animaticTimelinePath!);
+  await access(result.studioBundlePath!);
 
   const pdf = await readFile(result.outputPath);
   const pdfText = pdf.toString('latin1');
@@ -84,6 +86,10 @@ async function main(): Promise<void> {
   assert.equal(animaticTimeline.format, 'animatic-timeline');
   assert.equal(animaticTimeline.tracks.video.length >= 3, true);
   assert.equal(animaticTimeline.tracks.audio[0].audioPath, result.songAudioPath);
+  const studioBundle = JSON.parse(await readFile(result.studioBundlePath!, 'utf8'));
+  assert.equal(studioBundle.format, 'studio-bundle');
+  assert.equal(studioBundle.jobId, result.project.id);
+  assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
 
   const stem = result.outputPath.replace(/\.[^./\\]+$/, '');
   await rm(result.outputPath, { force: true });
@@ -94,6 +100,7 @@ async function main(): Promise<void> {
   await rm(result.songAudioPath!, { force: true });
   await rm(result.storyboardPackagePath!, { force: true });
   await rm(result.animaticTimelinePath!, { force: true });
+  await rm(result.studioBundlePath!, { force: true });
   await rm(`${stem}.images`, { recursive: true, force: true });
 
   console.log('PASS index');

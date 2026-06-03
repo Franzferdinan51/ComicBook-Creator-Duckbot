@@ -30,6 +30,7 @@ npm start
 | `animaticTimelinePath` | Video/audio timing timeline for rough animatics |
 | `songSheetPath` | Markdown song sheet for music follow-up |
 | `songAudioPath` | Generated theme audio from the selected music provider |
+| `studioBundlePath` | Unified JSON handoff with project, adaptation, music, and artifact paths |
 | `agentGuidancePath` | Markdown handoff so external agents keep working from the same project |
 
 ## Quick example

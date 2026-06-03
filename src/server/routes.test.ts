@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -28,6 +28,7 @@ const entry: HistoryEntry = {
   musicProvider: 'mock',
   storyboardPackagePath: '/tmp/history-job-storyboard-package.json',
   animaticTimelinePath: '/tmp/history-job-animatic-timeline.json',
+  studioBundlePath: '/tmp/history-job-studio-bundle.json',
   project: {
     id: 'project-1',
     title: 'History Project',
@@ -113,10 +114,41 @@ const entry: HistoryEntry = {
     artStyle: 'manga',
     pages: [{ pageNumber: 1, layout: 'grid-2x2', panels: [{ id: 'p1-panel1', description: 'A panel' }] }],
   },
-};
+  };
 
 try {
   await upsertHistoryEntry(entry);
+  await writeFile(entry.studioBundlePath!, JSON.stringify({
+    format: 'studio-bundle',
+    jobId: 'history-job',
+    title: 'History Project',
+    artifactPaths: {
+      outputPath: entry.outputPath,
+      pdfPath: entry.pdfPath,
+      cbzPath: entry.cbzPath,
+      coverImagePath: entry.coverImagePath,
+      projectPath: entry.projectPath,
+      agentGuidancePath: '/tmp/history-job-agent-guidance.md',
+      songSheetPath: entry.songSheetPath,
+      songAudioPath: entry.songAudioPath,
+      storyboardPackagePath: entry.storyboardPackagePath,
+      animaticTimelinePath: entry.animaticTimelinePath,
+      studioBundlePath: entry.studioBundlePath,
+      agentPlaybookPath: '/tmp/docs/agents/hermes-openclaw-playbook.md',
+    },
+    availability: {
+      pdf: true,
+      cbz: true,
+      coverImage: true,
+      project: true,
+      agentGuidance: true,
+      songSheet: true,
+      songAudio: true,
+      storyboardPackage: true,
+      animaticTimeline: true,
+      studioBundle: true,
+    },
+  }), 'utf8');
   const resolved = await getJobManager().resolve('history-job');
   assert.equal(resolved?.status, 'done');
   assert.equal(resolved?.fromHistory, true);
@@ -148,8 +180,10 @@ try {
     assert.equal(bundle.format, 'studio-bundle');
     assert.equal(bundle.jobId, 'history-job');
     assert.equal(bundle.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
+    assert.equal(bundle.artifactPaths.studioBundlePath, entry.studioBundlePath);
     assert.equal(bundle.availability.storyboardPackage, true);
     assert.equal(bundle.availability.animaticTimeline, true);
+    assert.equal(bundle.availability.studioBundle, true);
   } finally {
     await handle.close();
   }

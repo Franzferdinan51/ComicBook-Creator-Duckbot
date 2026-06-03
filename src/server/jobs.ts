@@ -160,6 +160,7 @@ class JobManager {
       pdfPath: entry.pdfPath ?? (entry.outputPath.endsWith('.pdf') ? entry.outputPath : null),
       cbzPath: entry.cbzPath ?? (entry.outputPath.endsWith('.cbz') ? entry.outputPath : null),
       coverImagePath: entry.coverImagePath ?? null,
+      studioBundlePath: entry.studioBundlePath ?? `${entry.outputPath.replace(/\.[^./\\]+$/, '')}-studio-bundle.json`,
       project: entry.project ?? {
         id: jobId,
         title: entry.scriptJson.title,
@@ -361,6 +362,7 @@ class JobManager {
         musicProvider: result.musicProvider,
         storyboardPackagePath: result.storyboardPackagePath ?? undefined,
         animaticTimelinePath: result.animaticTimelinePath ?? undefined,
+        studioBundlePath: result.studioBundlePath ?? undefined,
         scriptJson: result.script,
       };
       try {

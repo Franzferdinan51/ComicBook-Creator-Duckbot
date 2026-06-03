@@ -23,6 +23,7 @@ import {
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
+  buildStudioBundle,
   type ComicOptions,
   type ComicResult,
   type OutputProfile,
@@ -376,6 +377,7 @@ export async function runCli(
   const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.${musicProvider.outputExtension}`;
   const storyboardPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-storyboard-package.json`;
   const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
+  const studioBundlePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-studio-bundle.json`;
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
@@ -440,7 +442,7 @@ export async function runCli(
     }
   }
 
-  return {
+  const result: ComicResult = {
     script,
     outputPath: finalPath,
     pdfPath,
@@ -458,8 +460,11 @@ export async function runCli(
     musicProvider: musicProvider.name,
     storyboardPackagePath,
     animaticTimelinePath,
+    studioBundlePath,
     pages,
   };
+  await writeFile(studioBundlePath, JSON.stringify(buildStudioBundle(project.id, result), null, 2), 'utf8');
+  return result;
 }
 
 async function main(): Promise<void> {

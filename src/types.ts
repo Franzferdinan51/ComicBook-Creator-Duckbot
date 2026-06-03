@@ -247,6 +247,8 @@ export interface ComicResult {
   storyboardPackagePath: string | null;
   /** Absolute path to the generated animatic timeline JSON, if written. */
   animaticTimelinePath: string | null;
+  /** Absolute path to the unified studio bundle JSON, if written. */
+  studioBundlePath: string | null;
   pages: Array<{
     page: Page;
     /**
