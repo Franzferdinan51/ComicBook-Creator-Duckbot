@@ -7,6 +7,7 @@
  *   jobId:   string
  *   onRegenerate: (newJobId: string) => void
  *   onClose: () => void
+ *   onOpenMovie: () => void
  *
  * pdf.js is loaded lazily on first mount — the script tag is appended once,
  * cached, and reused across re-mounts.
@@ -157,7 +158,7 @@ function crc32(buf) {
   return (c ^ 0xffffffff) >>> 0;
 }
 
-export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
+export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [pdfError, setPdfError] = useState(null);
@@ -595,6 +596,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
         <button class="btn btn-ghost" type="button" onClick=${copyLink}>
           🔗 Copy link
         </button>
+
+        ${onOpenMovie ? html`
+          <button
+            class="btn btn-ghost"
+            type="button"
+            onClick=${onOpenMovie}
+            title="Open the movie/show adaptation workspace"
+          >
+            🎬 Open movie board
+          </button>
+        ` : null}
 
         <button
           class="btn btn-ghost"

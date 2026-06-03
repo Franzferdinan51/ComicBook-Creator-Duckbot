@@ -40,6 +40,7 @@ assert.equal(result.project.projectGoal, 'screen');
 assert.equal(result.musicProvider, 'mock');
 assert.equal(result.agentGuidancePackage.externalInterfaces.includes('cli'), true);
 assert.equal(result.projectPath, outputPath.replace(/\.pdf$/, '-project.json'));
+assert.equal(result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
 assert.equal(result.agentGuidancePath, outputPath.replace(/\.pdf$/, '-agent-guidance.md'));
 assert.equal(result.songSheetPath, outputPath.replace(/\.pdf$/, '-song-sheet.md'));
 assert.equal(result.songAudioPath, outputPath.replace(/\.pdf$/, '-theme.wav'));
@@ -47,6 +48,7 @@ assert.equal(result.storyboardPackagePath, outputPath.replace(/\.pdf$/, '-storyb
 assert.equal(result.animaticTimelinePath, outputPath.replace(/\.pdf$/, '-animatic-timeline.json'));
 assert.equal(result.studioBundlePath, outputPath.replace(/\.pdf$/, '-studio-bundle.json'));
 await access(result.projectPath!);
+await access(result.agentPlaybookPath!);
 await access(result.agentGuidancePath!);
 await access(result.songSheetPath!);
 await access(result.songAudioPath!);
@@ -80,6 +82,7 @@ const jsonProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--json'
 });
 const jsonResult = JSON.parse(jsonProbe.stdout);
 assert.equal(jsonResult.outputPath.endsWith('.pdf'), true);
+assert.equal(jsonResult.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
 assert.equal(jsonResult.agentGuidancePath.endsWith('-agent-guidance.md'), true);
 
 const bundleProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--studio-bundle', '--pages=1', '--panels=3', 'A Studio bundle story'], {
@@ -89,6 +92,7 @@ const bundleProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--stu
 const bundleResult = JSON.parse(bundleProbe.stdout);
 assert.equal(bundleResult.format, 'studio-bundle');
 assert.equal(bundleResult.artifactPaths.studioBundlePath.endsWith('-studio-bundle.json'), true);
+assert.equal(bundleResult.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
 
 const stem = outputPath.replace(/\.[^./\\]+$/, '');
 await rm(outputPath, { force: true });

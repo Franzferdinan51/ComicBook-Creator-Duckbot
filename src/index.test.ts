@@ -30,6 +30,7 @@ async function main(): Promise<void> {
   assert.equal(result.musicCuePackage.sceneCueMap.length >= 3, true);
   assert.equal(result.musicProvider, 'mock');
   assert.equal(result.projectPath?.endsWith('-project.json'), true);
+  assert.equal(result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
   assert.equal(result.agentGuidancePackage.workflowSteps.length >= 3, true);
   assert.equal(result.agentGuidancePath?.endsWith('-agent-guidance.md'), true);
   assert.equal(result.agentGuidancePath != null, true);
@@ -46,6 +47,7 @@ async function main(): Promise<void> {
   await access(result.coverImagePath!);
   await access(result.agentGuidancePath!);
   await access(result.projectPath!);
+  await access(result.agentPlaybookPath!);
   await access(result.songSheetPath!);
   await access(result.songAudioPath!);
   await access(result.storyboardPackagePath!);
@@ -90,6 +92,7 @@ async function main(): Promise<void> {
   assert.equal(studioBundle.format, 'studio-bundle');
   assert.equal(studioBundle.jobId, result.project.id);
   assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
+  assert.equal(studioBundle.artifactPaths.agentPlaybookPath, result.agentPlaybookPath);
 
   const stem = result.outputPath.replace(/\.[^./\\]+$/, '');
   await rm(result.outputPath, { force: true });

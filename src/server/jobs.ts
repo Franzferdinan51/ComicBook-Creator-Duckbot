@@ -15,6 +15,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
 import type { ComicOptions, ComicResult, StoryProject } from '../types.js';
 import { upsertHistoryEntry, type HistoryEntry } from './storage.js';
 
@@ -225,6 +226,7 @@ class JobManager {
       studioBundlePath: entry.studioBundlePath ?? `${entry.outputPath.replace(/\.[^./\\]+$/, '')}-studio-bundle.json`,
       project,
       projectPath: entry.projectPath ?? null,
+      agentPlaybookPath: entry.agentPlaybookPath ?? join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md'),
       storyBible: entry.project?.storyBible ?? {
         premise: entry.scriptJson.title,
         synopsis: `${entry.scriptJson.title} recovered from history.`,
@@ -357,6 +359,7 @@ class JobManager {
         coverImagePath: result.coverImagePath ?? undefined,
         project: result.project,
         projectPath: result.projectPath ?? undefined,
+        agentPlaybookPath: result.agentPlaybookPath ?? undefined,
         adaptationPackage: result.adaptationPackage,
         musicCuePackage: result.musicCuePackage,
         agentGuidancePackage: result.agentGuidancePackage,

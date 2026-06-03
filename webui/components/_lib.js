@@ -91,6 +91,7 @@ export function readHash() {
 export function hashToPage(hash) {
   if (hash === '/settings') return 'settings';
   if (hash === '/history') return 'history';
+  if (hash === '/movie') return 'movie';
   return 'home';
 }
 

@@ -23,6 +23,7 @@ const entry: HistoryEntry = {
   cbzPath: '/tmp/history-job.cbz',
   coverImagePath: '/tmp/history-job.images/cover.png',
   projectPath: '/tmp/history-job-project.json',
+  agentPlaybookPath: '/tmp/docs/agents/hermes-openclaw-playbook.md',
   songSheetPath: '/tmp/history-job-song-sheet.md',
   songAudioPath: '/tmp/history-job-theme.wav',
   musicProvider: 'mock',
@@ -135,7 +136,7 @@ try {
       storyboardPackagePath: entry.storyboardPackagePath,
       animaticTimelinePath: entry.animaticTimelinePath,
       studioBundlePath: entry.studioBundlePath,
-      agentPlaybookPath: '/tmp/docs/agents/hermes-openclaw-playbook.md',
+      agentPlaybookPath: entry.agentPlaybookPath,
     },
     availability: {
       pdf: true,
@@ -160,6 +161,7 @@ try {
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.cues), true);
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.sceneCueMap), true);
   assert.equal(resolved?.result.projectPath, '/tmp/history-job-project.json');
+  assert.equal(resolved?.result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
   assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
   assert.equal(resolved?.result.songAudioPath, '/tmp/history-job-theme.wav');
   assert.equal(resolved?.result.musicProvider, 'mock');
@@ -197,6 +199,7 @@ try {
     assert.equal(bundle.jobId, 'history-job');
     assert.equal(bundle.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
     assert.equal(bundle.artifactPaths.studioBundlePath, entry.studioBundlePath);
+    assert.equal(bundle.availability.agentPlaybook, true);
     assert.equal(bundle.availability.storyboardPackage, true);
     assert.equal(bundle.availability.animaticTimeline, true);
     assert.equal(bundle.availability.studioBundle, true);

@@ -23,6 +23,7 @@ npm start
 | `outputPath` | Comic PDF download |
 | `studioBundlePath` | Unified JSON handoff for external agents; start here first |
 | `projectPath` | Full `*-project.json` source-of-truth handoff for external agents |
+| `agentPlaybookPath` | Repo playbook path for Hermes/OpenClaw agent follow-up |
 | `coverImagePath` | AI-generated cover page image |
 | `storyBible` | Premise, synopsis, chapter outline, scene beats |
 | `adaptationPackage` | Per-scene screenplay summaries + visual goals |
@@ -120,6 +121,7 @@ open start.command
 The WebUI gives you:
 - Story input + style/format/provider options
 - Project goal preset for comic / screen / music / studio workflows
+- Movie / Show tab with story, script, shots, timeline, music, and deliverables tabs
 - Live job status and progress
 - PDF preview with page navigation and thumbnails
 - Download as PDF or CBZ, or grab all panel images as a ZIP

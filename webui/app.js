@@ -12,6 +12,7 @@ import { StoryInput, STORY_MIN_LEN } from './components/StoryInput.js';
 import { OptionsPanel } from './components/OptionsPanel.js';
 import { GenerateButton } from './components/GenerateButton.js';
 import { ResultPanel } from './components/ResultPanel.js';
+import { MoviePanel } from './components/MoviePanel.js';
 import { Settings } from './components/Settings.js';
 import { History } from './components/History.js';
 import { StatusBar } from './components/StatusBar.js';
@@ -135,6 +136,12 @@ function App() {
           >History</button>
           <button
             type="button"
+            class=${page === 'movie' ? 'active' : ''}
+            onClick=${() => handleNav('movie')}
+            aria-current=${page === 'movie' ? 'page' : undefined}
+          >Movie / Show</button>
+          <button
+            type="button"
             class=${page === 'settings' ? 'active' : ''}
             onClick=${() => handleNav('settings')}
             aria-current=${page === 'settings' ? 'page' : undefined}
@@ -187,6 +194,7 @@ function App() {
                 jobId=${activeJobId}
                 onRegenerate=${handleRegenerateNew}
                 onClose=${handleBackFromResult}
+                onOpenMovie=${() => handleNav('movie')}
               />
             </div>
           ` : null}
@@ -198,6 +206,13 @@ function App() {
 
         ${page === 'settings' ? html`<${Settings} />` : null}
         ${page === 'history' ? html`<${History} onOpen=${handleOpenHistory} />` : null}
+        ${page === 'movie' ? html`
+          <${MoviePanel}
+            result=${result}
+            jobId=${activeJobId}
+            onOpenComic=${() => handleNav('home')}
+          />
+        ` : null}
       </main>
 
 <footer class="app-footer">

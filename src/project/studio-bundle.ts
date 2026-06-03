@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import type { ComicResult } from '../types.js';
 
 export interface StudioBundle {
@@ -19,12 +18,12 @@ export interface StudioBundle {
     coverImagePath: string | null;
     projectPath: string | null;
     agentGuidancePath: string | null;
+    agentPlaybookPath: string | null;
     songSheetPath: string | null;
     songAudioPath: string | null;
     storyboardPackagePath: string | null;
     animaticTimelinePath: string | null;
     studioBundlePath: string | null;
-    agentPlaybookPath: string;
   };
   availability: {
     pdf: boolean;
@@ -32,6 +31,7 @@ export interface StudioBundle {
     coverImage: boolean;
     project: boolean;
     agentGuidance: boolean;
+    agentPlaybook: boolean;
     songSheet: boolean;
     songAudio: boolean;
     storyboardPackage: boolean;
@@ -59,12 +59,12 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       coverImagePath: result.coverImagePath,
       projectPath: result.projectPath,
       agentGuidancePath: result.agentGuidancePath,
+      agentPlaybookPath: result.agentPlaybookPath,
       songSheetPath: result.songSheetPath,
       songAudioPath: result.songAudioPath,
       storyboardPackagePath: result.storyboardPackagePath,
       animaticTimelinePath: result.animaticTimelinePath,
       studioBundlePath: result.studioBundlePath,
-      agentPlaybookPath: join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md'),
     },
     availability: {
       pdf: Boolean(result.pdfPath),
@@ -72,6 +72,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       coverImage: Boolean(result.coverImagePath),
       project: Boolean(result.projectPath),
       agentGuidance: Boolean(result.agentGuidancePath),
+      agentPlaybook: Boolean(result.agentPlaybookPath),
       songSheet: Boolean(result.songSheetPath),
       songAudio: Boolean(result.songAudioPath),
       storyboardPackage: Boolean(result.storyboardPackagePath),

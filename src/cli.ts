@@ -482,6 +482,7 @@ export async function runCli(
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
+    agentPlaybookPath: PLAYBOOK_PATH,
     songSheetPath,
     songAudioPath,
     musicProvider: musicProvider.name,
