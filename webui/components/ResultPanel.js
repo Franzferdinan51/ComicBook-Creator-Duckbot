@@ -15,6 +15,13 @@
 import { useState, useEffect, useRef } from 'https://esm.sh/preact@10/hooks';
 import { html, api, showToast } from './_lib.js';
 
+const PROJECT_GOAL_LABELS = {
+  comic: 'Comic',
+  screen: 'Screen',
+  music: 'Music',
+  studio: 'Studio',
+};
+
 const PDFJS_VERSION = '3.11.174';
 const PDFJS_BASE = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/`;
 const PDFJS_SCRIPT_SRC = `${PDFJS_BASE}pdf.min.js`;
@@ -509,6 +516,8 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
   const artStyle = result.script?.artStyle || '—';
   const pageCount = result.script?.pages?.length || 0;
   const outputProfile = result.project?.renderProfile?.outputProfile || 'comic-print';
+  const projectGoal = result.project?.projectGoal || 'comic';
+  const projectGoalLabel = PROJECT_GOAL_LABELS[projectGoal] || projectGoal;
   const panelCount = (result.script?.pages || []).reduce(
     (acc, p) => acc + (p.panels?.length || 0), 0
   );
@@ -535,6 +544,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
 
       <div class="result-meta">
         <span class="badge">${artStyle}</span>
+        <span class="badge">Goal: ${projectGoalLabel}</span>
         <span>${pageCount} pages</span>
         <span>${panelCount} panels</span>
         <span>${outputProfile}</span>
@@ -655,6 +665,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
       <div class="artifact-grid">
         <section class="panel artifact-panel">
           <h3>Project Assets</h3>
+          <p>Goal: <strong>${projectGoalLabel}</strong></p>
           <p>Profile: <strong>${outputProfile}</strong></p>
           <p>${result.storyBible?.chapterOutline?.length || 0} outline beats prepared.</p>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProject}>

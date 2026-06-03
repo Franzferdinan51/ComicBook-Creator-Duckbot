@@ -46,6 +46,7 @@ assert.equal(historyPanel.includes('Download the unified studio bundle for this 
 assert.equal(historyPanel.includes('studio-bundle'), true);
 assert.equal(historyPanel.includes('bundle.artifactPaths?.projectPath ?? null'), true);
 assert.equal(historyPanel.includes('bundle.format === \'studio-bundle\''), true);
+assert.equal(historyPanel.includes('Goal: '), true);
 assert.equal(optionsPanel.includes('Project goal'), true);
 assert.equal(optionsPanel.includes('project-goal'), true);
 assert.equal(optionsPanel.includes('Screen projects default to the storyboard widescreen profile'), true);
@@ -56,6 +57,8 @@ assert.equal(appJs.includes('defaultProjectGoal'), true);
 assert.equal(resultPanel.includes('Download agent playbook'), true);
 assert.equal(resultPanel.includes('Download studio bundle'), true);
 assert.equal(resultPanel.includes('Download theme audio'), true);
+assert.equal(resultPanel.includes('Goal: '), true);
+assert.equal(resultPanel.includes('Project Assets'), true);
 assert.equal(cliSource.includes('--project-goal=<name>'), true);
 assert.equal(cliSource.includes('renderProfile: project.renderProfile'), true);
 assert.equal(mcpServer.includes("projectGoal: z"), true);

@@ -11,6 +11,13 @@
 import { useState, useEffect } from 'https://esm.sh/preact@10/hooks';
 import { html, api, showToast, formatDate, navTo } from './_lib.js';
 
+const PROJECT_GOAL_LABELS = {
+  comic: 'Comic',
+  screen: 'Screen',
+  music: 'Music',
+  studio: 'Studio',
+};
+
 export function History({ onOpen }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +179,11 @@ export function History({ onOpen }) {
     return ART_GRADIENTS[key] || 'linear-gradient(135deg, var(--bg-2), var(--surface-2))';
   }
 
+  function projectGoalLabel(entry) {
+    const goal = entry?.project?.projectGoal || entry?.projectGoal || 'comic';
+    return PROJECT_GOAL_LABELS[goal] || goal;
+  }
+
   return html`
     <section class="panel" aria-labelledby="history-title">
       <header class="panel-title">
@@ -207,6 +219,7 @@ export function History({ onOpen }) {
                 <h3 class="history-title" title=${entry.title || ''}>${entry.title || 'Untitled'}</h3>
                 <div class="history-meta">
                   <span class="history-badge">${entry.artStyle || '—'}</span>
+                  <span class="history-badge">Goal: ${projectGoalLabel(entry)}</span>
                   <span>${entry.pageCount || '?'}p</span>
                   <span>${formatDate(entry.createdAt)}</span>
                 </div>
