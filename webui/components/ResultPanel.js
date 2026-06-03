@@ -485,6 +485,13 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     showToast('Agent playbook downloaded.', 'success');
   }
 
+  function themeAudioExtension() {
+    const path = String(result?.songAudioPath || '').toLowerCase();
+    if (path.endsWith('.mp3')) return 'mp3';
+    if (path.endsWith('.wav')) return 'wav';
+    return 'bin';
+  }
+
   if (!result) return null;
 
   const title = result.script?.title || 'Comic ready';
@@ -674,8 +681,8 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
             </button>
           ` : null}
           ${result.songAudioPath ? html`
-            <a class="btn btn-ghost btn-sm" href=${`/api/comic/${jobId}/theme-audio`} download=${`${titleSlug}-theme.wav`}>
-              Download theme WAV
+            <a class="btn btn-ghost btn-sm" href=${`/api/comic/${jobId}/theme-audio`} download=${`${titleSlug}-theme.${themeAudioExtension()}`}>
+              Download theme audio
             </a>
           ` : null}
         </section>

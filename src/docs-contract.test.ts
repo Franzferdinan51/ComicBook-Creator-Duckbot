@@ -22,6 +22,7 @@ assert.equal(readme.includes('get_agent_playbook'), true);
 assert.equal(debugHtml.includes('Array.isArray(b.music)'), true);
 assert.equal(generateButton.includes('Timed out waiting for comic to finish.'), false);
 assert.equal(resultPanel.includes('Download agent playbook'), true);
+assert.equal(resultPanel.includes('Download theme audio'), true);
 
 const toolNames = [...mcpServer.matchAll(/server\.tool\(\s*['"]([^'"]+)['"]/g)].map((match) => match[1]);
 const toolsLine = readme.split('\n').find((line) => line.startsWith('Tools: ')) ?? '';
