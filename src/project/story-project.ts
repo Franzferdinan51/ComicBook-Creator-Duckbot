@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { ComicOptions, StoryProject } from '../types.js';
 import { normalizeRenderProfile } from './render-profile.js';
+import { buildAgentGuidancePackage } from './agent-guidance.js';
 
 function inferTitle(story: string): string {
   const firstSentence = story.split(/[.!?]/)[0]?.trim();
@@ -17,6 +18,12 @@ export function buildStoryProject(
   const title = inferTitle(story);
   const artStyle = options.artStyle ?? 'manga';
   const renderProfile = normalizeRenderProfile(options);
+  const agentGuidancePackage = buildAgentGuidancePackage({
+    title,
+    premise: story,
+    artStyle,
+    outputProfile: renderProfile.outputProfile,
+  });
 
   return {
     id: randomUUID(),
@@ -56,5 +63,6 @@ export function buildStoryProject(
       ],
       themeSongPrompt: `Write a theme song concept for "${title}" with a ${artStyle} tone and cinematic momentum.`,
     },
+    agentGuidancePackage,
   };
 }

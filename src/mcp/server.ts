@@ -6,6 +6,7 @@
  *   - get_comic           — poll job status
  *   - get_comic_pdf       — fetch PDF as base64
  *   - get_comic_image     — fetch a single panel PNG as base64
+ *   - get_agent_guidance  — fetch the Hermes/OpenClaw markdown handoff
  *   - list_providers      — discover available text + image providers
  *   - get_history         — recent comics (persisted on disk)
  *   - get_settings        / update_settings — user preferences
@@ -19,6 +20,7 @@ import { z } from 'zod';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { existsSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { isDirectEntrypoint } from './entrypoint.js';
 
 import { getJobManager } from '../server/jobs.js';
 import {
@@ -110,8 +112,15 @@ export function buildMcpServer(): McpServer {
             .describe('Text provider. Default: same as imageProvider.'),
           pageCount: z.number().int().min(1).max(50).optional().describe('Pages. Default: 4.'),
           panelsPerPage: z.number().int().min(1).max(12).optional().describe('Panels per page. Default: 4.'),
+          outputProfile: z
+            .enum(['comic-print', 'digital-portrait', 'storyboard-widescreen'])
+            .optional()
+            .describe('Render/output profile. Default: "comic-print".'),
           outputFormat: z.enum(['pdf', 'cbz']).optional().describe('Output container. Default: "pdf".'),
+          imageModel: z.string().optional().describe('Override image model id for providers that support it.'),
+          textModel: z.string().optional().describe('Override text model id for providers that support it.'),
           outputPath: z.string().optional().describe('Override the output file path.'),
+          generateCover: z.boolean().optional().describe('Whether to generate a cover image. Default: true.'),
           seed: z.number().int().optional().describe('Deterministic seed (mock provider). Default: 0.'),
         })
         .partial()
@@ -143,7 +152,7 @@ export function buildMcpServer(): McpServer {
     },
     async ({ jobId }) => {
       try {
-        const record = getJobManager().get(jobId);
+        const record = await getJobManager().resolve(jobId);
         if (!record) return errResult(`job ${jobId} not found`);
         const body: Record<string, unknown> = {
           status: record.status,
@@ -163,6 +172,46 @@ export function buildMcpServer(): McpServer {
   // get_comic_pdf
   // -------------------------------------------------------------------------
   server.tool(
+    'get_agent_guidance',
+    'Fetch the generated Hermes/OpenClaw agent guidance markdown for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.agentGuidancePath;
+        if (!path || !existsSync(path)) {
+          return errResult(`agent guidance not available for job ${jobId}`);
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.agent-guidance.md`,
+                mimeType: 'text/markdown',
+                text,
+              },
+            },
+            {
+              type: 'text' as const,
+              text,
+            },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_agent_guidance failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
     'get_comic_pdf',
     'Fetch the generated PDF for a completed job, returned as base64.',
     {
@@ -170,7 +219,7 @@ export function buildMcpServer(): McpServer {
     },
     async ({ jobId }) => {
       try {
-        const record = getJobManager().get(jobId);
+        const record = await getJobManager().resolve(jobId);
         if (!record) return errResult(`job ${jobId} not found`);
         if (record.status !== 'done' || !record.result) {
           return errResult(`job ${jobId} not done (status: ${record.status})`);
@@ -215,7 +264,7 @@ export function buildMcpServer(): McpServer {
         if (panelId.includes('..') || panelId.includes('/') || panelId.includes('\\')) {
           return errResult('invalid panelId');
         }
-        const record = getJobManager().get(jobId);
+        const record = await getJobManager().resolve(jobId);
         if (!record) return errResult(`job ${jobId} not found`);
         if (record.status !== 'done' || !record.result) {
           return errResult(`job ${jobId} not done (status: ${record.status})`);
@@ -354,8 +403,7 @@ export async function startMcpServer(): Promise<void> {
 
 // CLI entry — `node dist/mcp/server.js` or via bin/comic-creator-mcp.mjs.
 const isMain =
-  import.meta.url === `file://${process.argv[1]}` ||
-  import.meta.url.endsWith(process.argv[1] ?? '');
+  isDirectEntrypoint(import.meta.url, process.argv[1]);
 if (isMain) {
   startMcpServer().catch((err) => {
     console.error('[comic-creator-mcp] fatal:', err);

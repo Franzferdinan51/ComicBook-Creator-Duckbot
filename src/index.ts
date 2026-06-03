@@ -32,6 +32,7 @@ export type {
   StoryBible,
   AdaptationPackage,
   MusicCuePackage,
+  AgentGuidancePackage,
   OutputProfile,
 } from './types.js';
 
@@ -41,12 +42,17 @@ export type { TextProvider, ImageProvider } from './providers/index.js';
 export { generateScript, generatePanelImages } from './pipeline/index.js';
 export type { ScriptGeneratorOptions, ImageGeneratorOptions } from './pipeline/index.js';
 export { assembleComic } from './assembler/index.js';
-export { buildStoryProject, normalizeRenderProfile } from './project/index.js';
+export {
+  buildStoryProject,
+  normalizeRenderProfile,
+  buildAgentGuidancePackage,
+  renderAgentGuidanceMarkdown,
+} from './project/index.js';
 
 import { getTextProvider, getImageProvider } from './providers/index.js';
 import { generateScript, generatePanelImages } from './pipeline/index.js';
 import { assembleComic } from './assembler/index.js';
-import { buildStoryProject } from './project/index.js';
+import { buildStoryProject, renderAgentGuidanceMarkdown } from './project/index.js';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 
@@ -202,6 +208,8 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
   const stem = outputPath.replace(/\.[^./\\]+$/, '');
   const imageDir = `${stem}.images`;
   await mkdir(imageDir, { recursive: true });
+  const agentGuidancePath = `${stem}-agent-guidance.md`;
+  await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   const pageImages: ComicResult['pages'] = [];
   for (const page of script.pages) {
     const panelImagePaths: string[] = [];
@@ -235,6 +243,8 @@ const stem = opts.outputPath.replace(/\.[^./\\]+$/, '');
     storyBible: project.storyBible,
     adaptationPackage: project.adaptationPackage,
     musicCuePackage: project.musicCuePackage,
+    agentGuidancePackage: project.agentGuidancePackage,
+    agentGuidancePath,
     pages: pageImages,
   };
 }

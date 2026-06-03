@@ -183,6 +183,24 @@ class JobManager {
           cues: [],
           themeSongPrompt: `Create a theme for "${entry.scriptJson.title}".`,
         },
+        agentGuidancePackage: {
+          format: 'agent-guidance',
+          frameworks: {
+            hermesAgent: {
+              repository: 'https://github.com/nousresearch/hermes-agent',
+              role: 'Long-horizon creative planning, task routing, and multi-step operator orchestration.',
+            },
+            openClaw: {
+              repository: 'https://github.com/openclaw/openclaw',
+              role: 'Tool-connected execution layer for generation, external model access, and local workflow control.',
+            },
+          },
+          workflowSteps: [],
+          deliverables: [],
+          operatorChecklist: [],
+          externalInterfaces: ['cli', 'mcp', 'webui', 'external-agent'],
+          systemPrompt: `Support "${entry.scriptJson.title}" as a reusable studio project.`,
+        },
       },
       storyBible: entry.project?.storyBible ?? {
         premise: entry.scriptJson.title,
@@ -199,6 +217,25 @@ class JobManager {
         cues: [],
         themeSongPrompt: `Create a theme for "${entry.scriptJson.title}".`,
       },
+      agentGuidancePackage: entry.agentGuidancePackage ?? entry.project?.agentGuidancePackage ?? {
+        format: 'agent-guidance',
+        frameworks: {
+          hermesAgent: {
+            repository: 'https://github.com/nousresearch/hermes-agent',
+            role: 'Long-horizon creative planning, task routing, and multi-step operator orchestration.',
+          },
+          openClaw: {
+            repository: 'https://github.com/openclaw/openclaw',
+            role: 'Tool-connected execution layer for generation, external model access, and local workflow control.',
+          },
+        },
+        workflowSteps: [],
+        deliverables: [],
+        operatorChecklist: [],
+        externalInterfaces: ['cli', 'mcp', 'webui', 'external-agent'],
+        systemPrompt: `Support "${entry.scriptJson.title}" as a reusable studio project.`,
+      },
+      agentGuidancePath: entry.agentGuidancePath ?? null,
       pages: await Promise.all(
         entry.scriptJson.pages.map(async (page) => {
           // The images dir is the outputPath with extension replaced
@@ -283,6 +320,8 @@ class JobManager {
         project: result.project,
         adaptationPackage: result.adaptationPackage,
         musicCuePackage: result.musicCuePackage,
+        agentGuidancePackage: result.agentGuidancePackage,
+        agentGuidancePath: result.agentGuidancePath ?? undefined,
         scriptJson: result.script,
       };
       try {

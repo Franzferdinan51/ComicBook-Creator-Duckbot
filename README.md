@@ -24,7 +24,15 @@ const result = await createComic('A shy robot discovers a garden on Mars', {
 });
 
 console.log('Comic saved at:', result.outputPath);
+console.log('Agent handoff saved at:', result.agentGuidancePath);
 ```
+
+Each run now also returns reusable story, adaptation, music, and agent-guidance
+artifacts so CLI tools, MCP hosts, and external agents can keep working from
+the same project foundation instead of starting over from the PDF.
+
+For external-agent workflows, see
+[`docs/agents/external-agent-guide.md`](./docs/agents/external-agent-guide.md).
 
 ## Layouts
 

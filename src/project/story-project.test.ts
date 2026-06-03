@@ -13,5 +13,11 @@ assert.equal(project.storyBible.premise, 'A small crew saves a floating city.');
 assert.equal(project.adaptationPackage.sceneOutline.length > 0, true);
 assert.equal(project.musicCuePackage.cues.length > 0, true);
 assert.equal(project.musicCuePackage.themeSongPrompt.includes(project.title), true);
+assert.equal(project.agentGuidancePackage.format, 'agent-guidance');
+assert.equal(project.agentGuidancePackage.frameworks.hermesAgent.repository, 'https://github.com/nousresearch/hermes-agent');
+assert.equal(project.agentGuidancePackage.frameworks.openClaw.repository, 'https://github.com/openclaw/openclaw');
+assert.equal(project.agentGuidancePackage.workflowSteps.length >= 3, true);
+assert.equal(project.agentGuidancePackage.deliverables.some((item) => item.includes('screen adaptation')), true);
+assert.equal(project.agentGuidancePackage.systemPrompt.includes(project.title), true);
 
 console.log('PASS story-project');

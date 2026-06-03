@@ -17,8 +17,11 @@ import {
   assembleComic,
   getTextProvider,
   getImageProvider,
+  buildStoryProject,
+  renderAgentGuidanceMarkdown,
   type ComicOptions,
   type ComicResult,
+  type OutputProfile,
   type PageLayout,
 } from './index.js';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
@@ -45,6 +48,7 @@ interface ParsedArgs {
   imageAspectRatio: string | null;
   imagePromptOptimizer: boolean;
   imageAigcWatermark: boolean;
+  outputProfile: OutputProfile;
   output: string | null;
   seed: number;
   help: boolean;
@@ -69,6 +73,7 @@ Options:
   --image-aspect-ratio=<r>  Aspect ratio for image gen (e.g. 16:9, 1:1, 4:3). Default: 1:1. Equivalent to the MiniMax CLI's --aspect-ratio.
   --image-prompt-optimizer  Let MiniMax rewrite the prompt before generation. Equivalent to the MiniMax CLI's --prompt-optimizer.
   --image-aigc-watermark    Embed an AI-generated watermark in the output image. Equivalent to the MiniMax CLI's --aigc-watermark.
+  --output-profile=<name>   comic-print | digital-portrait | storyboard-widescreen. Default: comic-print
   --output=<path>           Output file path. Default: ~/.openclaw/workspace/output/comics/<title>-<ts>.<format>
   --seed=<n>                Deterministic seed (mock provider). Default: 0
   --help                    Print this help and exit
@@ -95,6 +100,7 @@ function defaultArgs(): ParsedArgs {
     imageAspectRatio: null,
     imagePromptOptimizer: false,
     imageAigcWatermark: false,
+    outputProfile: 'comic-print',
     output: null,
     seed: 0,
     help: false,
@@ -156,6 +162,12 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
       break;
     case 'image-aigc-watermark':
       args.imageAigcWatermark = true;
+      break;
+    case 'output-profile':
+      if (value !== 'comic-print' && value !== 'digital-portrait' && value !== 'storyboard-widescreen') {
+        throw new Error(`--output-profile must be one of comic-print|digital-portrait|storyboard-widescreen, got "${value}"`);
+      }
+      args.outputProfile = value;
       break;
     case 'output':
       args.output = value;
@@ -254,6 +266,12 @@ export async function runCli(
 ): Promise<ComicResult> {
   const panelsPerPage = layoutToPanels(args.layout, args.panels);
   const outputPath = args.output ?? defaultOutputPath(args.story, args.format);
+  const project = buildStoryProject(args.story, {
+    artStyle: args.style,
+    pageCount: args.pages,
+    panelsPerPage,
+    outputProfile: args.outputProfile,
+  });
 
   const opts: ComicOptions = {
     artStyle: args.style,
@@ -261,6 +279,7 @@ export async function runCli(
     textProvider: args.textProvider,
     pageCount: args.pages,
     panelsPerPage,
+    outputProfile: args.outputProfile,
     outputFormat: args.format,
     outputPath,
     seed: args.seed,
@@ -317,6 +336,8 @@ export async function runCli(
   // real image providers.
   const imageDir = `${finalPath.replace(/\.[^./\\]+$/, '')}.images`;
   await mkdir(imageDir, { recursive: true });
+  const agentGuidancePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-guidance.md`;
+  await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   const pages: Array<{
     page: typeof script.pages[number];
     imagePath: string;
@@ -367,35 +388,18 @@ export async function runCli(
     }
   }
 
-  // The CLI entry point uses the simple legacy script-only pipeline,
-  // not the full StoryProject. Stub the new ComicResult fields so
-  // TypeScript is satisfied. The server pipeline returns real values.
-  const stubProject = {
-    id: `cli-${Date.now()}`,
-    title: script.title,
-    premise: '',
-    artStyle: script.artStyle,
-    renderProfile: {
-      outputProfile: 'comic-print' as const,
-      page: { width: 0, height: 0, margin: 0, bleed: 0 },
-      panel: { aspectRatio: '1:1', targetWidth: 0, targetHeight: 0, fit: 'contain' as const },
-      cover: { width: 0, height: 0, aspectRatio: '16:9' },
-    },
-    storyBible: { premise: '', synopsis: '', chapterOutline: [], sceneBeats: [] },
-    adaptationPackage: { format: 'screen-outline' as const, sceneOutline: [] },
-    musicCuePackage: { format: 'music-brief' as const, cues: [], themeSongPrompt: '' },
-  };
-
   return {
     script,
     outputPath: finalPath,
     pdfPath,
     cbzPath,
     coverImagePath: null,
-    project: stubProject,
-    storyBible: stubProject.storyBible,
-    adaptationPackage: stubProject.adaptationPackage,
-    musicCuePackage: stubProject.musicCuePackage,
+    project,
+    storyBible: project.storyBible,
+    adaptationPackage: project.adaptationPackage,
+    musicCuePackage: project.musicCuePackage,
+    agentGuidancePackage: project.agentGuidancePackage,
+    agentGuidancePath,
     pages,
   };
 }

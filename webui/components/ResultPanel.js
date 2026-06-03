@@ -397,6 +397,32 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
     downloadJsonArtifact('music', result.musicCuePackage, 'Music brief downloaded.');
   }
 
+  function handleDownloadAgentGuidance() {
+    if (result?.agentGuidancePath) {
+      const a = document.createElement('a');
+      a.href = `/api/comic/${jobId}/agent-guidance`;
+      a.download = `${localSlug(result.script?.title)}-agent-guidance.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Agent guidance downloaded.', 'success');
+      return;
+    }
+    if (!result?.agentGuidancePackage) return;
+    const blob = new Blob([JSON.stringify(result.agentGuidancePackage, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${localSlug(result.script?.title)}-agent-guidance.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    showToast('Agent guidance downloaded.', 'success');
+  }
+
   if (!result) return null;
 
   const title = result.script?.title || 'Comic ready';
@@ -561,6 +587,14 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose }) {
           <p>${result.musicCuePackage?.cues?.length || 0} cue ideas prepared.</p>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadMusic}>
             Download music brief
+          </button>
+        </section>
+
+        <section class="panel artifact-panel">
+          <h3>Agents</h3>
+          <p>${result.agentGuidancePackage?.externalInterfaces?.length || 0} agent interfaces prepared.</p>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>
+            Download agent guidance
           </button>
         </section>
       </div>

@@ -23,12 +23,16 @@ async function main(): Promise<void> {
   assert.equal(result.script.pages[0]?.panels.length, 3);
   assert.equal(result.adaptationPackage.sceneOutline.length > 0, true);
   assert.equal(result.musicCuePackage.cues.length > 0, true);
+  assert.equal(result.agentGuidancePackage.workflowSteps.length >= 3, true);
+  assert.equal(result.agentGuidancePath?.endsWith('-agent-guidance.md'), true);
+  assert.equal(result.agentGuidancePath != null, true);
 
   await access(result.outputPath);
   assert.equal(!!result.cbzPath, true);
   await access(result.cbzPath!);
   assert.equal(!!result.coverImagePath, true);
   await access(result.coverImagePath!);
+  await access(result.agentGuidancePath!);
 
   const pdf = await readFile(result.outputPath);
   const pdfText = pdf.toString('latin1');
@@ -43,6 +47,10 @@ async function main(): Promise<void> {
   const cover = PNG.sync.read(await readFile(result.coverImagePath!));
   assert.equal(cover.width, 1600);
   assert.equal(cover.height, 900);
+  const guidance = await readFile(result.agentGuidancePath!, 'utf8');
+  assert.equal(guidance.includes('Hermes Agent'), true);
+  assert.equal(guidance.includes('OpenClaw'), true);
+  assert.equal(guidance.includes(result.project.title), true);
 
   const stem = result.outputPath.replace(/\.[^./\\]+$/, '');
   await rm(result.outputPath, { force: true });

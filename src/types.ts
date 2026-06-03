@@ -83,6 +83,25 @@ export interface MusicCuePackage {
   themeSongPrompt: string;
 }
 
+export interface AgentGuidancePackage {
+  format: 'agent-guidance';
+  frameworks: {
+    hermesAgent: {
+      repository: string;
+      role: string;
+    };
+    openClaw: {
+      repository: string;
+      role: string;
+    };
+  };
+  workflowSteps: string[];
+  deliverables: string[];
+  operatorChecklist: string[];
+  externalInterfaces: Array<'cli' | 'mcp' | 'webui' | 'external-agent'>;
+  systemPrompt: string;
+}
+
 export interface StoryProject {
   id: string;
   title: string;
@@ -92,6 +111,7 @@ export interface StoryProject {
   storyBible: StoryBible;
   adaptationPackage: AdaptationPackage;
   musicCuePackage: MusicCuePackage;
+  agentGuidancePackage: AgentGuidancePackage;
 }
 
 export interface ComicOptions {
@@ -180,6 +200,10 @@ export interface ComicResult {
   adaptationPackage: AdaptationPackage;
   /** Convenience alias for `project.musicCuePackage`. */
   musicCuePackage: MusicCuePackage;
+  /** Convenience alias for `project.agentGuidancePackage`. */
+  agentGuidancePackage: AgentGuidancePackage;
+  /** Absolute path to the generated agent guidance markdown handoff, if written. */
+  agentGuidancePath: string | null;
   pages: Array<{
     page: Page;
     /**

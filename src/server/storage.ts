@@ -18,6 +18,7 @@ import { randomUUID } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import type {
   AdaptationPackage,
+  AgentGuidancePackage,
   ComicScript,
   MusicCuePackage,
   StoryProject,
@@ -50,6 +51,10 @@ export interface HistoryEntry {
   adaptationPackage?: AdaptationPackage;
   /** Music or song-development artifact for the project. */
   musicCuePackage?: MusicCuePackage;
+  /** Agent orchestration guidance artifact for the project. */
+  agentGuidancePackage?: AgentGuidancePackage;
+  /** Path to the generated markdown handoff for external agents. */
+  agentGuidancePath?: string;
   scriptJson: ComicScript;  // the full script (so the frontend can re-render)
   thumbnailPath?: string;   // optional — reserved for future
 }

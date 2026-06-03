@@ -938,6 +938,39 @@ export function buildRouter(): Router {
   });
 
   /**
+   * GET /api/comic/:jobId/agent-guidance
+   * Returns the generated markdown handoff for Hermes/OpenClaw/external agents.
+   * Headers: Content-Type: text/markdown
+   */
+  router.get('/comic/:jobId/agent-guidance', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const guidancePath = record.result.agentGuidancePath;
+    if (!guidancePath || !existsSync(guidancePath)) {
+      return res.status(404).json({ error: 'no agent guidance for this comic' });
+    }
+    const size = statSync(guidancePath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${titleSlug}-agent-guidance.md"`
+    );
+    const buf = await readFile(guidancePath, 'utf8');
+    res.end(buf);
+  });
+
+  /**
    * GET /api/comic/:jobId/cover
    * Returns the cover/title-page image if one was generated.
    * Headers: Content-Type: image/png or image/jpeg

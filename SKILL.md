@@ -161,6 +161,7 @@ After `npm install -g .` (or `npm link` from the skill dir) the
 | `--format=<pdf\|cbz>` | `pdf` | Output container |
 | `--text-provider=<name>` | `mock` | Script-generation provider |
 | `--image-provider=<name>` | `mock` | Panel-image provider |
+| `--output-profile=<name>` | `comic-print` | `comic-print` \| `digital-portrait` \| `storyboard-widescreen` |
 | `--output=<path>` | auto | Override the output path (default: `~/.openclaw/workspace/output/comics/<title>-<ts>.pdf`) |
 | `--seed=<n>` | `0` | Deterministic seed (mock provider) |
 | `--help` | — | Print usage and exit |
@@ -175,6 +176,13 @@ After `npm install -g .` (or `npm link` from the skill dir) the
   `[3/3] assembling comic`) plus per-step summaries.
 - **exit code**: `0` on success, `1` on pipeline failure, `2` on arg
   parse error (unknown flag, missing `<story>`, bad numeric value, …).
+
+Each CLI run also writes a sibling `*-agent-guidance.md` file next to the
+main export so Hermes/OpenClaw and other external agents can continue from
+the same project, adaptation, and music context.
+
+The stable external-agent contract is documented in
+[`docs/agents/external-agent-guide.md`](./docs/agents/external-agent-guide.md).
 
 The bin shim (`bin/comic-creator.mjs`) re-invokes node with `tsx/esm`
 preloaded, so the TypeScript source in `src/cli.ts` runs directly
@@ -277,8 +285,9 @@ comic-creator-mcp
 ```
 
 The `comic-creator-mcp` binary speaks JSON-RPC over stdio and registers
-eight tools: `create_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`,
-`list_providers`, `get_history`, `get_settings`, `update_settings`.
+nine tools: `create_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`,
+`get_agent_guidance`, `list_providers`, `get_history`, `get_settings`,
+`update_settings`.
 
 Point your MCP host at the `comic-creator-mcp` binary. Example config
 for an MCP host that reads `~/.config/<host>/mcp_servers.json`:
