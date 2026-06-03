@@ -34,6 +34,13 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const PKG_PATH = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
+const PLAYBOOK_PATH = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'docs',
+  'agents',
+  'hermes-openclaw-playbook.md'
+);
 
 type Layout = 'auto' | 'grid-2x2' | 'grid-2x3' | 'strip-3' | 'custom';
 type Format = 'pdf' | 'cbz';
@@ -58,6 +65,7 @@ interface ParsedArgs {
   seed: number;
   help: boolean;
   version: boolean;
+  agentPlaybook: boolean;
 }
 
 const USAGE = `comic-creator — generate a multi-page AI comic from a story
@@ -82,6 +90,7 @@ Options:
   --output-profile=<name>   comic-print | digital-portrait | storyboard-widescreen. Default: comic-print
   --output=<path>           Output file path. Default: ~/.openclaw/workspace/output/comics/<title>-<ts>.<format>
   --seed=<n>                Deterministic seed (mock provider). Default: 0
+  --agent-playbook          Print the repo-level Hermes/OpenClaw playbook and exit
   --help                    Print this help and exit
   --version                 Print version and exit
 
@@ -112,6 +121,7 @@ function defaultArgs(): ParsedArgs {
     seed: 0,
     help: false,
     version: false,
+    agentPlaybook: false,
   };
 }
 
@@ -195,7 +205,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
 
 /**
  * Minimal arg parser: --key=value flags, then positional <story>.
- * Recognises --help / --version (and -h / -V).
+ * Recognises --help / --version / --agent-playbook (and -h / -V).
  */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = defaultArgs();
@@ -206,6 +216,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.help = true;
     } else if (arg === '--version' || arg === '-V') {
       args.version = true;
+    } else if (arg === '--agent-playbook') {
+      args.agentPlaybook = true;
     } else if (arg.startsWith('--') && arg.includes('=')) {
       const eq = arg.indexOf('=');
       const key = arg.slice(2, eq);
@@ -243,6 +255,10 @@ export async function getVersion(): Promise<string> {
   } catch {
     return '0.0.0';
   }
+}
+
+export async function getAgentPlaybookMarkdown(): Promise<string> {
+  return await readFile(PLAYBOOK_PATH, 'utf8');
 }
 
 /**
@@ -459,6 +475,10 @@ async function main(): Promise<void> {
   if (args.version) {
     const v = await getVersion();
     process.stdout.write(`${v}\n`);
+    return;
+  }
+  if (args.agentPlaybook) {
+    process.stdout.write(await getAgentPlaybookMarkdown());
     return;
   }
   if (!args.story) {

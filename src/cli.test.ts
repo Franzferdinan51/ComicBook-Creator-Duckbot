@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { access, readFile, rm } from 'node:fs/promises';
+import { promisify } from 'node:util';
 import { parseArgs, runCli } from './cli.js';
+
+const execFileAsync = promisify(execFile);
 
 const parsed = parseArgs([
   '--output-profile=storyboard-widescreen',
@@ -12,6 +16,13 @@ const parsed = parseArgs([
 
 assert.equal(parsed.outputProfile, 'storyboard-widescreen');
 assert.equal(parsed.musicProvider, 'mock');
+
+const playbookProbe = await execFileAsync(process.execPath, ['bin/comic-creator.mjs', '--agent-playbook'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+assert.equal(playbookProbe.stdout.includes('# Hermes + OpenClaw Playbook'), true);
+assert.equal(playbookProbe.stdout.includes('Use Hermes Agent to decompose'), true);
 
 const outputPath = `/tmp/comic-creator-cli-${Date.now()}.pdf`;
 const result = await runCli({

@@ -117,6 +117,7 @@ The WebUI gives you:
 ```bash
 node bin/comic-creator.mjs "A robot discovers a garden"
 node bin/comic-creator.mjs --style=noir --pages=4 --panels=3 --output=/tmp/my-comic.pdf "A robot discovers a garden"
+node bin/comic-creator.mjs --agent-playbook
 ```
 
 | Flag | Default | Description |
@@ -131,6 +132,7 @@ node bin/comic-creator.mjs --style=noir --pages=4 --panels=3 --output=/tmp/my-co
 | `--music-provider=<name>` | `mock` | Music provider |
 | `--output-profile=<name>` | `comic-print` | Output profile |
 | `--output=<path>` | auto | Override output path |
+| `--agent-playbook` | off | Print the repo-level Hermes/OpenClaw playbook |
 
 ## MCP server
 
