@@ -69,6 +69,7 @@ import {
   type XAILoginProgress,
 } from './openclaw-auth.js';
 import type { ComicOptions, ComicResult } from '../types.js';
+import { audioExtensionForPath, audioMimeTypeForPath } from '../project/index.js';
 
 /** Names of the providers that the user can configure through the UI. */
 const CONFIGURABLE_PROVIDERS = new Set(['openrouter', 'lmstudio', 'minimax', 'xai', 'gemini', 'comfyui']);
@@ -99,13 +100,6 @@ function slugifyFilename(raw: string): string {
 
 function isConfigurableProvider(name: string): boolean {
   return CONFIGURABLE_PROVIDERS.has(name);
-}
-
-function audioMimeTypeForPath(path: string): string {
-  const ext = path.split('.').pop()?.toLowerCase();
-  if (ext === 'mp3') return 'audio/mpeg';
-  if (ext === 'wav') return 'audio/wav';
-  return 'application/octet-stream';
 }
 
 /** Refresh the custom-provider caches and the live registry from disk state. */
@@ -1130,8 +1124,7 @@ export function buildRouter(): Router {
     res.setHeader('Content-Type', audioMimeTypeForPath(songAudioPath));
     res.setHeader('Content-Length', String(size));
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    const audioExt = songAudioPath.split('.').pop() || 'wav';
-    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-theme.${audioExt}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-theme.${audioExtensionForPath(songAudioPath)}"`);
     const buf = await readFile(songAudioPath);
     res.end(buf);
   });

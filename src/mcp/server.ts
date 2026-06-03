@@ -37,6 +37,10 @@ import {
   getProviderConfig,
   isProviderConfigured,
 } from '../providers/index.js';
+import {
+  audioExtensionForPath,
+  audioMimeTypeForPath,
+} from '../project/index.js';
 import type { ComicOptions } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -366,7 +370,7 @@ export function buildMcpServer(): McpServer {
 
   server.tool(
     'get_theme_audio',
-    'Fetch the generated mock theme WAV for a completed comic, returned as base64.',
+    'Fetch the generated theme audio for a completed comic, returned as base64.',
     {
       jobId: z.string().min(1).describe('The jobId of a completed comic.'),
     },
@@ -382,17 +386,18 @@ export function buildMcpServer(): McpServer {
           return errResult(`theme audio not available for job ${jobId}`);
         }
         const buf = await readFile(path);
+        const audioExt = audioExtensionForPath(path);
         return {
           content: [
             {
               type: 'resource' as const,
               resource: {
-                uri: `comic://${jobId}.theme.wav`,
-                mimeType: 'audio/wav',
+                uri: `comic://${jobId}.theme.${audioExt}`,
+                mimeType: audioMimeTypeForPath(path),
                 blob: buf.toString('base64'),
               },
             },
-            { type: 'text' as const, text: `Theme WAV size: ${buf.length} bytes` },
+            { type: 'text' as const, text: `Theme audio size: ${buf.length} bytes` },
           ],
         };
       } catch (e) {

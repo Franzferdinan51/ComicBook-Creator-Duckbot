@@ -1,5 +1,19 @@
 import type { StoryProject } from '../types.js';
 
+export function audioExtensionForPath(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase();
+  if (ext === 'mp3') return 'mp3';
+  if (ext === 'wav') return 'wav';
+  return ext || 'bin';
+}
+
+export function audioMimeTypeForPath(path: string): string {
+  const ext = audioExtensionForPath(path);
+  if (ext === 'mp3') return 'audio/mpeg';
+  if (ext === 'wav') return 'audio/wav';
+  return 'application/octet-stream';
+}
+
 export function renderSongSheetMarkdown(project: StoryProject): string {
   const song = project.musicCuePackage.songDraft;
   return `# ${song.title}
