@@ -33,6 +33,7 @@ assert.equal(readme.includes('--json'), true);
 assert.equal(readme.includes('--studio-bundle'), true);
 assert.equal(readme.includes('--project-goal'), true);
 assert.equal(readme.includes('save a default project goal'), true);
+assert.equal(readme.includes('When `screen` is selected'), true);
 assert.equal(readme.includes('unified studio bundle'), true);
 assert.equal(readme.includes('External agents should start from the studio bundle first'), true);
 assert.equal(playbook.includes('## Task Routing'), true);

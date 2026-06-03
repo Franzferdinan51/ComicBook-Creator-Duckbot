@@ -85,7 +85,7 @@ export async function createComic(
     projectGoal: options.projectGoal ?? 'comic',
     pageCount: options.pageCount ?? 4,
     panelsPerPage: options.panelsPerPage ?? 4,
-    outputProfile: options.outputProfile ?? 'comic-print',
+    outputProfile: options.outputProfile ?? (options.projectGoal === 'screen' ? 'storyboard-widescreen' : 'comic-print'),
     outputFormat: options.outputFormat ?? 'pdf',
     outputPath:
       options.outputPath ??

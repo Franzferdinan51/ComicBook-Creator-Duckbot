@@ -45,6 +45,7 @@ Choose a goal preset to steer the generated handoff toward the right studio work
 | `studio` | Balanced comic, adaptation, and music handoff |
 
 You can also save a default project goal in the WebUI Settings page so new runs start with your preferred workflow.
+When `screen` is selected, the app defaults to the storyboard widescreen render profile unless you explicitly choose another output profile.
 
 ## Quick example
 

@@ -10,7 +10,7 @@ async function main(): Promise<void> {
     pageCount: 1,
     panelsPerPage: 3,
     outputFormat: 'pdf',
-    outputProfile: 'storyboard-widescreen',
+    projectGoal: 'screen',
     musicProvider: 'mock',
     generateCover: true,
   });
