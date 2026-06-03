@@ -27,6 +27,7 @@ assert.equal(readme.includes('--json'), true);
 assert.equal(readme.includes('unified studio bundle'), true);
 assert.equal(playbook.includes('## Task Routing'), true);
 assert.equal(playbook.includes('## Agent Loop'), true);
+assert.equal(playbook.includes('studioBundlePath'), true);
 assert.equal(playbook.includes('minimax'), true);
 assert.equal(debugHtml.includes('Array.isArray(b.music)'), true);
 assert.equal(generateButton.includes('Timed out waiting for comic to finish.'), false);

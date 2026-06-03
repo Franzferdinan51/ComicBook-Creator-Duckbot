@@ -100,7 +100,9 @@ ${project.musicCuePackage.songDraft.lyrics}
 
 - Storyboard package path: generated alongside the comic output
 - Animatic timeline path: generated alongside the comic output
+- Studio bundle path: generated alongside the comic output
 - Adaptation package: screenplay scenes + storyboard prompts
+- Use the studio bundle to hand off the full project state to external agents
 - Use the song sheet and theme audio together when refining the soundtrack pass
 - External agent follow-up: use the handoff file to continue into production planning
 

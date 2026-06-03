@@ -25,8 +25,8 @@ long-horizon planning and OpenClaw for connected execution.
 ## Recommended Workflow
 
 1. Read the generated `*-agent-guidance.md` file first.
-2. Inspect the project JSON, storyboard package, animatic timeline, song sheet,
-   and theme audio path.
+2. Inspect the project JSON, studio bundle, storyboard package, animatic
+   timeline, song sheet, and theme audio path.
 3. Split work into three tracks:
    - comic production and revision
    - show/movie adaptation
@@ -69,6 +69,8 @@ long-horizon planning and OpenClaw for connected execution.
   goals.
 - `storyboardPackagePath` and `animaticTimelinePath` are the downstream
   production handoff files.
+- `studioBundlePath` is the single JSON handoff that packages the project,
+  adaptation, music, and artifact-path map for external agents.
 - `agentGuidancePath` is the operator guide for continuing the run later.
 - `renderProfile` should stay consistent when a comic run becomes a storyboard
   pass or a screen-adaptation planning pass.

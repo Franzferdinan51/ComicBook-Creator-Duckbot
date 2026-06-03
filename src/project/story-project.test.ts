@@ -33,5 +33,7 @@ const guidance = renderAgentGuidanceMarkdown(project);
 assert.equal(guidance.includes('Hermes + OpenClaw playbook'), true);
 assert.equal(guidance.includes('Show / Movie Handoff'), true);
 assert.equal(guidance.includes('song sheet and theme audio'), true);
+assert.equal(guidance.includes('Studio bundle path'), true);
+assert.equal(guidance.includes('Use the studio bundle to hand off the full project state'), true);
 
 console.log('PASS story-project');
