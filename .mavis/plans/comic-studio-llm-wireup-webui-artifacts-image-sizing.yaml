@@ -1,0 +1,271 @@
+version: 1
+plan:
+  name: comic-studio-llm-wireup-webui-artifacts-image-sizing
+  max_concurrency: 3
+  max_consecutive_failures: 1
+  verifier_config:
+    default_verifiers: []
+    audit_sample_rate: 0.0
+tasks:
+  - id: llm-wireup
+    title: Wire buildStoryProject() to real LLM calls
+    role: produce
+    assigned_to: developer
+    verified_by: verifier
+    verify_prompt: |
+      Re-run TypeScript type check: `cd /Users/duckets/comic-creator-staging && npx tsc --noEmit`
+      Verify:
+      1. No TS errors
+      2. The `buildStoryProject` function now accepts a `textProvider` parameter
+      3. The function signature in `src/project/story-project.ts` includes `TextProvider` import
+      4. The call site in `src/index.ts` passes `textProvider` to `buildStoryProject()`
+      Do not re-read the producer's diff — re-run the checks independently.
+    prompt: |
+      Make `buildStoryProject()` in `/Users/duckets/comic-creator-staging/src/project/story-project.ts` call the text provider for real content instead of returning hardcoded stub strings.
+
+      ## What to change
+
+      The function currently takes `(story, options)` and returns hardcoded placeholder strings for `storyBible.synopsis`, `storyBible.chapterOutline`, `storyBible.sceneBeats`, `adaptationPackage.sceneOutline`, `musicCuePackage.cues`, and `musicCuePackage.themeSongPrompt`.
+
+      Refactor it to:
+
+      1. Accept a `textProvider: TextProvider` parameter
+      2. Make 2–3 parallel LLM calls using the provider's `complete()` method (or `completeJSON()` if available):
+         - **Story Bible call**: Ask the LLM to produce a structured story bible JSON from the story (premise, synopsis, chapter outline, scene beats). Use the existing `extractJSON` from `/Users/duckets/comic-creator-staging/src/pipeline/script.ts`.
+         - **Adaptation package call**: Ask the LLM to produce a screen-adaptation outline JSON (sceneId, summary, visualGoal per scene).
+         - **Music cues call**: Ask the LLM to produce a music-brief JSON (cues array with cueId, title, mood, placement, and a themeSongPrompt).
+      3. Parse each LLM response with `extractJSON()` — if parsing fails, fall back to the stub values
+      4. Update `/Users/duckets/comic-creator-staging/src/index.ts` to pass `textProvider` to `buildStoryProject()`
+      5. Also update `/Users/duckets/comic-creator-staging/src/cli.ts` where `buildStoryProject` is called (it won't have a real provider, so pass the mock/dummy and let it fall back to stubs)
+      6. Update type signatures in `/Users/duckets/comic-creator-staging/src/project/story-project.ts` to accept the `textProvider` parameter
+      7. TypeScript must be clean: `npx tsc --noEmit` passes with zero errors
+      8. Add or update the test in `/Users/duckets/comic-creator-staging/src/project/story-project.test.ts` to verify the function signature change and basic fallback behavior
+
+      ## TextProvider interface
+
+      The `TextProvider` interface (from `/Users/duckets/comic-creator-staging/src/providers/index.ts`) has:
+      ```ts
+      interface TextProvider {
+        complete(prompt: string, opts?: { system?: string; model?: string; temperature?: number; maxTokens?: number }): Promise<string>;
+      }
+      ```
+
+      ## Prompt design
+
+      Keep prompts concise (~200–300 tokens). Include the schema in the prompt so the LLM knows what JSON shape to return. Example for story bible:
+      ```
+      Given this story: "{story}"
+      Produce a story bible JSON with: premise, synopsis, chapterOutline (array of 4 chapter titles), sceneBeats (array of 5 narrative beats). Return ONLY the JSON object, no markdown fences.
+      ```
+
+      Same pattern for adaptation (sceneId, summary, visualGoal per scene) and music (cueId, title, mood, placement, themeSongPrompt).
+
+      ## Important rules
+      - Do NOT change the exported types in `types.ts`
+      - Do NOT remove the stub fallback — if the LLM call fails or parse fails, fall back to the existing stub values so the pipeline never hard-fails
+      - Keep the function synchronous where possible (build prompts, return immediately — let the caller await the parallel provider calls) OR make it async and update `createComic()` accordingly
+      - Run `npx tsc --noEmit` and fix ALL errors before declaring done
+      - Commit with message: "feat(project): wire buildStoryProject to real LLM calls for story bible, adaptation, and music artifacts"
+    timeout_ms: 600000
+
+  - id: webui-artifacts
+    title: Surface project artifacts in WebUI ResultPanel
+    role: produce
+    assigned_to: developer
+    verified_by: verifier
+    verify_prompt: |
+      Verify the ResultPanel.js has the artifact download sections by running:
+      `node --input-type=module -e "import('/Users/duckets/comic-creator-staging/webui/components/ResultPanel.js')"`
+      It should not throw a parse error.
+      Also check that `downloadArtifact` function exists in the file and that the three `<details>` blocks for storyBible, adaptationPackage, and musicCuePackage are present (grep for `storyBible`, `adaptationPackage`, `musicCuePackage` in the file).
+      Do not re-read — actually run the node import check and grep.
+    prompt: |
+      Add download cards for the project artifacts (Story Bible, Adaptation Package, Music Cue Package) to `/Users/duckets/comic-creator-staging/webui/components/ResultPanel.js`.
+
+      ## What to add
+
+      After the existing "Download all pages (.zip)" section and before the panel image strip, add three collapsible `<details>` sections:
+
+      1. **Story Bible** — shows `result.storyBible?.synopsis` as a short excerpt, plus:
+         - "Premise: {result.storyBible?.premise}"
+         - "Chapters: {result.storyBible?.chapterOutline?.join(', ')}"
+         - Download button → saves `storyBible` as JSON
+
+      2. **Adaptation Package** — shows the number of scenes, lists scene summaries:
+         - `{result.adaptationPackage?.sceneOutline?.length ?? 0} scenes`
+         - Each scene: `{sceneId}: {summary}`
+         - Download button → saves `adaptationPackage` as JSON
+
+      3. **Music Cue Package** — shows cues:
+         - Theme: "{result.musicCuePackage?.themeSongPrompt}" (truncated to 100 chars)
+         - Cues list: each `{cue.title} — {cue.mood} ({cue.placement})`
+         - Download button → saves `musicCuePackage` as JSON
+
+      ## Implementation pattern
+
+      Each section follows this shape:
+      ```js
+      ${result.storyBible ? html`
+        <details class="artifact-section">
+          <summary>Story Bible</summary>
+          <p class="artifact-field">Premise: ${result.storyBible.premise}</p>
+          <p class="artifact-field">Synopsis: ${(result.storyBible.synopsis || '').slice(0, 120)}…</p>
+          <p class="artifact-field">Chapters: ${(result.storyBible.chapterOutline || []).join(', ')}</p>
+          <button type="button" class="btn btn-ghost" onClick=${() => downloadArtifact('storyBible', result.storyBible)}>
+            📄 Download Story Bible (.json)
+          </button>
+        </details>
+      ` : null}
+      ```
+
+      Same pattern for `result.adaptationPackage` and `result.musicCuePackage`.
+
+      Add a `downloadArtifact(type, data)` helper near the top of the component:
+      ```js
+      function downloadArtifact(name, data) {
+        if (!data) return;
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${localSlug(result.script?.title || 'comic')}-${name}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        showToast(`Downloaded ${name}`, 'success');
+      }
+      ```
+
+      Add CSS for `.artifact-section`, `.artifact-field`, `.artifact-section summary` to `/Users/duckets/comic-creator-staging/webui/app.css`. Use the existing dark theme variables (--surface, --border, --text, --text-muted).
+
+      ## Rules
+      - Check `result.storyBible`, `result.adaptationPackage`, `result.musicCuePackage` exist before rendering each section (they may be null for old jobs that predate this feature)
+      - Use `showToast` from `./_lib.js` for download confirmations
+      - Use `localSlug` from the existing component for filename generation
+      - Do NOT fetch from any API — just serialize from the existing `result` prop
+      - The JS must parse cleanly: `node --input-type=module -e "import('./webui/components/ResultPanel.js')"` should not throw
+    timeout_ms: 300000
+
+  - id: image-sizing
+    title: Wire imageAspectRatio through to pixel dimensions per provider
+    role: produce
+    assigned_to: developer
+    verified_by: verifier
+    verify_prompt: |
+      Run TypeScript check: `cd /Users/duckets/comic-creator-staging && npx tsc --noEmit`
+      Must pass with zero errors.
+      Then verify the aspect ratio helper exists in `src/providers/image.ts` by grepping for a function that maps "16:9" to numeric width/height dimensions.
+      Run the server test: `cd /Users/duckets/comic-creator-staging && npx tsx src/server/__test__.ts`
+      All tests must pass.
+      Do not re-read — re-run these commands.
+    prompt: |
+      Fix the image aspect ratio override so it actually changes the generated image dimensions.
+
+      ## Current state
+      `ComicOptions.imageAspectRatio` (e.g. "16:9", "4:3") is forwarded to `generatePanelImages()` in `src/index.ts` but the image provider implementation doesn't map it to pixel dimensions.
+
+      ## What to fix
+
+      ### 1. Provider image.ts — add aspect ratio mapping
+
+      In `/Users/duckets/comic-creator-staging/src/providers/image.ts`, update every provider's `generate()` call to respect the `aspectRatio` field when it overrides the default width/height.
+
+      The `aspectRatio` string maps to pixel dimensions like this:
+      - "1:1" → 1024×1024 (or whatever provider default)
+      - "16:9" → 1344×756
+      - "9:16" → 756×1344
+      - "4:3" → 1024×768
+      - "3:4" → 768×1024
+      - "2:3" → 768×1152
+      - "3:2" → 1152×768
+      - "21:9" → 1680×720
+      - "5:4" → 1024×819
+      - "4:5" → 819×1024
+
+      Add a shared helper function `resolveAspectDimensions(aspectRatio: string | undefined, defaultW: number, defaultH: number): { width: number; height: number }` to `image.ts`. It should:
+      - If `aspectRatio` is undefined/empty, return `{ width: defaultW, height: defaultH }`
+      - Otherwise look up the mapped dimensions
+
+      Then update each provider's `generate()` call to call this helper instead of hardcoding.
+
+      ### 2. generatePanelImages — pass aspect ratio through
+
+      In `/Users/duckets/comic-creator-staging/src/pipeline/image.ts`, update the `ImageGeneratorOptions` interface to include `aspectRatio?: string`, and pass it through to the provider's `generate()` call.
+
+      The `src/index.ts` already forwards `imageAspectRatio` to `generatePanelImages` — verify it's there and working. Check:
+      ```ts
+      ...(opts.imageAspectRatio ? { aspectRatio: opts.imageAspectRatio } : {}),
+      ```
+
+      ### 3. Verify TypeScript clean
+      Run `npx tsc --noEmit` in `/Users/duckets/comic-creator-staging/` and fix any errors.
+
+      ### 4. Test (manual)
+      Run `npx tsx src/server/__test__.ts` to make sure nothing is broken.
+
+      ## Rules
+      - The helper must handle unknown aspect ratios gracefully (fall back to 1:1 / default)
+      - Do NOT change provider API key handling or network logic
+      - Do NOT change the `AssembleOptions` or `ComicOptions` type signatures
+      - Keep the changes localized to `src/providers/image.ts` and `src/pipeline/image.ts`
+    timeout_ms: 300000
+
+  - id: sync-and-push
+    title: Sync all changes to GitHub
+    role: produce
+    assigned_to: developer
+    depends_on: [llm-wireup, webui-artifacts, image-sizing]
+    verify_by: verifier
+    verify_prompt: |
+      Verify the push happened successfully:
+      1. Check `cd /Users/duckets/comic-creator-staging && git log --oneline -3` — should show a new commit (not just the existing one)
+      2. Run `npx tsc --noEmit` in staging — must pass
+      3. Run `npx tsx src/assembler/__test__.ts` — must print PASS
+      Do not re-read — re-run these commands.
+    verify_skip_reason: "Mechanical git push with prior verification on all three dependency tasks"
+    prompt: |
+      After the three fix tasks are complete, sync all changed files from the three work directories back to staging and push to GitHub.
+
+      ## Steps
+
+      1. Run `npx tsc --noEmit` in `/Users/duckets/comic-creator-staging/` — it must pass with zero errors before pushing.
+
+      2. Run the test suite:
+         ```
+         cd /Users/duckets/comic-creator-staging && npx tsx src/assembler/__test__.ts && npx tsx src/server/__test__.ts && npx tsx src/mcp/__test__.ts
+         ```
+         All tests must pass.
+
+      3. Sync from skill directory (in case any files were also updated there during development):
+         Copy these files from `/Users/duckets/.openclaw/workspace/skills/comic-creator/src/` to `/Users/duckets/comic-creator-staging/src/`:
+         - `project/story-project.ts` (updated by llm-wireup)
+         - `project/story-project.test.ts` (updated by llm-wireup)  
+         - `pipeline/image.ts` (updated by image-sizing)
+         - `providers/image.ts` (updated by image-sizing)
+         - `index.ts` (updated by llm-wireup)
+         - `types.ts` (any type changes)
+         - `cli.ts` (any changes)
+         Copy `webui/components/ResultPanel.js` and `webui/app.css` from the skill dir.
+
+      4. Commit all changes:
+         ```
+         cd /Users/duckets/comic-creator-staging
+         git add -A
+         git commit -m "feat: LLM-wired project generation, WebUI artifact downloads, image aspect ratio fixes"
+         ```
+
+      5. Push to GitHub:
+         ```
+         git push origin main
+         ```
+
+      6. Also sync the updated files BACK to the skill directory so local and GitHub stay in sync:
+         Copy all changed files from staging to `/Users/duckets/.openclaw/workspace/skills/comic-creator/src/` and update the README if needed.
+
+      ## Success criteria
+      - `npx tsc --noEmit` passes with zero errors in staging
+      - All tests pass
+      - GitHub shows the new commit
+      - Skill directory is updated with the same changes
+    timeout_ms: 120000

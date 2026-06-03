@@ -367,7 +367,37 @@ export async function runCli(
     }
   }
 
-  return { script, outputPath: finalPath, pdfPath, cbzPath, coverImagePath: null, pages };
+  // The CLI entry point uses the simple legacy script-only pipeline,
+  // not the full StoryProject. Stub the new ComicResult fields so
+  // TypeScript is satisfied. The server pipeline returns real values.
+  const stubProject = {
+    id: `cli-${Date.now()}`,
+    title: script.title,
+    premise: '',
+    artStyle: script.artStyle,
+    renderProfile: {
+      outputProfile: 'comic-print' as const,
+      page: { width: 0, height: 0, margin: 0, bleed: 0 },
+      panel: { aspectRatio: '1:1', targetWidth: 0, targetHeight: 0, fit: 'contain' as const },
+      cover: { width: 0, height: 0, aspectRatio: '16:9' },
+    },
+    storyBible: { premise: '', synopsis: '', chapterOutline: [], sceneBeats: [] },
+    adaptationPackage: { format: 'screen-outline' as const, sceneOutline: [] },
+    musicCuePackage: { format: 'music-brief' as const, cues: [], themeSongPrompt: '' },
+  };
+
+  return {
+    script,
+    outputPath: finalPath,
+    pdfPath,
+    cbzPath,
+    coverImagePath: null,
+    project: stubProject,
+    storyBible: stubProject.storyBible,
+    adaptationPackage: stubProject.adaptationPackage,
+    musicCuePackage: stubProject.musicCuePackage,
+    pages,
+  };
 }
 
 async function main(): Promise<void> {
