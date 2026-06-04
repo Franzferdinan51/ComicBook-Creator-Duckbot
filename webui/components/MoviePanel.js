@@ -13,6 +13,7 @@ const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'pitch', label: 'Pitch' },
   { id: 'trailer', label: 'Trailer' },
+  { id: 'video', label: 'Video' },
   { id: 'story', label: 'Story' },
   { id: 'series', label: 'Series' },
   { id: 'script', label: 'Script' },
@@ -129,6 +130,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
     { label: 'Comic pages', tab: 'overview' },
     { label: 'Pitch deck', tab: 'pitch' },
     { label: 'Trailer', tab: 'trailer' },
+    { label: 'Video', tab: 'video' },
     { label: 'Story bible', tab: 'story' },
     { label: 'Series bible', tab: 'series' },
     { label: 'Screenplay', tab: 'script' },
@@ -170,6 +172,12 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       href: jobId ? `/api/comic/${jobId}/trailer-package` : null,
       filename: `${localSlug(title)}-trailer-package.json`,
       hint: 'Pitch beats and teaser structure for the screen version.',
+    },
+    {
+      label: 'Video package',
+      href: jobId && result.videoPackagePath ? `/api/comic/${jobId}/video-package` : null,
+      filename: `${localSlug(title)}-video-package.json`,
+      hint: 'MiniMax-ready video clip prompts and motion workflow for real show/movie output.',
     },
     {
       label: 'Series package',
@@ -263,6 +271,15 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       `/api/comic/${jobId}/series-package`,
       `${localSlug(title)}-series-package.json`,
       'Series package downloaded.'
+    );
+  }
+
+  function handleDownloadVideoPackage() {
+    if (!jobId || !result?.videoPackagePath) return;
+    download(
+      `/api/comic/${jobId}/video-package`,
+      `${localSlug(title)}-video-package.json`,
+      'Video package downloaded.'
     );
   }
 
@@ -374,6 +391,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSeriesPackage}>Download series package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStoryboardPackage}>Download storyboard package</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAnimaticTimeline}>Download animatic timeline</button>
             </div>
           </section>
@@ -423,6 +441,50 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
               <li>Use the music package to shape teaser energy and theme music.</li>
             </ul>
           </section>
+        </div>
+      ` : null}
+
+      ${activeTab === 'video' ? html`
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card movie-pitch-card">
+            <h3>Video generation package</h3>
+            <p class="movie-pitch-line">${result.videoPackage?.overview || `${title} is ready for MiniMax video generation.`}</p>
+            <p class="muted small">${result.videoPackage?.trailerDirection || 'Use the video package to turn storyboard shots into real motion, not a slideshow.'}</p>
+            <div class="action-row">
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>
+            </div>
+          </section>
+          <section class="movie-card">
+            <h3>MiniMax commands</h3>
+            <ul class="movie-list">
+              <li><code>${result.videoPackage?.commands?.generate || 'mmx video generate --prompt "<clip prompt>" --async'}</code></li>
+              <li><code>${result.videoPackage?.commands?.poll || 'mmx video task get --task-id <task-id>'}</code></li>
+              <li><code>${result.videoPackage?.commands?.download || 'mmx video download --file-id <file-id> --out clip.mp4'}</code></li>
+            </ul>
+          </section>
+        </div>
+        <div class="movie-grid">
+          ${(result.videoPackage?.clips || []).length > 0
+            ? result.videoPackage.clips.map((clip) => html`
+              <article class="movie-card movie-script-card" key=${clip.clipId}>
+                <div class="scene-head">
+                  <span class="movie-chip">${clip.clipId}</span>
+                  <span class="movie-chip subtle">${clip.title}</span>
+                </div>
+                <p>${clip.prompt}</p>
+                <div class="movie-script-meta">
+                  <div>
+                    <strong>Camera / motion</strong>
+                    <p>${clip.cameraLanguage || 'Cinematic movement and readable blocking.'}</p>
+                  </div>
+                  <div>
+                    <strong>Music tie-in</strong>
+                    <p>${clip.musicCueTitle || 'No cue linked yet.'}</p>
+                  </div>
+                </div>
+              </article>
+            `)
+            : html`<p class="muted small">No video clip package yet.</p>`}
         </div>
       ` : null}
 
@@ -803,6 +865,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
             </div>
@@ -821,6 +884,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
         </div>
       </section>

@@ -1202,6 +1202,35 @@ export function buildRouter(): Router {
   });
 
   /**
+   * GET /api/comic/:jobId/video-package
+   * Returns the generated MiniMax-ready video package JSON.
+   */
+  router.get('/comic/:jobId/video-package', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const videoPackagePath = record.result.videoPackagePath;
+    if (!videoPackagePath || !existsSync(videoPackagePath)) {
+      return res.status(404).json({ error: 'no video package for this comic' });
+    }
+    const size = statSync(videoPackagePath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-video-package.json"`);
+    const buf = await readFile(videoPackagePath, 'utf8');
+    res.end(buf);
+  });
+
+  /**
    * GET /api/comic/:jobId/animatic-timeline
    * Returns the generated animatic timeline JSON.
    */

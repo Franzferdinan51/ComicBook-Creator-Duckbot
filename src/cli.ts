@@ -25,6 +25,7 @@ import {
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
+  buildVideoPackage,
   buildStudioBundle,
   type ComicOptions,
   type ComicResult,
@@ -73,6 +74,7 @@ interface ParsedArgs {
   studioBundle: boolean;
   screenplay: boolean;
   directorBrief: boolean;
+  videoPackage: boolean;
   seriesPackage: boolean;
   trailerPackage: boolean;
   musicCuePackage: boolean;
@@ -108,6 +110,7 @@ Options:
   --studio-bundle           Print the unified studio bundle JSON and exit
   --screenplay              Print the generated screenplay markdown and exit
   --director-brief          Print the generated director brief markdown and exit
+  --video-package           Print the generated MiniMax-ready video package JSON and exit
   --series-package          Print the episodic series package JSON and exit
   --trailer-package         Print the trailer package JSON and exit
   --music-cue-package       Print the music cue package JSON and exit
@@ -146,6 +149,7 @@ function defaultArgs(): ParsedArgs {
     studioBundle: false,
     screenplay: false,
     directorBrief: false,
+    videoPackage: false,
     seriesPackage: false,
     trailerPackage: false,
     musicCuePackage: false,
@@ -242,7 +246,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
 
 /**
  * Minimal arg parser: --key=value flags, then positional <story>.
- * Recognises --help / --version / --json / --studio-bundle / --screenplay / --director-brief / --series-package / --trailer-package / --music-cue-package / --agent-playbook (and -h / -V).
+ * Recognises --help / --version / --json / --studio-bundle / --screenplay / --director-brief / --video-package / --series-package / --trailer-package / --music-cue-package / --agent-playbook (and -h / -V).
  */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = defaultArgs();
@@ -261,6 +265,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.screenplay = true;
     } else if (arg === '--director-brief') {
       args.directorBrief = true;
+    } else if (arg === '--video-package') {
+      args.videoPackage = true;
     } else if (arg === '--series-package') {
       args.seriesPackage = true;
     } else if (arg === '--trailer-package') {
@@ -435,6 +441,7 @@ export async function runCli(
   const storyboardPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-storyboard-package.json`;
   const seriesPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-series-package.json`;
   const trailerPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-trailer-package.json`;
+  const videoPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-video-package.json`;
   const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
   const studioBundlePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-studio-bundle.json`;
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
@@ -475,6 +482,8 @@ export async function runCli(
     'utf8'
   );
   await writeFile(trailerPackagePath, JSON.stringify(project.trailerPackage, null, 2), 'utf8');
+  const videoPackage = buildVideoPackage({ project, pages, songAudioPath });
+  await writeFile(videoPackagePath, JSON.stringify(videoPackage, null, 2), 'utf8');
   await writeFile(
     animaticTimelinePath,
     JSON.stringify(buildAnimaticTimeline({ project, pages, songAudioPath }), null, 2),
@@ -518,6 +527,7 @@ export async function runCli(
     adaptationPackage: project.adaptationPackage,
     seriesPackage: project.seriesPackage,
     trailerPackage: project.trailerPackage,
+    videoPackage,
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
@@ -531,6 +541,7 @@ export async function runCli(
     musicProvider: musicProvider.name,
     storyboardPackagePath,
     trailerPackagePath,
+    videoPackagePath,
     animaticTimelinePath,
     studioBundlePath,
     pages,
@@ -580,6 +591,10 @@ async function main(): Promise<void> {
     }
     if (args.directorBrief) {
       process.stdout.write(await readFile(result.directorBriefPath!, 'utf8'));
+      return;
+    }
+    if (args.videoPackage) {
+      process.stdout.write(await readFile(result.videoPackagePath!, 'utf8'));
       return;
     }
     if (args.seriesPackage) {

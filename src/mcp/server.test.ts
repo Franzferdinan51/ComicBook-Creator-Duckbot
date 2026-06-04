@@ -28,6 +28,7 @@ assert.equal(registeredTools.includes('get_series_package'), true);
 assert.equal(registeredTools.includes('get_screenplay'), true);
 assert.equal(registeredTools.includes('get_director_brief'), true);
 assert.equal(registeredTools.includes('get_trailer_package'), true);
+assert.equal(registeredTools.includes('get_video_package'), true);
 
 const storageDir = await mkdtemp(join(tmpdir(), 'comic-mcp-test-'));
 setStorageDir(storageDir);
@@ -76,6 +77,10 @@ try {
   const directorBriefJson = await mcpServer._registeredTools.get_director_brief.handler({ jobId: job.jobId });
   assert.equal(directorBriefJson.content[0].resource.mimeType, 'text/markdown');
   assert.equal(directorBriefJson.content[0].resource.text.includes('## Director Brief'), true);
+  const videoPackageJson = await mcpServer._registeredTools.get_video_package.handler({ jobId: job.jobId });
+  const videoPackage = JSON.parse(videoPackageJson.content[0].resource.text);
+  assert.equal(videoPackage.format, 'video-generation-package');
+  assert.equal(videoPackage.provider, 'minimax');
 } finally {
   await rm(storageDir, { recursive: true, force: true });
 }

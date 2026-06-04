@@ -200,6 +200,21 @@ class JobManager {
         endCard: entry.scriptJson.title,
         durationSeconds: 0,
       },
+      videoPackage: {
+        format: 'video-generation-package',
+        provider: 'minimax',
+        aspectRatio: '16:9',
+        renderGoal: 'movie',
+        overview: `${entry.scriptJson.title} should move beyond a slideshow into short cinematic clips.`,
+        trailerDirection: `${entry.scriptJson.title} becomes a MiniMax-ready teaser package.`,
+        commands: {
+          generate: 'mmx video generate --prompt "<clip prompt>" --async',
+          poll: 'mmx video task get --task-id <task-id>',
+          download: 'mmx video download --file-id <file-id> --out clip.mp4',
+        },
+        clips: [],
+        workflowNotes: [],
+      },
       musicCuePackage: {
         format: 'music-brief',
         cues: [],
@@ -240,6 +255,7 @@ class JobManager {
           projectGoal: entry.project.projectGoal ?? projectGoal,
           seriesPackage: entry.project.seriesPackage ?? fallbackProject.seriesPackage,
           trailerPackage: entry.project.trailerPackage ?? fallbackProject.trailerPackage,
+          videoPackage: entry.project.videoPackage ?? fallbackProject.videoPackage,
           musicCuePackage: entry.project.musicCuePackage ?? fallbackProject.musicCuePackage,
           agentGuidancePackage: entry.project.agentGuidancePackage ?? fallbackProject.agentGuidancePackage,
         }
@@ -288,6 +304,21 @@ class JobManager {
         endCard: entry.scriptJson.title,
         durationSeconds: 0,
       },
+      videoPackage: entry.videoPackage ?? entry.project?.videoPackage ?? {
+        format: 'video-generation-package',
+        provider: 'minimax',
+        aspectRatio: '16:9',
+        renderGoal: 'movie',
+        overview: `${entry.scriptJson.title} should move beyond a slideshow into short cinematic clips.`,
+        trailerDirection: `${entry.scriptJson.title} becomes a MiniMax-ready teaser package.`,
+        commands: {
+          generate: 'mmx video generate --prompt "<clip prompt>" --async',
+          poll: 'mmx video task get --task-id <task-id>',
+          download: 'mmx video download --file-id <file-id> --out clip.mp4',
+        },
+        clips: [],
+        workflowNotes: [],
+      },
       musicCuePackage: entry.musicCuePackage ?? entry.project?.musicCuePackage ?? {
         format: 'music-brief',
         cues: [],
@@ -329,6 +360,7 @@ class JobManager {
       musicProvider: entry.musicProvider ?? 'mock',
       storyboardPackagePath: entry.storyboardPackagePath ?? null,
       trailerPackagePath: entry.trailerPackagePath ?? null,
+      videoPackagePath: entry.videoPackagePath ?? null,
       animaticTimelinePath: entry.animaticTimelinePath ?? null,
       pages: await Promise.all(
         entry.scriptJson.pages.map(async (page) => {
@@ -414,6 +446,7 @@ class JobManager {
         agentPlaybookPath: result.agentPlaybookPath ?? undefined,
         adaptationPackage: result.adaptationPackage,
         trailerPackage: result.trailerPackage,
+        videoPackage: result.videoPackage,
         musicCuePackage: result.musicCuePackage,
         seriesPackage: result.seriesPackage,
         agentGuidancePackage: result.agentGuidancePackage,
@@ -427,6 +460,7 @@ class JobManager {
         musicProvider: result.musicProvider,
         storyboardPackagePath: result.storyboardPackagePath ?? undefined,
         trailerPackagePath: result.trailerPackagePath ?? undefined,
+        videoPackagePath: result.videoPackagePath ?? undefined,
         animaticTimelinePath: result.animaticTimelinePath ?? undefined,
         studioBundlePath: result.studioBundlePath ?? undefined,
         scriptJson: result.script,

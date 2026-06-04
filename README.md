@@ -31,6 +31,7 @@ npm start
 | `directorBriefPath` | Markdown production brief connecting story, visuals, trailer, and score |
 | `seriesPackagePath` | Episodic show-bible JSON with episode seeds and showrunner notes |
 | `trailerPackagePath` | Pitch / teaser trailer package for show or movie handoff |
+| `videoPackagePath` | MiniMax-ready video generation package for real motion clips |
 | `musicCuePackage` | Mood cues, song draft, theme-prompt for audio tools |
 | `storyboardPackagePath` | Shot-by-shot show/movie storyboard package |
 | `animaticTimelinePath` | Video/audio timing timeline for rough animatics |
@@ -160,6 +161,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--studio-bundle` | off | Print the unified studio bundle JSON |
 | `--screenplay` | off | Print the generated screenplay markdown |
 | `--director-brief` | off | Print the generated director brief markdown |
+| `--video-package` | off | Print the generated MiniMax-ready video package JSON |
 | `--series-package` | off | Print the episodic series package JSON |
 | `--trailer-package` | off | Print the trailer package JSON |
 | `--music-cue-package` | off | Print the music cue package JSON |
@@ -173,9 +175,9 @@ External agents (OpenClaw, Claude Desktop, etc.) can invoke the pipeline via MCP
 comic-creator-mcp
 ```
 
-Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
+Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
 
-The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed. When score planning is the next step, grab the music cue package before the theme audio.
+The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package to drive `mmx video` clip generation.
 
 ## Agent playbook
 

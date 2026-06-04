@@ -10,6 +10,7 @@ export interface StudioBundle {
   adaptationPackage: ComicResult['adaptationPackage'];
   seriesPackage: ComicResult['seriesPackage'];
   trailerPackage: ComicResult['trailerPackage'];
+  videoPackage: ComicResult['videoPackage'];
   musicCuePackage: ComicResult['musicCuePackage'];
   agentGuidancePackage: ComicResult['agentGuidancePackage'];
   musicProvider: string;
@@ -29,6 +30,7 @@ export interface StudioBundle {
     seriesPackagePath: string | null;
     storyboardPackagePath: string | null;
     trailerPackagePath: string | null;
+    videoPackagePath: string | null;
     animaticTimelinePath: string | null;
     studioBundlePath: string | null;
   };
@@ -47,6 +49,7 @@ export interface StudioBundle {
     seriesPackage: boolean;
     storyboardPackage: boolean;
     trailerPackage: boolean;
+    videoPackage: boolean;
     animaticTimeline: boolean;
     studioBundle: boolean;
   };
@@ -63,6 +66,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
     adaptationPackage: result.adaptationPackage,
     seriesPackage: result.seriesPackage,
     trailerPackage: result.trailerPackage,
+    videoPackage: result.videoPackage,
     musicCuePackage: result.musicCuePackage,
     agentGuidancePackage: result.agentGuidancePackage,
     musicProvider: result.musicProvider,
@@ -82,6 +86,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       seriesPackagePath: result.seriesPackagePath,
       storyboardPackagePath: result.storyboardPackagePath,
       trailerPackagePath: result.trailerPackagePath,
+      videoPackagePath: result.videoPackagePath,
       animaticTimelinePath: result.animaticTimelinePath,
       studioBundlePath: result.studioBundlePath,
     },
@@ -100,6 +105,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       seriesPackage: Boolean(result.seriesPackagePath),
       storyboardPackage: Boolean(result.storyboardPackagePath),
       trailerPackage: Boolean(result.trailerPackagePath),
+      videoPackage: Boolean(result.videoPackagePath),
       animaticTimeline: Boolean(result.animaticTimelinePath),
       studioBundle: Boolean(result.studioBundlePath),
     },

@@ -577,6 +577,43 @@ export function buildMcpServer(): McpServer {
   );
 
   server.tool(
+    'get_video_package',
+    'Fetch the generated MiniMax-ready video package JSON for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.videoPackagePath;
+        if (!path || !existsSync(path)) {
+          return errResult(`video package not available for job ${jobId}`);
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.video-package.json`,
+                mimeType: 'application/json',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_video_package failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
     'get_song_sheet',
     'Fetch the generated song sheet markdown for a completed comic.',
     {

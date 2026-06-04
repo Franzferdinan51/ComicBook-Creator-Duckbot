@@ -42,6 +42,32 @@ const trailerPackage = {
   durationSeconds: 75,
 };
 
+const videoPackage = {
+  format: 'video-generation-package' as const,
+  provider: 'minimax' as const,
+  aspectRatio: '16:9',
+  renderGoal: 'show' as const,
+  overview: 'History Project should move beyond a slideshow into cinematic clips.',
+  trailerDirection: 'History Project becomes a MiniMax-ready teaser package.',
+  commands: {
+    generate: 'mmx video generate --prompt "<clip prompt>" --async',
+    poll: 'mmx video task get --task-id <task-id>',
+    download: 'mmx video download --file-id <file-id> --out clip.mp4',
+  },
+  clips: [{
+    clipId: 'clip-001',
+    title: 'History opening clip',
+    sourceSceneId: 'scene-1',
+    durationSeconds: 4,
+    prompt: 'History cinematic opening clip.',
+    cameraLanguage: 'wide frame',
+    musicCueId: 'cue-1',
+    musicCueTitle: 'Cue 1',
+    referenceImagePath: '/tmp/history-job.images/p1-panel1.png',
+  }],
+  workflowNotes: ['Generate asynchronously', 'Use cue map', 'Avoid slideshow motion'],
+};
+
 const musicCuePackage = {
   format: 'music-brief' as const,
   cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
@@ -79,6 +105,7 @@ const entry: HistoryEntry = {
   musicProvider: 'mock',
   storyboardPackagePath: '/tmp/history-job-storyboard-package.json',
   trailerPackagePath: '/tmp/history-job-trailer-package.json',
+  videoPackagePath: '/tmp/history-job-video-package.json',
   animaticTimelinePath: '/tmp/history-job-animatic-timeline.json',
   studioBundlePath: '/tmp/history-job-studio-bundle.json',
   project: {
@@ -117,6 +144,7 @@ const entry: HistoryEntry = {
     },
     seriesPackage,
     trailerPackage,
+    videoPackage,
     musicCuePackage,
     agentGuidancePackage: {
       format: 'agent-guidance',
@@ -155,6 +183,7 @@ const entry: HistoryEntry = {
   },
   seriesPackage,
   trailerPackage,
+  videoPackage,
   musicCuePackage,
   scriptJson: {
     title: 'History Project',
@@ -168,6 +197,7 @@ try {
   await writeFile(entry.musicCuePackagePath!, JSON.stringify(musicCuePackage), 'utf8');
   await writeFile(entry.seriesPackagePath!, JSON.stringify(seriesPackage), 'utf8');
   await writeFile(entry.trailerPackagePath!, JSON.stringify(trailerPackage), 'utf8');
+  await writeFile(entry.videoPackagePath!, JSON.stringify(videoPackage), 'utf8');
   await writeFile(entry.screenplayPath!, '# History Project\n\n## Screenplay Handoff\n\nHistory screenplay text.', 'utf8');
   await writeFile(entry.directorBriefPath!, '# History Project\n\n## Director Brief\n\nHistory director brief text.', 'utf8');
   await writeFile(entry.studioBundlePath!, JSON.stringify({
@@ -180,6 +210,7 @@ try {
     adaptationPackage: entry.adaptationPackage,
     seriesPackage,
     trailerPackage,
+    videoPackage,
     musicCuePackage,
     agentGuidancePackage: entry.project!.agentGuidancePackage,
     musicProvider: 'mock',
@@ -199,6 +230,7 @@ try {
       seriesPackagePath: entry.seriesPackagePath,
       storyboardPackagePath: entry.storyboardPackagePath,
       trailerPackagePath: entry.trailerPackagePath,
+      videoPackagePath: entry.videoPackagePath,
       animaticTimelinePath: entry.animaticTimelinePath,
       studioBundlePath: entry.studioBundlePath,
     },
@@ -217,6 +249,7 @@ try {
       seriesPackage: true,
       storyboardPackage: true,
       trailerPackage: true,
+      videoPackage: true,
       animaticTimeline: true,
       studioBundle: true,
     },
@@ -241,6 +274,7 @@ try {
   assert.equal(resolved?.result.musicProvider, 'mock');
   assert.equal(resolved?.result.storyboardPackagePath, '/tmp/history-job-storyboard-package.json');
   assert.equal(resolved?.result.trailerPackagePath, '/tmp/history-job-trailer-package.json');
+  assert.equal(resolved?.result.videoPackagePath, '/tmp/history-job-video-package.json');
   assert.equal(resolved?.result.animaticTimelinePath, '/tmp/history-job-animatic-timeline.json');
 
   const handle = await startWebUI({ port: 0, webuiDir: join(process.cwd(), 'webui') });
@@ -279,6 +313,7 @@ try {
     assert.equal(bundle.artifactPaths.musicCuePackagePath, entry.musicCuePackagePath);
     assert.equal(bundle.artifactPaths.seriesPackagePath, entry.seriesPackagePath);
     assert.equal(bundle.artifactPaths.trailerPackagePath, entry.trailerPackagePath);
+    assert.equal(bundle.artifactPaths.videoPackagePath, entry.videoPackagePath);
     assert.equal(bundle.availability.agentPlaybook, true);
     assert.equal(bundle.availability.screenplay, true);
     assert.equal(bundle.availability.directorBrief, true);
@@ -286,6 +321,7 @@ try {
     assert.equal(bundle.availability.seriesPackage, true);
     assert.equal(bundle.availability.storyboardPackage, true);
     assert.equal(bundle.availability.trailerPackage, true);
+    assert.equal(bundle.availability.videoPackage, true);
     assert.equal(bundle.availability.animaticTimeline, true);
     assert.equal(bundle.availability.studioBundle, true);
 
@@ -321,6 +357,13 @@ try {
     const trailerPayload = await trailerRes.json();
     assert.equal(trailerPayload.format, 'trailer-package');
     assert.equal(trailerPayload.logline.includes('History Project'), true);
+
+    const videoRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/video-package`);
+    assert.equal(videoRes.ok, true);
+    assert.equal(videoRes.headers.get('content-type')?.includes('application/json'), true);
+    const videoPayload = await videoRes.json();
+    assert.equal(videoPayload.format, 'video-generation-package');
+    assert.equal(videoPayload.provider, 'minimax');
 
     const createRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic`, {
       method: 'POST',

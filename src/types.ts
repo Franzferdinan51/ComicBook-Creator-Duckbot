@@ -152,6 +152,32 @@ export interface SeriesPackage {
   showrunnerNotes: string[];
 }
 
+export interface VideoPackage {
+  format: 'video-generation-package';
+  provider: 'minimax';
+  aspectRatio: string;
+  renderGoal: 'show' | 'movie' | 'studio';
+  overview: string;
+  trailerDirection: string;
+  commands: {
+    generate: string;
+    poll: string;
+    download: string;
+  };
+  clips: Array<{
+    clipId: string;
+    title: string;
+    sourceSceneId?: string;
+    durationSeconds: number;
+    prompt: string;
+    cameraLanguage: string;
+    musicCueId?: string;
+    musicCueTitle?: string;
+    referenceImagePath?: string | null;
+  }>;
+  workflowNotes: string[];
+}
+
 export interface AgentGuidancePackage {
   format: 'agent-guidance';
   frameworks: {
@@ -182,6 +208,7 @@ export interface StoryProject {
   adaptationPackage: AdaptationPackage;
   seriesPackage: SeriesPackage;
   trailerPackage: TrailerPackage;
+  videoPackage: VideoPackage;
   musicCuePackage: MusicCuePackage;
   agentGuidancePackage: AgentGuidancePackage;
 }
@@ -280,6 +307,8 @@ export interface ComicResult {
   seriesPackage: SeriesPackage;
   /** Convenience alias for `project.trailerPackage`. */
   trailerPackage: TrailerPackage;
+  /** Convenience alias for the MiniMax-ready video generation package. */
+  videoPackage: VideoPackage;
   /** Convenience alias for `project.musicCuePackage`. */
   musicCuePackage: MusicCuePackage;
   /** Convenience alias for `project.agentGuidancePackage`. */
@@ -304,6 +333,8 @@ export interface ComicResult {
   storyboardPackagePath: string | null;
   /** Absolute path to the generated trailer package JSON, if written. */
   trailerPackagePath: string | null;
+  /** Absolute path to the generated video package JSON, if written. */
+  videoPackagePath: string | null;
   /** Absolute path to the generated series package JSON, if written. */
   seriesPackagePath: string | null;
   /** Absolute path to the generated animatic timeline JSON, if written. */

@@ -70,6 +70,15 @@ const directorBriefProbe = await execFileAsync('node', ['bin/comic-creator.mjs',
 assert.equal(directorBriefProbe.stdout.includes('## Director Brief'), true);
 assert.equal(directorBriefProbe.stdout.includes('A Director brief story'), true);
 
+const videoPackageOutputPath = `/tmp/comic-creator-cli-video-package-${Date.now()}.pdf`;
+const videoPackageProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--video-package', `--output=${videoPackageOutputPath}`, '--pages=1', '--panels=3', 'A Video package story'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+const videoPackageResult = JSON.parse(videoPackageProbe.stdout);
+assert.equal(videoPackageResult.format, 'video-generation-package');
+assert.equal(Array.isArray(videoPackageResult.clips), true);
+
 const outputPath = `/tmp/comic-creator-cli-${Date.now()}.pdf`;
 const result = await runCli({
   ...parsed,
@@ -94,6 +103,7 @@ assert.equal(result.musicCuePackagePath, outputPath.replace(/\.pdf$/, '-music-cu
 assert.equal(result.seriesPackagePath, outputPath.replace(/\.pdf$/, '-series-package.json'));
 assert.equal(result.storyboardPackagePath, outputPath.replace(/\.pdf$/, '-storyboard-package.json'));
 assert.equal(result.trailerPackagePath, outputPath.replace(/\.pdf$/, '-trailer-package.json'));
+assert.equal(result.videoPackagePath, outputPath.replace(/\.pdf$/, '-video-package.json'));
 assert.equal(result.animaticTimelinePath, outputPath.replace(/\.pdf$/, '-animatic-timeline.json'));
 assert.equal(result.studioBundlePath, outputPath.replace(/\.pdf$/, '-studio-bundle.json'));
 await access(result.projectPath!);
@@ -107,6 +117,7 @@ await access(result.musicCuePackagePath!);
 await access(result.seriesPackagePath!);
 await access(result.storyboardPackagePath!);
 await access(result.trailerPackagePath!);
+await access(result.videoPackagePath!);
 await access(result.animaticTimelinePath!);
 await access(result.studioBundlePath!);
 const firstPanelPath = result.pages[0]?.panelImagePaths[0];
@@ -132,6 +143,9 @@ const timeline = JSON.parse(await readFile(result.animaticTimelinePath!, 'utf8')
 assert.equal(timeline.tracks.audio[0].audioPath, result.songAudioPath);
 const trailer = JSON.parse(await readFile(result.trailerPackagePath!, 'utf8'));
 assert.equal(trailer.format, 'trailer-package');
+const videoPackage = JSON.parse(await readFile(result.videoPackagePath!, 'utf8'));
+assert.equal(videoPackage.format, 'video-generation-package');
+assert.equal(videoPackage.provider, 'minimax');
 const musicCuePackage = JSON.parse(await readFile(result.musicCuePackagePath!, 'utf8'));
 assert.equal(musicCuePackage.format, 'music-brief');
 const seriesPackage = JSON.parse(await readFile(result.seriesPackagePath!, 'utf8'));
@@ -144,6 +158,7 @@ assert.equal(studioBundle.artifactPaths.directorBriefPath, result.directorBriefP
 assert.equal(studioBundle.artifactPaths.musicCuePackagePath, result.musicCuePackagePath);
 assert.equal(studioBundle.artifactPaths.seriesPackagePath, result.seriesPackagePath);
 assert.equal(studioBundle.artifactPaths.trailerPackagePath, result.trailerPackagePath);
+assert.equal(studioBundle.artifactPaths.videoPackagePath, result.videoPackagePath);
 
 const jsonProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--json', '--pages=1', '--panels=3', 'A JSON agent story'], {
   cwd: process.cwd(),
@@ -163,6 +178,7 @@ assert.equal(bundleResult.format, 'studio-bundle');
 assert.equal(bundleResult.artifactPaths.studioBundlePath.endsWith('-studio-bundle.json'), true);
 assert.equal(bundleResult.artifactPaths.seriesPackagePath.endsWith('-series-package.json'), true);
 assert.equal(bundleResult.artifactPaths.trailerPackagePath.endsWith('-trailer-package.json'), true);
+assert.equal(bundleResult.artifactPaths.videoPackagePath.endsWith('-video-package.json'), true);
 assert.equal(bundleResult.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
 
 const stem = outputPath.replace(/\.[^./\\]+$/, '');
@@ -171,6 +187,7 @@ const musicStem = musicOutputPath.replace(/\.[^./\\]+$/, '');
 const seriesStem = seriesOutputPath.replace(/\.[^./\\]+$/, '');
 const screenplayStem = screenplayOutputPath.replace(/\.[^./\\]+$/, '');
 const directorBriefStem = directorBriefOutputPath.replace(/\.[^./\\]+$/, '');
+const videoPackageStem = videoPackageOutputPath.replace(/\.[^./\\]+$/, '');
 await rm(outputPath, { force: true });
 if (result.cbzPath) await rm(result.cbzPath, { force: true });
 await rm(result.agentGuidancePath!, { force: true });
@@ -183,6 +200,7 @@ await rm(result.musicCuePackagePath!, { force: true });
 await rm(result.seriesPackagePath!, { force: true });
 await rm(result.storyboardPackagePath!, { force: true });
 await rm(result.trailerPackagePath!, { force: true });
+await rm(result.videoPackagePath!, { force: true });
 await rm(result.animaticTimelinePath!, { force: true });
 await rm(result.studioBundlePath!, { force: true });
 await rm(`${stem}.images`, { recursive: true, force: true });
@@ -199,6 +217,7 @@ await rm(`${trailerStem}-music-cue-package.json`, { force: true });
 await rm(`${trailerStem}-series-package.json`, { force: true });
 await rm(`${trailerStem}-storyboard-package.json`, { force: true });
 await rm(`${trailerStem}-trailer-package.json`, { force: true });
+await rm(`${trailerStem}-video-package.json`, { force: true });
 await rm(`${trailerStem}-animatic-timeline.json`, { force: true });
 await rm(`${trailerStem}-studio-bundle.json`, { force: true });
 await rm(`${musicStem}.cbz`, { force: true });
@@ -212,6 +231,7 @@ await rm(`${musicStem}-music-cue-package.json`, { force: true });
 await rm(`${musicStem}-series-package.json`, { force: true });
 await rm(`${musicStem}-storyboard-package.json`, { force: true });
 await rm(`${musicStem}-trailer-package.json`, { force: true });
+await rm(`${musicStem}-video-package.json`, { force: true });
 await rm(`${musicStem}-animatic-timeline.json`, { force: true });
 await rm(`${musicStem}-studio-bundle.json`, { force: true });
 await rm(seriesOutputPath, { force: true });
@@ -226,6 +246,7 @@ await rm(`${seriesStem}-music-cue-package.json`, { force: true });
 await rm(`${seriesStem}-series-package.json`, { force: true });
 await rm(`${seriesStem}-storyboard-package.json`, { force: true });
 await rm(`${seriesStem}-trailer-package.json`, { force: true });
+await rm(`${seriesStem}-video-package.json`, { force: true });
 await rm(`${seriesStem}-animatic-timeline.json`, { force: true });
 await rm(`${seriesStem}-studio-bundle.json`, { force: true });
 await rm(screenplayOutputPath, { force: true });
@@ -241,6 +262,7 @@ await rm(`${screenplayStem}-music-cue-package.json`, { force: true });
 await rm(`${screenplayStem}-series-package.json`, { force: true });
 await rm(`${screenplayStem}-storyboard-package.json`, { force: true });
 await rm(`${screenplayStem}-trailer-package.json`, { force: true });
+await rm(`${screenplayStem}-video-package.json`, { force: true });
 await rm(`${screenplayStem}-animatic-timeline.json`, { force: true });
 await rm(`${screenplayStem}-studio-bundle.json`, { force: true });
 await rm(directorBriefOutputPath, { force: true });
@@ -256,7 +278,24 @@ await rm(`${directorBriefStem}-music-cue-package.json`, { force: true });
 await rm(`${directorBriefStem}-series-package.json`, { force: true });
 await rm(`${directorBriefStem}-storyboard-package.json`, { force: true });
 await rm(`${directorBriefStem}-trailer-package.json`, { force: true });
+await rm(`${directorBriefStem}-video-package.json`, { force: true });
 await rm(`${directorBriefStem}-animatic-timeline.json`, { force: true });
 await rm(`${directorBriefStem}-studio-bundle.json`, { force: true });
+await rm(videoPackageOutputPath, { force: true });
+await rm(`${videoPackageStem}.cbz`, { force: true });
+await rm(`${videoPackageStem}.images`, { recursive: true, force: true });
+await rm(`${videoPackageStem}-project.json`, { force: true });
+await rm(`${videoPackageStem}-agent-guidance.md`, { force: true });
+await rm(`${videoPackageStem}-screenplay.md`, { force: true });
+await rm(`${videoPackageStem}-director-brief.md`, { force: true });
+await rm(`${videoPackageStem}-song-sheet.md`, { force: true });
+await rm(`${videoPackageStem}-theme.wav`, { force: true });
+await rm(`${videoPackageStem}-music-cue-package.json`, { force: true });
+await rm(`${videoPackageStem}-series-package.json`, { force: true });
+await rm(`${videoPackageStem}-storyboard-package.json`, { force: true });
+await rm(`${videoPackageStem}-trailer-package.json`, { force: true });
+await rm(`${videoPackageStem}-video-package.json`, { force: true });
+await rm(`${videoPackageStem}-animatic-timeline.json`, { force: true });
+await rm(`${videoPackageStem}-studio-bundle.json`, { force: true });
 
 console.log('PASS cli');

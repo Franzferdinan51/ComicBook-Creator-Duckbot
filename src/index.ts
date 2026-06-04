@@ -55,6 +55,7 @@ export {
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
+  buildVideoPackage,
   buildSeriesPackage,
   buildStudioBundle,
 } from './project/index.js';
@@ -70,6 +71,7 @@ import {
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
+  buildVideoPackage,
   buildStudioBundle,
 } from './project/index.js';
 import { writeFile, mkdir } from 'node:fs/promises';
@@ -241,6 +243,7 @@ export async function createComic(
   const storyboardPackagePath = `${stemFromOutput}-storyboard-package.json`;
   const seriesPackagePath = `${stemFromOutput}-series-package.json`;
   const trailerPackagePath = `${stemFromOutput}-trailer-package.json`;
+  const videoPackagePath = `${stemFromOutput}-video-package.json`;
   const animaticTimelinePath = `${stemFromOutput}-animatic-timeline.json`;
   const studioBundlePath = `${stemFromOutput}-studio-bundle.json`;
   const agentPlaybookPath = join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md');
@@ -280,6 +283,8 @@ export async function createComic(
     'utf8'
   );
   await writeFile(trailerPackagePath, JSON.stringify(project.trailerPackage, null, 2), 'utf8');
+  const videoPackage = buildVideoPackage({ project, pages: pageImages, songAudioPath });
+  await writeFile(videoPackagePath, JSON.stringify(videoPackage, null, 2), 'utf8');
   await writeFile(
     animaticTimelinePath,
     JSON.stringify(buildAnimaticTimeline({ project, pages: pageImages, songAudioPath }), null, 2),
@@ -297,6 +302,7 @@ export async function createComic(
     adaptationPackage: project.adaptationPackage,
     seriesPackage: project.seriesPackage,
     trailerPackage: project.trailerPackage,
+    videoPackage,
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
@@ -310,6 +316,7 @@ export async function createComic(
     musicProvider: musicProvider.name,
     storyboardPackagePath,
     trailerPackagePath,
+    videoPackagePath,
     animaticTimelinePath,
     studioBundlePath,
     pages: pageImages,

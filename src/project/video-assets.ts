@@ -1,7 +1,7 @@
-import type { Page, SeriesPackage, StoryProject, TrailerPackage } from '../types.js';
+import type { Page, SeriesPackage, StoryProject, TrailerPackage, VideoPackage } from '../types.js';
 
 export interface StoryboardPackageInput {
-  project: StoryProject;
+  project: Pick<StoryProject, 'title' | 'renderProfile' | 'adaptationPackage'>;
   pages: Array<{
     page: Page;
     panelImagePaths: string[];
@@ -15,6 +15,15 @@ export interface TrailerPackageInput {
 
 export interface SeriesPackageInput {
   project: Pick<StoryProject, 'title' | 'projectGoal' | 'storyBible' | 'adaptationPackage'>;
+}
+
+export interface VideoPackageInput {
+  project: Pick<StoryProject, 'title' | 'artStyle' | 'projectGoal' | 'renderProfile' | 'adaptationPackage' | 'trailerPackage' | 'musicCuePackage'>;
+  pages: Array<{
+    page: Page;
+    panelImagePaths: string[];
+  }>;
+  songAudioPath: string | null;
 }
 
 export function buildTrailerPackage(input: TrailerPackageInput): TrailerPackage {
@@ -219,5 +228,62 @@ export function buildAnimaticTimeline(input: StoryboardPackageInput) {
           }]
         : [],
     },
+  };
+}
+
+export function buildVideoPackage(input: VideoPackageInput): VideoPackage {
+  const storyboard = buildStoryboardPackage(input);
+  const titleSlug = input.project.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'comic-project';
+  const renderGoal = input.project.projectGoal === 'screen'
+    ? 'show'
+    : input.project.projectGoal === 'studio'
+      ? 'studio'
+      : 'movie';
+  const overview = `${input.project.title} should move beyond a slideshow into short cinematic clips with motion, scene continuity, and cue-aware pacing.`;
+  const trailerDirection = input.project.trailerPackage.logline;
+
+  return {
+    format: 'video-generation-package',
+    provider: 'minimax',
+    aspectRatio: '16:9',
+    renderGoal,
+    overview,
+    trailerDirection,
+    commands: {
+      generate: `mmx video generate --prompt "<clip prompt>" --async`,
+      poll: 'mmx video task get --task-id <task-id>',
+      download: `mmx video download --file-id <file-id> --out ${titleSlug}-clip.mp4`,
+    },
+    clips: storyboard.shots.map((shot, index) => {
+      const cue = input.project.musicCuePackage.sceneCueMap.find((entry) => entry.sceneId === shot.sceneId);
+      const cueMeta = cue
+        ? input.project.musicCuePackage.cues.find((item) => item.cueId === cue.cueId)
+        : null;
+      return {
+        clipId: `clip-${String(index + 1).padStart(3, '0')}`,
+        title: shot.slugline,
+        sourceSceneId: shot.sceneId,
+        durationSeconds: Math.max(4, shot.durationSeconds),
+        prompt: [
+          `${input.project.artStyle} cinematic video shot for "${input.project.title}"`,
+          shot.action,
+          `Camera language: ${shot.cameraLanguage || 'clean cinematic movement and readable blocking'}.`,
+          `Storyboard prompt: ${shot.storyboardPrompt || 'Preserve the comic iconography and introduce real movement.'}`,
+          cueMeta ? `Music cue mood: ${cueMeta.mood}.` : null,
+          input.songAudioPath ? `Sync pacing to theme audio reference at ${input.songAudioPath}.` : null,
+          'Avoid slideshow behavior; introduce motion, parallax, and environmental movement.',
+        ].filter(Boolean).join(' '),
+        cameraLanguage: shot.cameraLanguage,
+        musicCueId: cue?.cueId,
+        musicCueTitle: cueMeta?.title,
+        referenceImagePath: shot.panelImagePath || null,
+      };
+    }),
+    workflowNotes: [
+      'Start from the strongest hook shot and generate clips asynchronously with mmx video.',
+      'Use the panel image path as the visual continuity reference for each scene.',
+      'Pair each clip with the mapped music cue before stitching into teaser, trailer, or scene assembly.',
+      'Treat this package as the bridge from comic panels to actual motion, not as a slideshow export.',
+    ],
   };
 }

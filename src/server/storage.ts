@@ -25,6 +25,7 @@ import type {
   SeriesPackage,
   StoryProject,
   TrailerPackage,
+  VideoPackage,
 } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -58,6 +59,8 @@ export interface HistoryEntry {
   seriesPackage?: SeriesPackage;
   /** Trailer / teaser artifact for the project. */
   trailerPackage?: TrailerPackage;
+  /** MiniMax-ready video generation artifact for the project. */
+  videoPackage?: VideoPackage;
   /** Music or song-development artifact for the project. */
   musicCuePackage?: MusicCuePackage;
   /** Agent orchestration guidance artifact for the project. */
@@ -84,6 +87,8 @@ export interface HistoryEntry {
   storyboardPackagePath?: string;
   /** Path to the generated trailer package JSON. */
   trailerPackagePath?: string;
+  /** Path to the generated video package JSON. */
+  videoPackagePath?: string;
   /** Path to the generated animatic timeline JSON. */
   animaticTimelinePath?: string;
   /** Path to the generated unified studio bundle JSON. */

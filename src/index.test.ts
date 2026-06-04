@@ -45,6 +45,7 @@ async function main(): Promise<void> {
   assert.equal(result.seriesPackagePath?.endsWith('-series-package.json'), true);
   assert.equal(result.storyboardPackagePath?.endsWith('-storyboard-package.json'), true);
   assert.equal(result.trailerPackagePath?.endsWith('-trailer-package.json'), true);
+  assert.equal(result.videoPackagePath?.endsWith('-video-package.json'), true);
   assert.equal(result.animaticTimelinePath?.endsWith('-animatic-timeline.json'), true);
   assert.equal(result.studioBundlePath?.endsWith('-studio-bundle.json'), true);
 
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
   await access(result.seriesPackagePath!);
   await access(result.storyboardPackagePath!);
   await access(result.trailerPackagePath!);
+  await access(result.videoPackagePath!);
   await access(result.animaticTimelinePath!);
   await access(result.studioBundlePath!);
 
@@ -112,6 +114,10 @@ async function main(): Promise<void> {
   const trailerPackage = JSON.parse(await readFile(result.trailerPackagePath!, 'utf8'));
   assert.equal(trailerPackage.format, 'trailer-package');
   assert.equal(trailerPackage.logline.includes(result.project.title), true);
+  const videoPackage = JSON.parse(await readFile(result.videoPackagePath!, 'utf8'));
+  assert.equal(videoPackage.format, 'video-generation-package');
+  assert.equal(videoPackage.provider, 'minimax');
+  assert.equal(videoPackage.clips.length >= 3, true);
   const animaticTimeline = JSON.parse(await readFile(result.animaticTimelinePath!, 'utf8'));
   assert.equal(animaticTimeline.format, 'animatic-timeline');
   assert.equal(animaticTimeline.tracks.video.length >= 3, true);
@@ -124,6 +130,7 @@ async function main(): Promise<void> {
   assert.equal(studioBundle.artifactPaths.directorBriefPath, result.directorBriefPath);
   assert.equal(studioBundle.artifactPaths.musicCuePackagePath, result.musicCuePackagePath);
   assert.equal(studioBundle.artifactPaths.seriesPackagePath, result.seriesPackagePath);
+  assert.equal(studioBundle.artifactPaths.videoPackagePath, result.videoPackagePath);
   assert.equal(studioBundle.artifactPaths.agentPlaybookPath, result.agentPlaybookPath);
 
   const stem = result.outputPath.replace(/\.[^./\\]+$/, '');
@@ -139,6 +146,7 @@ async function main(): Promise<void> {
   await rm(result.seriesPackagePath!, { force: true });
   await rm(result.storyboardPackagePath!, { force: true });
   await rm(result.trailerPackagePath!, { force: true });
+  await rm(result.videoPackagePath!, { force: true });
   await rm(result.animaticTimelinePath!, { force: true });
   await rm(result.studioBundlePath!, { force: true });
   await rm(`${stem}.images`, { recursive: true, force: true });

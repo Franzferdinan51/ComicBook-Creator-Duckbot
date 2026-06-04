@@ -42,6 +42,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | GET    | `/api/comic/:jobId/music-cue-package`   | Stream the music cue JSON        |
 | GET    | `/api/comic/:jobId/series-package`      | Stream the episodic series JSON  |
 | GET    | `/api/comic/:jobId/trailer-package`     | Stream the trailer / teaser JSON |
+| GET    | `/api/comic/:jobId/video-package`       | Stream the MiniMax-ready video JSON |
 | GET    | `/api/comic/:jobId/images/:panelId`     | Stream a single panel PNG        |
 | POST   | `/api/comic/:jobId/regenerate`          | Re-run with new options          |
 | GET    | `/api/history`                          | List recent jobs                 |
@@ -263,6 +264,21 @@ workspace.
 
 ---
 
+### `GET /api/comic/:jobId/video-package`
+
+**Response 200** — streams the MiniMax-ready video generation JSON.
+- `Content-Type: application/json`
+- `Content-Disposition: attachment; filename="<jobId>-video-package.json"`
+
+This package is the motion-generation handoff. It packages clip prompts,
+camera language, cue alignment, and `mmx video` command scaffolding so the
+project can move beyond a slideshow into generated clips.
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+**410** if the on-disk file is gone.
+
+---
+
 ### `GET /api/comic/:jobId/music-cue-package`
 
 **Response 200** — streams the music cue / score brief JSON.
@@ -332,6 +348,7 @@ a future version).
     "musicCuePackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-music-cue-package.json",
     "seriesPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-series-package.json",
     "trailerPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-trailer-package.json",
+    "videoPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-video-package.json",
     "studioBundlePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-studio-bundle.json",
     "scriptJson": { "title": "...", "artStyle": "manga", "pages": [ ... ] }
   }

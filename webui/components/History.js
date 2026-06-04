@@ -63,6 +63,7 @@ export function History({ onOpen }) {
               adaptationPackage: bundle.adaptationPackage,
               seriesPackage: bundle.seriesPackage,
               trailerPackage: bundle.trailerPackage,
+              videoPackage: bundle.videoPackage,
               musicCuePackage: bundle.musicCuePackage,
               agentGuidancePackage: bundle.agentGuidancePackage,
               agentGuidancePath: bundle.artifactPaths?.agentGuidancePath ?? null,
@@ -75,6 +76,7 @@ export function History({ onOpen }) {
               musicProvider: bundle.musicProvider || entry.musicProvider || 'mock',
               storyboardPackagePath: bundle.artifactPaths?.storyboardPackagePath ?? null,
               trailerPackagePath: bundle.artifactPaths?.trailerPackagePath ?? null,
+              videoPackagePath: bundle.artifactPaths?.videoPackagePath ?? null,
               animaticTimelinePath: bundle.artifactPaths?.animaticTimelinePath ?? null,
               studioBundlePath: bundle.artifactPaths?.studioBundlePath ?? entry.studioBundlePath ?? null,
               pages: [],
@@ -94,6 +96,7 @@ export function History({ onOpen }) {
           adaptationPackage: entry.adaptationPackage || null,
           seriesPackage: entry.seriesPackage || null,
           trailerPackage: entry.trailerPackage || null,
+          videoPackage: entry.videoPackage || null,
           musicCuePackage: entry.musicCuePackage || null,
           agentGuidancePackage: entry.agentGuidancePackage || null,
           agentGuidancePath: entry.agentGuidancePath || null,
@@ -106,6 +109,7 @@ export function History({ onOpen }) {
           musicProvider: entry.musicProvider || 'mock',
           storyboardPackagePath: entry.storyboardPackagePath || null,
           trailerPackagePath: entry.trailerPackagePath || null,
+          videoPackagePath: entry.videoPackagePath || null,
           animaticTimelinePath: entry.animaticTimelinePath || null,
           studioBundlePath: entry.studioBundlePath || null,
           pages: [],
@@ -171,6 +175,18 @@ export function History({ onOpen }) {
     a.click();
     document.body.removeChild(a);
     showToast('Series package downloaded.', 'success');
+  }
+
+  function handleDownloadVideoPackage(entry, e) {
+    e.stopPropagation();
+    if (!entry.videoPackagePath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${entry.jobId}/video-package`;
+    a.download = `${(entry.title || entry.jobId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-video-package.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Video package downloaded.', 'success');
   }
 
   function handleDownloadScreenplay(entry, e) {
@@ -320,6 +336,13 @@ export function History({ onOpen }) {
                     onClick=${(e) => handleDownloadSeriesPackage(entry, e)}
                     title="Download the episodic series package for this history item"
                   >Series</button>
+                ` : null}
+                ${entry.videoPackagePath ? html`
+                  <button
+                    type="button"
+                    onClick=${(e) => handleDownloadVideoPackage(entry, e)}
+                    title="Download the MiniMax-ready video package for this history item"
+                  >Video</button>
                 ` : null}
                 ${entry.screenplayPath ? html`
                   <button
