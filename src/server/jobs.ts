@@ -180,6 +180,16 @@ class JobManager {
         screenplayScenes: [],
         storyboardPrompts: [],
       },
+      seriesPackage: {
+        format: 'series-bible',
+        seriesLogline: `${entry.scriptJson.title} unfolds into an episodic screen story.`,
+        premise: entry.scriptJson.title,
+        targetFormat: 'pilot',
+        seasonArc: [],
+        episodeOutline: [],
+        pilotBeatSheet: [],
+        showrunnerNotes: [],
+      },
       trailerPackage: {
         format: 'trailer-package',
         logline: `${entry.scriptJson.title} becomes a screen-ready comic adaptation.`,
@@ -228,7 +238,10 @@ class JobManager {
       ? {
           ...entry.project,
           projectGoal: entry.project.projectGoal ?? projectGoal,
+          seriesPackage: entry.project.seriesPackage ?? fallbackProject.seriesPackage,
           trailerPackage: entry.project.trailerPackage ?? fallbackProject.trailerPackage,
+          musicCuePackage: entry.project.musicCuePackage ?? fallbackProject.musicCuePackage,
+          agentGuidancePackage: entry.project.agentGuidancePackage ?? fallbackProject.agentGuidancePackage,
         }
       : fallbackProject;
     const result: ComicResult = {
@@ -252,6 +265,16 @@ class JobManager {
         sceneOutline: [],
         screenplayScenes: [],
         storyboardPrompts: [],
+      },
+      seriesPackage: entry.seriesPackage ?? entry.project?.seriesPackage ?? {
+        format: 'series-bible',
+        seriesLogline: `${entry.scriptJson.title} unfolds into an episodic screen story.`,
+        premise: entry.scriptJson.title,
+        targetFormat: 'pilot',
+        seasonArc: [],
+        episodeOutline: [],
+        pilotBeatSheet: [],
+        showrunnerNotes: [],
       },
       trailerPackage: entry.trailerPackage ?? entry.project?.trailerPackage ?? {
         format: 'trailer-package',
@@ -300,6 +323,7 @@ class JobManager {
       songSheetPath: entry.songSheetPath ?? null,
       songAudioPath: entry.songAudioPath ?? null,
       musicCuePackagePath: entry.musicCuePackagePath ?? null,
+      seriesPackagePath: entry.seriesPackagePath ?? null,
       musicProvider: entry.musicProvider ?? 'mock',
       storyboardPackagePath: entry.storyboardPackagePath ?? null,
       trailerPackagePath: entry.trailerPackagePath ?? null,
@@ -389,11 +413,13 @@ class JobManager {
         adaptationPackage: result.adaptationPackage,
         trailerPackage: result.trailerPackage,
         musicCuePackage: result.musicCuePackage,
+        seriesPackage: result.seriesPackage,
         agentGuidancePackage: result.agentGuidancePackage,
         agentGuidancePath: result.agentGuidancePath ?? undefined,
         songSheetPath: result.songSheetPath ?? undefined,
         songAudioPath: result.songAudioPath ?? undefined,
         musicCuePackagePath: result.musicCuePackagePath ?? undefined,
+        seriesPackagePath: result.seriesPackagePath ?? undefined,
         musicProvider: result.musicProvider,
         storyboardPackagePath: result.storyboardPackagePath ?? undefined,
         trailerPackagePath: result.trailerPackagePath ?? undefined,

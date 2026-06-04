@@ -27,6 +27,7 @@ npm start
 | `coverImagePath` | AI-generated cover page image |
 | `storyBible` | Premise, synopsis, chapter outline, scene beats |
 | `adaptationPackage` | Per-scene screenplay summaries + visual goals |
+| `seriesPackagePath` | Episodic show-bible JSON with episode seeds and showrunner notes |
 | `trailerPackagePath` | Pitch / teaser trailer package for show or movie handoff |
 | `musicCuePackage` | Mood cues, song draft, theme-prompt for audio tools |
 | `storyboardPackagePath` | Shot-by-shot show/movie storyboard package |
@@ -123,7 +124,7 @@ open start.command
 The WebUI gives you:
 - Story input + style/format/provider options
 - Project goal preset for comic / screen / music / studio workflows
-- Movie / Show tab with pitch, trailer, story, script, shots, previs, timeline, music, agents, and deliverables tabs
+- Movie / Show tab with pitch, trailer, story, series, script, shots, previs, timeline, music, agents, and deliverables tabs
 - Live job status and progress
 - PDF preview with page navigation and thumbnails
 - Download as PDF or CBZ, or grab all panel images as a ZIP
@@ -155,6 +156,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--output=<path>` | auto | Override output path |
 | `--json` | off | Print the full `ComicResult` JSON |
 | `--studio-bundle` | off | Print the unified studio bundle JSON |
+| `--series-package` | off | Print the episodic series package JSON |
 | `--trailer-package` | off | Print the trailer package JSON |
 | `--music-cue-package` | off | Print the music cue package JSON |
 | `--agent-playbook` | off | Print the repo-level Hermes/OpenClaw playbook |
@@ -167,7 +169,7 @@ External agents (OpenClaw, Claude Desktop, etc.) can invoke the pipeline via MCP
 comic-creator-mcp
 ```
 
-Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_music_cue_package`, `get_trailer_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
+Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
 
 The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed. When score planning is the next step, grab the music cue package before the theme audio.
 

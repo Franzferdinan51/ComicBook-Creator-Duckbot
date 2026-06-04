@@ -135,6 +135,23 @@ export interface MusicCuePackage {
   musicGenerationPrompt: string;
 }
 
+export interface SeriesPackage {
+  format: 'series-bible';
+  seriesLogline: string;
+  premise: string;
+  targetFormat: 'series' | 'limited-series' | 'pilot';
+  seasonArc: string[];
+  episodeOutline: Array<{
+    episodeId: string;
+    title: string;
+    summary: string;
+    cliffhanger: string;
+    sourceSceneId?: string;
+  }>;
+  pilotBeatSheet: string[];
+  showrunnerNotes: string[];
+}
+
 export interface AgentGuidancePackage {
   format: 'agent-guidance';
   frameworks: {
@@ -163,6 +180,7 @@ export interface StoryProject {
   renderProfile: RenderProfile;
   storyBible: StoryBible;
   adaptationPackage: AdaptationPackage;
+  seriesPackage: SeriesPackage;
   trailerPackage: TrailerPackage;
   musicCuePackage: MusicCuePackage;
   agentGuidancePackage: AgentGuidancePackage;
@@ -258,6 +276,8 @@ export interface ComicResult {
   storyBible: StoryBible;
   /** Convenience alias for `project.adaptationPackage`. */
   adaptationPackage: AdaptationPackage;
+  /** Convenience alias for `project.seriesPackage`. */
+  seriesPackage: SeriesPackage;
   /** Convenience alias for `project.trailerPackage`. */
   trailerPackage: TrailerPackage;
   /** Convenience alias for `project.musicCuePackage`. */
@@ -280,6 +300,8 @@ export interface ComicResult {
   storyboardPackagePath: string | null;
   /** Absolute path to the generated trailer package JSON, if written. */
   trailerPackagePath: string | null;
+  /** Absolute path to the generated series package JSON, if written. */
+  seriesPackagePath: string | null;
   /** Absolute path to the generated animatic timeline JSON, if written. */
   animaticTimelinePath: string | null;
   /** Absolute path to the unified studio bundle JSON, if written. */

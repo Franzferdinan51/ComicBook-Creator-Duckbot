@@ -38,6 +38,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | GET    | `/api/comic/:jobId`                     | Poll job status                  |
 | GET    | `/api/comic/:jobId/pdf`                 | Stream the generated PDF         |
 | GET    | `/api/comic/:jobId/music-cue-package`   | Stream the music cue JSON        |
+| GET    | `/api/comic/:jobId/series-package`      | Stream the episodic series JSON  |
 | GET    | `/api/comic/:jobId/trailer-package`     | Stream the trailer / teaser JSON |
 | GET    | `/api/comic/:jobId/images/:panelId`     | Stream a single panel PNG        |
 | POST   | `/api/comic/:jobId/regenerate`          | Re-run with new options          |
@@ -209,6 +210,18 @@ The `mock` provider is always available.
 
 ---
 
+### `GET /api/comic/:jobId/series-package`
+
+Streams the generated episodic show-bible JSON.
+
+**Success response headers**
+- `Content-Type: application/json; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-series-package.json"`
+
+**404** if the job is unknown or no series package exists for that comic.
+
+---
+
 ### `GET /api/comic/:jobId/trailer-package`
 
 **Response 200** — streams the trailer / teaser JSON.
@@ -289,6 +302,7 @@ a future version).
     "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
     "agentPlaybookPath": "/Users/duckets/Desktop/ComicBook-Creator-Duckbot-main/docs/agents/hermes-openclaw-playbook.md",
     "musicCuePackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-music-cue-package.json",
+    "seriesPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-series-package.json",
     "trailerPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-trailer-package.json",
     "studioBundlePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-studio-bundle.json",
     "scriptJson": { "title": "...", "artStyle": "manga", "pages": [ ... ] }

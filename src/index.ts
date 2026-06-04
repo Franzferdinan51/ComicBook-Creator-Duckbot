@@ -31,6 +31,7 @@ export type {
   StoryProject,
   StoryBible,
   AdaptationPackage,
+  SeriesPackage,
   TrailerPackage,
   MusicCuePackage,
   AgentGuidancePackage,
@@ -52,6 +53,7 @@ export {
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
+  buildSeriesPackage,
   buildStudioBundle,
 } from './project/index.js';
 
@@ -231,6 +233,7 @@ export async function createComic(
   const songAudioPath = `${stemFromOutput}-theme.${musicProvider.outputExtension}`;
   const musicCuePackagePath = `${stemFromOutput}-music-cue-package.json`;
   const storyboardPackagePath = `${stemFromOutput}-storyboard-package.json`;
+  const seriesPackagePath = `${stemFromOutput}-series-package.json`;
   const trailerPackagePath = `${stemFromOutput}-trailer-package.json`;
   const animaticTimelinePath = `${stemFromOutput}-animatic-timeline.json`;
   const studioBundlePath = `${stemFromOutput}-studio-bundle.json`;
@@ -239,6 +242,7 @@ export async function createComic(
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(musicCuePackagePath, JSON.stringify(project.musicCuePackage, null, 2), 'utf8');
+  await writeFile(seriesPackagePath, JSON.stringify(project.seriesPackage, null, 2), 'utf8');
   await writeFile(songAudioPath, await musicProvider.generate(project, { seed: opts.seed }));
   const pageImages: ComicResult['pages'] = [];
   for (const page of script.pages) {
@@ -283,6 +287,7 @@ export async function createComic(
     projectPath,
     storyBible: project.storyBible,
     adaptationPackage: project.adaptationPackage,
+    seriesPackage: project.seriesPackage,
     trailerPackage: project.trailerPackage,
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
@@ -291,6 +296,7 @@ export async function createComic(
     songSheetPath,
     songAudioPath,
     musicCuePackagePath,
+    seriesPackagePath,
     musicProvider: musicProvider.name,
     storyboardPackagePath,
     trailerPackagePath,

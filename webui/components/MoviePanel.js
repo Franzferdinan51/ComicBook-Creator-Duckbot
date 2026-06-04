@@ -14,6 +14,7 @@ const TABS = [
   { id: 'pitch', label: 'Pitch' },
   { id: 'trailer', label: 'Trailer' },
   { id: 'story', label: 'Story' },
+  { id: 'series', label: 'Series' },
   { id: 'script', label: 'Script' },
   { id: 'shots', label: 'Shots' },
   { id: 'previs', label: 'Previs' },
@@ -97,6 +98,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
   const chapterOutline = result.storyBible?.chapterOutline || [];
   const sceneBeats = result.storyBible?.sceneBeats || [];
   const songSections = result.musicCuePackage?.songDraft?.sections || [];
+  const seriesPackage = result.seriesPackage;
   const trailerPackage = result.trailerPackage;
   const agentGuidance = result.agentGuidancePackage || {};
   const agentWorkflowSteps = agentGuidance.workflowSteps || [];
@@ -128,6 +130,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
     { label: 'Pitch deck', tab: 'pitch' },
     { label: 'Trailer', tab: 'trailer' },
     { label: 'Story bible', tab: 'story' },
+    { label: 'Series bible', tab: 'series' },
     { label: 'Screenplay', tab: 'script' },
     { label: 'Storyboard', tab: 'shots' },
     { label: 'Previs', tab: 'previs' },
@@ -155,6 +158,12 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       href: jobId ? `/api/comic/${jobId}/trailer-package` : null,
       filename: `${localSlug(title)}-trailer-package.json`,
       hint: 'Pitch beats and teaser structure for the screen version.',
+    },
+    {
+      label: 'Series package',
+      href: jobId && result.seriesPackagePath ? `/api/comic/${jobId}/series-package` : null,
+      filename: `${localSlug(title)}-series-package.json`,
+      hint: 'Episode arc, pilot beat sheet, and showrunner notes for the show version.',
     },
     {
       label: 'Animatic timeline',
@@ -215,6 +224,15 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       `/api/comic/${jobId}/animatic-timeline`,
       `${localSlug(title)}-animatic-timeline.json`,
       'Animatic timeline downloaded.'
+    );
+  }
+
+  function handleDownloadSeriesPackage() {
+    if (!jobId || !result?.seriesPackagePath) return;
+    download(
+      `/api/comic/${jobId}/series-package`,
+      `${localSlug(title)}-series-package.json`,
+      'Series package downloaded.'
     );
   }
 
@@ -311,6 +329,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
             </p>
             <ul class="movie-bullets">
               <li>${sceneOutline.length} scene outline beats</li>
+              <li>${seriesPackage?.episodeOutline?.length || 0} episode seeds</li>
               <li>${screenplayScenes.length} screenplay scenes</li>
               <li>${storyboardPrompts.length} storyboard prompts</li>
               <li>${sceneCueMap.length} music timing links</li>
@@ -321,6 +340,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
             <div class="action-row">
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSeriesPackage}>Download series package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStoryboardPackage}>Download storyboard package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAnimaticTimeline}>Download animatic timeline</button>
             </div>
@@ -445,6 +465,69 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
                 ? sceneBeats.map((item) => html`<li key=${item}>${item}</li>`)
                 : html`<li>No scene beats yet.</li>`}
             </ol>
+          </section>
+        </div>
+      ` : null}
+
+      ${activeTab === 'series' ? html`
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card movie-pitch-card">
+            <h3>Series hook</h3>
+            <p class="movie-pitch-line">${seriesPackage?.seriesLogline || `${title} is ready for an episodic adaptation.`}</p>
+            <p class="muted small">${seriesPackage?.premise || result.storyBible?.premise || 'No episodic premise captured yet.'}</p>
+          </section>
+          <section class="movie-card">
+            <h3>Format target</h3>
+            <p><strong>${seriesPackage?.targetFormat || 'pilot'}</strong></p>
+            <p class="muted small">This tab is for the show version: episode flow, season engine, and showrunner notes.</p>
+          </section>
+        </div>
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card">
+            <h3>Season arc</h3>
+            <ol class="movie-list">
+              ${(seriesPackage?.seasonArc || []).length > 0
+                ? seriesPackage.seasonArc.map((item) => html`<li key=${item}>${item}</li>`)
+                : html`<li>No season arc yet.</li>`}
+            </ol>
+          </section>
+          <section class="movie-card">
+            <h3>Pilot beat sheet</h3>
+            <ol class="movie-list">
+              ${(seriesPackage?.pilotBeatSheet || []).length > 0
+                ? seriesPackage.pilotBeatSheet.map((item) => html`<li key=${item}>${item}</li>`)
+                : html`<li>No pilot beat sheet yet.</li>`}
+            </ol>
+          </section>
+        </div>
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card">
+            <h3>Episode seeds</h3>
+            <div class="movie-previs-list">
+              ${(seriesPackage?.episodeOutline || []).length > 0
+                ? seriesPackage.episodeOutline.map((episode) => html`
+                  <article class="movie-previs-card" key=${episode.episodeId}>
+                    <div class="scene-head">
+                      <span class="movie-chip">${episode.episodeId}</span>
+                      <span class="movie-chip subtle">${episode.title}</span>
+                    </div>
+                    <p>${episode.summary}</p>
+                    <p class="muted small">Cliffhanger: ${episode.cliffhanger}</p>
+                  </article>
+                `)
+                : html`<p class="muted small">No episode outline yet.</p>`}
+            </div>
+          </section>
+          <section class="movie-card">
+            <h3>Showrunner notes</h3>
+            <ul class="movie-list">
+              ${(seriesPackage?.showrunnerNotes || []).length > 0
+                ? seriesPackage.showrunnerNotes.map((item) => html`<li key=${item}>${item}</li>`)
+                : html`<li>No showrunner notes yet.</li>`}
+            </ul>
+            <div class="action-row" style="margin-top: .9rem;">
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSeriesPackage}>Download series package</button>
+            </div>
           </section>
         </div>
       ` : null}
@@ -647,6 +730,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         <div class="action-row">
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSeriesPackage}>Download series package</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
         </div>
       ` : null}

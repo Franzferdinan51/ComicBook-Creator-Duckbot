@@ -61,14 +61,18 @@ export function History({ onOpen }) {
               projectPath: bundle.artifactPaths?.projectPath ?? null,
               storyBible: bundle.storyBible,
               adaptationPackage: bundle.adaptationPackage,
+              seriesPackage: bundle.seriesPackage,
+              trailerPackage: bundle.trailerPackage,
               musicCuePackage: bundle.musicCuePackage,
               agentGuidancePackage: bundle.agentGuidancePackage,
               agentGuidancePath: bundle.artifactPaths?.agentGuidancePath ?? null,
               songSheetPath: bundle.artifactPaths?.songSheetPath ?? null,
               songAudioPath: bundle.artifactPaths?.songAudioPath ?? null,
               musicCuePackagePath: bundle.artifactPaths?.musicCuePackagePath ?? null,
+              seriesPackagePath: bundle.artifactPaths?.seriesPackagePath ?? null,
               musicProvider: bundle.musicProvider || entry.musicProvider || 'mock',
               storyboardPackagePath: bundle.artifactPaths?.storyboardPackagePath ?? null,
+              trailerPackagePath: bundle.artifactPaths?.trailerPackagePath ?? null,
               animaticTimelinePath: bundle.artifactPaths?.animaticTimelinePath ?? null,
               studioBundlePath: bundle.artifactPaths?.studioBundlePath ?? entry.studioBundlePath ?? null,
               pages: [],
@@ -86,14 +90,18 @@ export function History({ onOpen }) {
           projectPath: entry.projectPath || null,
           storyBible: entry.storyBible || null,
           adaptationPackage: entry.adaptationPackage || null,
+          seriesPackage: entry.seriesPackage || null,
+          trailerPackage: entry.trailerPackage || null,
           musicCuePackage: entry.musicCuePackage || null,
           agentGuidancePackage: entry.agentGuidancePackage || null,
           agentGuidancePath: entry.agentGuidancePath || null,
           songSheetPath: entry.songSheetPath || null,
           songAudioPath: entry.songAudioPath || null,
           musicCuePackagePath: entry.musicCuePackagePath || null,
+          seriesPackagePath: entry.seriesPackagePath || null,
           musicProvider: entry.musicProvider || 'mock',
           storyboardPackagePath: entry.storyboardPackagePath || null,
+          trailerPackagePath: entry.trailerPackagePath || null,
           animaticTimelinePath: entry.animaticTimelinePath || null,
           studioBundlePath: entry.studioBundlePath || null,
           pages: [],
@@ -147,6 +155,18 @@ export function History({ onOpen }) {
     a.click();
     document.body.removeChild(a);
     showToast('Music cue package downloaded.', 'success');
+  }
+
+  function handleDownloadSeriesPackage(entry, e) {
+    e.stopPropagation();
+    if (!entry.seriesPackagePath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${entry.jobId}/series-package`;
+    a.download = `${(entry.title || entry.jobId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-series-package.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Series package downloaded.', 'success');
   }
 
   function handleDownloadAgentPlaybook(e) {
@@ -265,6 +285,13 @@ export function History({ onOpen }) {
                     onClick=${(e) => handleDownloadMusicCuePackage(entry, e)}
                     title="Download the music cue package for this history item"
                   >Music</button>
+                ` : null}
+                ${entry.seriesPackagePath ? html`
+                  <button
+                    type="button"
+                    onClick=${(e) => handleDownloadSeriesPackage(entry, e)}
+                    title="Download the episodic series package for this history item"
+                  >Series</button>
                 ` : null}
                 <button
                   type="button"

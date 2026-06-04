@@ -45,6 +45,15 @@ const musicResult = JSON.parse(musicProbe.stdout);
 assert.equal(musicResult.format, 'music-brief');
 assert.equal(Array.isArray(musicResult.cues), true);
 
+const seriesOutputPath = `/tmp/comic-creator-cli-series-${Date.now()}.pdf`;
+const seriesProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--series-package', `--output=${seriesOutputPath}`, '--pages=1', '--panels=3', 'A Series package story'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+const seriesResult = JSON.parse(seriesProbe.stdout);
+assert.equal(seriesResult.format, 'series-bible');
+assert.equal(Array.isArray(seriesResult.episodeOutline), true);
+
 const outputPath = `/tmp/comic-creator-cli-${Date.now()}.pdf`;
 const result = await runCli({
   ...parsed,
@@ -64,6 +73,7 @@ assert.equal(result.agentGuidancePath, outputPath.replace(/\.pdf$/, '-agent-guid
 assert.equal(result.songSheetPath, outputPath.replace(/\.pdf$/, '-song-sheet.md'));
 assert.equal(result.songAudioPath, outputPath.replace(/\.pdf$/, '-theme.wav'));
 assert.equal(result.musicCuePackagePath, outputPath.replace(/\.pdf$/, '-music-cue-package.json'));
+assert.equal(result.seriesPackagePath, outputPath.replace(/\.pdf$/, '-series-package.json'));
 assert.equal(result.storyboardPackagePath, outputPath.replace(/\.pdf$/, '-storyboard-package.json'));
 assert.equal(result.trailerPackagePath, outputPath.replace(/\.pdf$/, '-trailer-package.json'));
 assert.equal(result.animaticTimelinePath, outputPath.replace(/\.pdf$/, '-animatic-timeline.json'));
@@ -74,6 +84,7 @@ await access(result.agentGuidancePath!);
 await access(result.songSheetPath!);
 await access(result.songAudioPath!);
 await access(result.musicCuePackagePath!);
+await access(result.seriesPackagePath!);
 await access(result.storyboardPackagePath!);
 await access(result.trailerPackagePath!);
 await access(result.animaticTimelinePath!);
@@ -99,10 +110,13 @@ const trailer = JSON.parse(await readFile(result.trailerPackagePath!, 'utf8'));
 assert.equal(trailer.format, 'trailer-package');
 const musicCuePackage = JSON.parse(await readFile(result.musicCuePackagePath!, 'utf8'));
 assert.equal(musicCuePackage.format, 'music-brief');
+const seriesPackage = JSON.parse(await readFile(result.seriesPackagePath!, 'utf8'));
+assert.equal(seriesPackage.format, 'series-bible');
 const studioBundle = JSON.parse(await readFile(result.studioBundlePath!, 'utf8'));
 assert.equal(studioBundle.format, 'studio-bundle');
 assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
 assert.equal(studioBundle.artifactPaths.musicCuePackagePath, result.musicCuePackagePath);
+assert.equal(studioBundle.artifactPaths.seriesPackagePath, result.seriesPackagePath);
 assert.equal(studioBundle.artifactPaths.trailerPackagePath, result.trailerPackagePath);
 
 const jsonProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--json', '--pages=1', '--panels=3', 'A JSON agent story'], {
@@ -121,12 +135,14 @@ const bundleProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--stu
 const bundleResult = JSON.parse(bundleProbe.stdout);
 assert.equal(bundleResult.format, 'studio-bundle');
 assert.equal(bundleResult.artifactPaths.studioBundlePath.endsWith('-studio-bundle.json'), true);
+assert.equal(bundleResult.artifactPaths.seriesPackagePath.endsWith('-series-package.json'), true);
 assert.equal(bundleResult.artifactPaths.trailerPackagePath.endsWith('-trailer-package.json'), true);
 assert.equal(bundleResult.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
 
 const stem = outputPath.replace(/\.[^./\\]+$/, '');
 const trailerStem = trailerOutputPath.replace(/\.[^./\\]+$/, '');
 const musicStem = musicOutputPath.replace(/\.[^./\\]+$/, '');
+const seriesStem = seriesOutputPath.replace(/\.[^./\\]+$/, '');
 await rm(outputPath, { force: true });
 if (result.cbzPath) await rm(result.cbzPath, { force: true });
 await rm(result.agentGuidancePath!, { force: true });
@@ -134,6 +150,7 @@ await rm(result.projectPath!, { force: true });
 await rm(result.songSheetPath!, { force: true });
 await rm(result.songAudioPath!, { force: true });
 await rm(result.musicCuePackagePath!, { force: true });
+await rm(result.seriesPackagePath!, { force: true });
 await rm(result.storyboardPackagePath!, { force: true });
 await rm(result.trailerPackagePath!, { force: true });
 await rm(result.animaticTimelinePath!, { force: true });
@@ -148,6 +165,7 @@ await rm(`${trailerStem}-agent-guidance.md`, { force: true });
 await rm(`${trailerStem}-song-sheet.md`, { force: true });
 await rm(`${trailerStem}-theme.wav`, { force: true });
 await rm(`${trailerStem}-music-cue-package.json`, { force: true });
+await rm(`${trailerStem}-series-package.json`, { force: true });
 await rm(`${trailerStem}-storyboard-package.json`, { force: true });
 await rm(`${trailerStem}-trailer-package.json`, { force: true });
 await rm(`${trailerStem}-animatic-timeline.json`, { force: true });
@@ -159,9 +177,23 @@ await rm(`${musicStem}-agent-guidance.md`, { force: true });
 await rm(`${musicStem}-song-sheet.md`, { force: true });
 await rm(`${musicStem}-theme.wav`, { force: true });
 await rm(`${musicStem}-music-cue-package.json`, { force: true });
+await rm(`${musicStem}-series-package.json`, { force: true });
 await rm(`${musicStem}-storyboard-package.json`, { force: true });
 await rm(`${musicStem}-trailer-package.json`, { force: true });
 await rm(`${musicStem}-animatic-timeline.json`, { force: true });
 await rm(`${musicStem}-studio-bundle.json`, { force: true });
+await rm(seriesOutputPath, { force: true });
+await rm(`${seriesStem}.cbz`, { force: true });
+await rm(`${seriesStem}.images`, { recursive: true, force: true });
+await rm(`${seriesStem}-project.json`, { force: true });
+await rm(`${seriesStem}-agent-guidance.md`, { force: true });
+await rm(`${seriesStem}-song-sheet.md`, { force: true });
+await rm(`${seriesStem}-theme.wav`, { force: true });
+await rm(`${seriesStem}-music-cue-package.json`, { force: true });
+await rm(`${seriesStem}-series-package.json`, { force: true });
+await rm(`${seriesStem}-storyboard-package.json`, { force: true });
+await rm(`${seriesStem}-trailer-package.json`, { force: true });
+await rm(`${seriesStem}-animatic-timeline.json`, { force: true });
+await rm(`${seriesStem}-studio-bundle.json`, { force: true });
 
 console.log('PASS cli');

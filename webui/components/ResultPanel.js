@@ -434,6 +434,21 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     downloadJsonArtifact('music', result.musicCuePackage, 'Music cue package downloaded.');
   }
 
+  function handleDownloadSeriesPackage() {
+    if (!result?.seriesPackage) return;
+    if (result?.seriesPackagePath) {
+      const a = document.createElement('a');
+      a.href = `/api/comic/${jobId}/series-package`;
+      a.download = `${localSlug(result.script?.title)}-series-package.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Series package downloaded.', 'success');
+      return;
+    }
+    downloadJsonArtifact('series-package', result.seriesPackage, 'Series package downloaded.');
+  }
+
   function handleDownloadSongSheet() {
     if (!result?.songSheetPath) return;
     const a = document.createElement('a');
@@ -704,6 +719,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAdaptation}>
             Download adaptation JSON
           </button>
+          ${result.seriesPackagePath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSeriesPackage}>
+              Download series package
+            </button>
+          ` : null}
           ${result.storyboardPackagePath ? html`
             <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStoryboardPackage}>
               Download storyboard package

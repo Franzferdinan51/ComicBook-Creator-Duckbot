@@ -69,6 +69,7 @@ interface ParsedArgs {
   seed: number;
   json: boolean;
   studioBundle: boolean;
+  seriesPackage: boolean;
   trailerPackage: boolean;
   musicCuePackage: boolean;
   help: boolean;
@@ -101,6 +102,7 @@ Options:
   --seed=<n>                Deterministic seed (mock provider). Default: 0
   --json                    Print the full ComicResult JSON and exit
   --studio-bundle           Print the unified studio bundle JSON and exit
+  --series-package          Print the episodic series package JSON and exit
   --trailer-package         Print the trailer package JSON and exit
   --music-cue-package       Print the music cue package JSON and exit
   --agent-playbook          Print the repo-level Hermes/OpenClaw playbook and exit
@@ -136,6 +138,7 @@ function defaultArgs(): ParsedArgs {
     seed: 0,
     json: false,
     studioBundle: false,
+    seriesPackage: false,
     trailerPackage: false,
     musicCuePackage: false,
     help: false,
@@ -231,7 +234,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
 
 /**
  * Minimal arg parser: --key=value flags, then positional <story>.
- * Recognises --help / --version / --json / --studio-bundle / --trailer-package / --music-cue-package / --agent-playbook (and -h / -V).
+ * Recognises --help / --version / --json / --studio-bundle / --series-package / --trailer-package / --music-cue-package / --agent-playbook (and -h / -V).
  */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = defaultArgs();
@@ -246,6 +249,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.json = true;
     } else if (arg === '--studio-bundle') {
       args.studioBundle = true;
+    } else if (arg === '--series-package') {
+      args.seriesPackage = true;
     } else if (arg === '--trailer-package') {
       args.trailerPackage = true;
     } else if (arg === '--music-cue-package') {
@@ -414,6 +419,7 @@ export async function runCli(
   const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.${musicProvider.outputExtension}`;
   const musicCuePackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-music-cue-package.json`;
   const storyboardPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-storyboard-package.json`;
+  const seriesPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-series-package.json`;
   const trailerPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-trailer-package.json`;
   const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
   const studioBundlePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-studio-bundle.json`;
@@ -421,6 +427,7 @@ export async function runCli(
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(musicCuePackagePath, JSON.stringify(project.musicCuePackage, null, 2), 'utf8');
+  await writeFile(seriesPackagePath, JSON.stringify(project.seriesPackage, null, 2), 'utf8');
   await writeFile(songAudioPath, await musicProvider.generate(project, { seed: args.seed }));
   const pages: Array<{
     page: typeof script.pages[number];
@@ -493,6 +500,7 @@ export async function runCli(
     projectPath,
     storyBible: project.storyBible,
     adaptationPackage: project.adaptationPackage,
+    seriesPackage: project.seriesPackage,
     trailerPackage: project.trailerPackage,
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
@@ -501,6 +509,7 @@ export async function runCli(
     songSheetPath,
     songAudioPath,
     musicCuePackagePath,
+    seriesPackagePath,
     musicProvider: musicProvider.name,
     storyboardPackagePath,
     trailerPackagePath,
@@ -545,6 +554,10 @@ async function main(): Promise<void> {
     const result = await runCli(args);
     if (args.studioBundle) {
       process.stdout.write(await readFile(result.studioBundlePath!, 'utf8'));
+      return;
+    }
+    if (args.seriesPackage) {
+      process.stdout.write(await readFile(result.seriesPackagePath!, 'utf8'));
       return;
     }
     if (args.trailerPackage) {

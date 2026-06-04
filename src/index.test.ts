@@ -25,6 +25,9 @@ async function main(): Promise<void> {
   assert.equal(result.adaptationPackage.sceneOutline.length > 0, true);
   assert.equal(result.adaptationPackage.screenplayScenes.length >= 3, true);
   assert.equal(result.adaptationPackage.storyboardPrompts.length >= 3, true);
+  assert.equal(result.seriesPackage.format, 'series-bible');
+  assert.equal(result.seriesPackage.targetFormat, 'series');
+  assert.equal(result.seriesPackage.episodeOutline.length >= 3, true);
   assert.equal(result.musicCuePackage.cues.length > 0, true);
   assert.equal(result.musicCuePackage.songDraft.lyrics.includes(result.project.title), true);
   assert.equal(result.musicCuePackage.sceneCueMap.length >= 3, true);
@@ -37,6 +40,7 @@ async function main(): Promise<void> {
   assert.equal(result.songSheetPath?.endsWith('-song-sheet.md'), true);
   assert.equal(result.songAudioPath?.endsWith('-theme.wav'), true);
   assert.equal(result.musicCuePackagePath?.endsWith('-music-cue-package.json'), true);
+  assert.equal(result.seriesPackagePath?.endsWith('-series-package.json'), true);
   assert.equal(result.storyboardPackagePath?.endsWith('-storyboard-package.json'), true);
   assert.equal(result.trailerPackagePath?.endsWith('-trailer-package.json'), true);
   assert.equal(result.animaticTimelinePath?.endsWith('-animatic-timeline.json'), true);
@@ -53,6 +57,7 @@ async function main(): Promise<void> {
   await access(result.songSheetPath!);
   await access(result.songAudioPath!);
   await access(result.musicCuePackagePath!);
+  await access(result.seriesPackagePath!);
   await access(result.storyboardPackagePath!);
   await access(result.trailerPackagePath!);
   await access(result.animaticTimelinePath!);
@@ -84,6 +89,9 @@ async function main(): Promise<void> {
   const musicCuePackage = JSON.parse(await readFile(result.musicCuePackagePath!, 'utf8'));
   assert.equal(musicCuePackage.format, 'music-brief');
   assert.equal(musicCuePackage.songDraft.title, result.musicCuePackage.songDraft.title);
+  const seriesPackage = JSON.parse(await readFile(result.seriesPackagePath!, 'utf8'));
+  assert.equal(seriesPackage.format, 'series-bible');
+  assert.equal(seriesPackage.targetFormat, 'series');
   const wav = await readFile(result.songAudioPath!);
   assert.equal(wav.subarray(0, 4).toString('ascii'), 'RIFF');
   assert.equal(wav.subarray(8, 12).toString('ascii'), 'WAVE');
@@ -103,6 +111,7 @@ async function main(): Promise<void> {
   assert.equal(studioBundle.jobId, result.project.id);
   assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
   assert.equal(studioBundle.artifactPaths.musicCuePackagePath, result.musicCuePackagePath);
+  assert.equal(studioBundle.artifactPaths.seriesPackagePath, result.seriesPackagePath);
   assert.equal(studioBundle.artifactPaths.agentPlaybookPath, result.agentPlaybookPath);
 
   const stem = result.outputPath.replace(/\.[^./\\]+$/, '');
@@ -113,6 +122,7 @@ async function main(): Promise<void> {
   await rm(result.songSheetPath!, { force: true });
   await rm(result.songAudioPath!, { force: true });
   await rm(result.musicCuePackagePath!, { force: true });
+  await rm(result.seriesPackagePath!, { force: true });
   await rm(result.storyboardPackagePath!, { force: true });
   await rm(result.trailerPackagePath!, { force: true });
   await rm(result.animaticTimelinePath!, { force: true });

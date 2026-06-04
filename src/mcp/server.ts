@@ -429,6 +429,43 @@ export function buildMcpServer(): McpServer {
   );
 
   server.tool(
+    'get_series_package',
+    'Fetch the generated episodic series package JSON for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.seriesPackagePath;
+        if (!path || !existsSync(path)) {
+          return errResult(`series package not available for job ${jobId}`);
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.series-package.json`,
+                mimeType: 'application/json',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_series_package failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
     'get_trailer_package',
     'Fetch the generated trailer / teaser package JSON for a completed comic.',
     {

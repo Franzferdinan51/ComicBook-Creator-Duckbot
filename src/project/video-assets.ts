@@ -1,4 +1,4 @@
-import type { Page, StoryProject, TrailerPackage } from '../types.js';
+import type { Page, SeriesPackage, StoryProject, TrailerPackage } from '../types.js';
 
 export interface StoryboardPackageInput {
   project: StoryProject;
@@ -11,6 +11,10 @@ export interface StoryboardPackageInput {
 
 export interface TrailerPackageInput {
   project: Pick<StoryProject, 'title' | 'projectGoal' | 'storyBible' | 'adaptationPackage' | 'musicCuePackage'>;
+}
+
+export interface SeriesPackageInput {
+  project: Pick<StoryProject, 'title' | 'projectGoal' | 'storyBible' | 'adaptationPackage'>;
 }
 
 export function buildTrailerPackage(input: TrailerPackageInput): TrailerPackage {
@@ -81,6 +85,69 @@ export function buildTrailerPackage(input: TrailerPackageInput): TrailerPackage 
     ],
     endCard: endingCue ? `${project.title} ends on the ${endingCue.title} cue.` : `${project.title} ends on the final hook.`,
     durationSeconds: 75,
+  };
+}
+
+export function buildSeriesPackage(input: SeriesPackageInput): SeriesPackage {
+  const { project } = input;
+  const screenplayScenes = project.adaptationPackage.screenplayScenes;
+  const sceneOutline = project.adaptationPackage.sceneOutline;
+  const openingScene = screenplayScenes[0];
+  const midpointScene = screenplayScenes[Math.max(0, Math.floor(screenplayScenes.length / 2))];
+  const endingScene = screenplayScenes[screenplayScenes.length - 1];
+  const openingOutline = sceneOutline[0];
+  const midpointOutline = sceneOutline[Math.max(0, Math.floor(sceneOutline.length / 2))];
+  const endingOutline = sceneOutline[sceneOutline.length - 1];
+  const targetFormat = project.projectGoal === 'studio'
+    ? 'limited-series'
+    : project.projectGoal === 'screen'
+      ? 'series'
+      : 'pilot';
+
+  return {
+    format: 'series-bible',
+    seriesLogline: `${project.title} unfolds as a ${targetFormat.replace('-', ' ')} with a comic-born visual identity and an episode engine built for screen continuation.`,
+    premise: project.storyBible.premise,
+    targetFormat,
+    seasonArc: [
+      `Episode 1 establishes ${project.title}'s world, cast, and the emotional promise behind the premise.`,
+      'The middle run widens the conflict into a repeatable weekly engine with stronger reveals and reversals.',
+      'The finale lands the current arc cleanly while opening the door to a larger season or follow-up batch of episodes.',
+    ],
+    episodeOutline: [
+      {
+        episodeId: 'ep-1',
+        title: 'Pilot',
+        summary: openingOutline?.summary || openingScene?.action || 'Introduce the world and central hook.',
+        cliffhanger: 'A final image hints that the comic-sized problem is only the opening edge of a larger series arc.',
+        sourceSceneId: openingScene?.sceneId ?? openingOutline?.sceneId,
+      },
+      {
+        episodeId: 'ep-2',
+        title: 'Pressure Point',
+        summary: midpointOutline?.summary || midpointScene?.action || 'The cast is pushed into motion.',
+        cliffhanger: 'The stakes widen beyond the initial premise and reveal the real shape of the season.',
+        sourceSceneId: midpointScene?.sceneId ?? midpointOutline?.sceneId,
+      },
+      {
+        episodeId: 'ep-3',
+        title: 'Final Hook',
+        summary: endingOutline?.summary || endingScene?.action || 'The core promise lands cleanly.',
+        cliffhanger: 'The ending resolves the pilot-sized plot while teeing up the next episode or a larger season-order question.',
+        sourceSceneId: endingScene?.sceneId ?? endingOutline?.sceneId,
+      },
+    ],
+    pilotBeatSheet: [
+      'Open on the world, tone, and the first strong image that proves the comic can live as a show.',
+      'Introduce the core cast and the repeating story engine that can sustain multiple episodes.',
+      'Escalate into a midpoint choice that changes the season trajectory, not just the current scene.',
+      'End with a hook that can drive episodic continuation and a broader writer-room conversation.',
+    ],
+    showrunnerNotes: [
+      'Keep the emotional premise readable in one episode, but always point each beat toward a broader season question.',
+      'Build each episode around a clear hook, a status-quo shift, and a reason to come back next week.',
+      'Preserve the comic’s iconic imagery while widening pacing, geography, and ensemble dynamics for screen storytelling.',
+    ],
   };
 }
 

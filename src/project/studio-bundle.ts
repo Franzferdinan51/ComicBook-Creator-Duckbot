@@ -8,6 +8,7 @@ export interface StudioBundle {
   script: ComicResult['script'];
   storyBible: ComicResult['storyBible'];
   adaptationPackage: ComicResult['adaptationPackage'];
+  seriesPackage: ComicResult['seriesPackage'];
   trailerPackage: ComicResult['trailerPackage'];
   musicCuePackage: ComicResult['musicCuePackage'];
   agentGuidancePackage: ComicResult['agentGuidancePackage'];
@@ -23,6 +24,7 @@ export interface StudioBundle {
     songSheetPath: string | null;
     songAudioPath: string | null;
     musicCuePackagePath: string | null;
+    seriesPackagePath: string | null;
     storyboardPackagePath: string | null;
     trailerPackagePath: string | null;
     animaticTimelinePath: string | null;
@@ -38,6 +40,7 @@ export interface StudioBundle {
     songSheet: boolean;
     songAudio: boolean;
     musicCuePackage: boolean;
+    seriesPackage: boolean;
     storyboardPackage: boolean;
     trailerPackage: boolean;
     animaticTimeline: boolean;
@@ -54,6 +57,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
     script: result.script,
     storyBible: result.storyBible,
     adaptationPackage: result.adaptationPackage,
+    seriesPackage: result.seriesPackage,
     trailerPackage: result.trailerPackage,
     musicCuePackage: result.musicCuePackage,
     agentGuidancePackage: result.agentGuidancePackage,
@@ -69,6 +73,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       songSheetPath: result.songSheetPath,
       songAudioPath: result.songAudioPath,
       musicCuePackagePath: result.musicCuePackagePath,
+      seriesPackagePath: result.seriesPackagePath,
       storyboardPackagePath: result.storyboardPackagePath,
       trailerPackagePath: result.trailerPackagePath,
       animaticTimelinePath: result.animaticTimelinePath,
@@ -84,6 +89,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       songSheet: Boolean(result.songSheetPath),
       songAudio: Boolean(result.songAudioPath),
       musicCuePackage: Boolean(result.musicCuePackagePath),
+      seriesPackage: Boolean(result.seriesPackagePath),
       storyboardPackage: Boolean(result.storyboardPackagePath),
       trailerPackage: Boolean(result.trailerPackagePath),
       animaticTimeline: Boolean(result.animaticTimelinePath),

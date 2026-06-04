@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { ComicOptions, ProjectGoal, StoryProject } from '../types.js';
 import { normalizeRenderProfile } from './render-profile.js';
 import { buildAgentGuidancePackage } from './agent-guidance.js';
-import { buildTrailerPackage } from './video-assets.js';
+import { buildSeriesPackage, buildTrailerPackage } from './video-assets.js';
 
 const PROJECT_GOAL_LABELS: Record<ProjectGoal, string> = {
   comic: 'comic-first production',
@@ -213,6 +213,15 @@ export function buildStoryProject(
     },
   });
 
+  const seriesPackage = buildSeriesPackage({
+    project: {
+      title,
+      projectGoal,
+      storyBible,
+      adaptationPackage,
+    },
+  });
+
   return {
     id: randomUUID(),
     title,
@@ -222,6 +231,7 @@ export function buildStoryProject(
     renderProfile,
     storyBible,
     adaptationPackage,
+    seriesPackage,
     trailerPackage,
     musicCuePackage,
     agentGuidancePackage,

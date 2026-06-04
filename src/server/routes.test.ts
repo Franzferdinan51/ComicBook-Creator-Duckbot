@@ -12,6 +12,52 @@ const storageDir = await mkdtemp(join(tmpdir(), 'comic-routes-test-'));
 setStorageDir(storageDir);
 _resetJobManager();
 
+const seriesPackage = {
+  format: 'series-bible' as const,
+  seriesLogline: 'History Project unfolds as a screen-forward series with a larger episodic engine.',
+  premise: 'History project premise',
+  targetFormat: 'series' as const,
+  seasonArc: ['Open the world.', 'Widen the stakes.', 'Land a season hook.'],
+  episodeOutline: [
+    {
+      episodeId: 'ep-1',
+      title: 'Pilot',
+      summary: 'History project opens on a major hook.',
+      cliffhanger: 'The world grows beyond the opening reveal.',
+      sourceSceneId: 'scene-1',
+    },
+  ],
+  pilotBeatSheet: ['Opening image', 'Engine reveal', 'Cliffhanger'],
+  showrunnerNotes: ['Preserve the comic iconography.', 'Keep the episode hook sharp.', 'Open room for a broader season.'],
+};
+
+const trailerPackage = {
+  format: 'trailer-package' as const,
+  logline: 'History Project becomes a screen-ready comic adaptation.',
+  hook: 'History project premise',
+  teaserBeats: [{ beatId: 'beat-1', title: 'Hook', description: 'Hook beat', sourceSceneId: 'scene-1' }],
+  voiceOver: ['From the world of History Project.'],
+  cutList: [{ shotId: 'cut-1', shotType: 'wide establishing shot', purpose: 'Open the trailer', sourceSceneId: 'scene-1' }],
+  endCard: 'History Project ends on the final hook.',
+  durationSeconds: 75,
+};
+
+const musicCuePackage = {
+  format: 'music-brief' as const,
+  cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
+  sceneCueMap: [{ sceneId: 'scene-1', cueId: 'cue-1', timing: '00:00-00:30', purpose: 'History purpose' }],
+  songDraft: {
+    title: 'History Theme',
+    genre: 'cinematic pop',
+    bpm: 96,
+    key: 'A minor',
+    sections: ['verse', 'chorus'],
+    lyrics: 'History Project chorus',
+  },
+  themeSongPrompt: 'Theme prompt',
+  musicGenerationPrompt: 'Generate music with instrumentation for History Project.',
+};
+
 const entry: HistoryEntry = {
   jobId: 'history-job',
   title: 'History Project',
@@ -27,20 +73,21 @@ const entry: HistoryEntry = {
   songSheetPath: '/tmp/history-job-song-sheet.md',
   songAudioPath: '/tmp/history-job-theme.wav',
   musicCuePackagePath: '/tmp/history-job-music-cue-package.json',
+  seriesPackagePath: '/tmp/history-job-series-package.json',
   musicProvider: 'mock',
   storyboardPackagePath: '/tmp/history-job-storyboard-package.json',
   trailerPackagePath: '/tmp/history-job-trailer-package.json',
   animaticTimelinePath: '/tmp/history-job-animatic-timeline.json',
   studioBundlePath: '/tmp/history-job-studio-bundle.json',
-    project: {
-      id: 'project-1',
-      title: 'History Project',
-      premise: 'History project premise',
-      artStyle: 'manga',
-      projectGoal: 'screen',
-      renderProfile: {
-        outputProfile: 'storyboard-widescreen',
-        page: { width: 1600, height: 900, margin: 48, bleed: 0 },
+  project: {
+    id: 'project-1',
+    title: 'History Project',
+    premise: 'History project premise',
+    artStyle: 'manga',
+    projectGoal: 'screen',
+    renderProfile: {
+      outputProfile: 'storyboard-widescreen',
+      page: { width: 1600, height: 900, margin: 48, bleed: 0 },
       panel: { aspectRatio: '16:9', targetWidth: 1536, targetHeight: 864, fit: 'contain' },
       cover: { width: 1600, height: 900, aspectRatio: '16:9' },
     },
@@ -66,30 +113,26 @@ const entry: HistoryEntry = {
         cameraLanguage: 'wide frame',
       }],
     },
-    trailerPackage: {
-      format: 'trailer-package',
-      logline: 'History Project becomes a screen-ready comic adaptation.',
-      hook: 'History project premise',
-      teaserBeats: [{ beatId: 'beat-1', title: 'Hook', description: 'Hook beat', sourceSceneId: 'scene-1' }],
-      voiceOver: ['From the world of History Project.'],
-      cutList: [{ shotId: 'cut-1', shotType: 'wide establishing shot', purpose: 'Open the trailer', sourceSceneId: 'scene-1' }],
-      endCard: 'History Project ends on the final hook.',
-      durationSeconds: 75,
-    },
-    musicCuePackage: {
-      format: 'music-brief',
-      cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
-      sceneCueMap: [{ sceneId: 'scene-1', cueId: 'cue-1', timing: '00:00-00:30', purpose: 'History purpose' }],
-      songDraft: {
-        title: 'History Theme',
-        genre: 'cinematic pop',
-        bpm: 96,
-        key: 'A minor',
-        sections: ['verse', 'chorus'],
-        lyrics: 'History Project chorus',
+    seriesPackage,
+    trailerPackage,
+    musicCuePackage,
+    agentGuidancePackage: {
+      format: 'agent-guidance',
+      frameworks: {
+        hermesAgent: {
+          repository: 'https://github.com/nousresearch/hermes-agent',
+          role: 'Planning and orchestration.',
+        },
+        openClaw: {
+          repository: 'https://github.com/openclaw/openclaw',
+          role: 'Execution and tool control.',
+        },
       },
-      themeSongPrompt: 'Theme prompt',
-      musicGenerationPrompt: 'Generate music with instrumentation for History Project.',
+      workflowSteps: ['Read the bundle.', 'Split work.', 'Run the next surface.'],
+      deliverables: ['screen adaptation', 'series package', 'music handoff'],
+      operatorChecklist: ['Confirm goal', 'Use the studio bundle', 'Refresh docs'],
+      externalInterfaces: ['cli', 'mcp', 'webui', 'external-agent'],
+      systemPrompt: 'Support History Project as a reusable studio project.',
     },
   },
   adaptationPackage: {
@@ -108,59 +151,34 @@ const entry: HistoryEntry = {
       cameraLanguage: 'wide frame',
     }],
   },
-  trailerPackage: {
-    format: 'trailer-package',
-    logline: 'History Project becomes a screen-ready comic adaptation.',
-    hook: 'History project premise',
-    teaserBeats: [{ beatId: 'beat-1', title: 'Hook', description: 'Hook beat', sourceSceneId: 'scene-1' }],
-    voiceOver: ['From the world of History Project.'],
-    cutList: [{ shotId: 'cut-1', shotType: 'wide establishing shot', purpose: 'Open the trailer', sourceSceneId: 'scene-1' }],
-    endCard: 'History Project ends on the final hook.',
-    durationSeconds: 75,
-  },
-  musicCuePackage: {
-    format: 'music-brief',
-    cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
-    sceneCueMap: [{ sceneId: 'scene-1', cueId: 'cue-1', timing: '00:00-00:30', purpose: 'History purpose' }],
-    songDraft: {
-      title: 'History Theme',
-      genre: 'cinematic pop',
-      bpm: 96,
-      key: 'A minor',
-      sections: ['verse', 'chorus'],
-      lyrics: 'History Project chorus',
-    },
-    themeSongPrompt: 'Theme prompt',
-    musicGenerationPrompt: 'Generate music with instrumentation for History Project.',
-  },
+  seriesPackage,
+  trailerPackage,
+  musicCuePackage,
   scriptJson: {
     title: 'History Project',
     artStyle: 'manga',
     pages: [{ pageNumber: 1, layout: 'grid-2x2', panels: [{ id: 'p1-panel1', description: 'A panel' }] }],
   },
-  };
+};
 
 try {
   await upsertHistoryEntry(entry);
-  await writeFile(entry.musicCuePackagePath!, JSON.stringify({
-    format: 'music-brief',
-    cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
-    sceneCueMap: [{ sceneId: 'scene-1', cueId: 'cue-1', timing: '00:00-00:30', purpose: 'History purpose' }],
-    songDraft: {
-      title: 'History Theme',
-      genre: 'cinematic pop',
-      bpm: 96,
-      key: 'A minor',
-      sections: ['verse', 'chorus'],
-      lyrics: 'History Project chorus',
-    },
-    themeSongPrompt: 'Theme prompt',
-    musicGenerationPrompt: 'Generate music with instrumentation for History Project.',
-  }), 'utf8');
+  await writeFile(entry.musicCuePackagePath!, JSON.stringify(musicCuePackage), 'utf8');
+  await writeFile(entry.seriesPackagePath!, JSON.stringify(seriesPackage), 'utf8');
+  await writeFile(entry.trailerPackagePath!, JSON.stringify(trailerPackage), 'utf8');
   await writeFile(entry.studioBundlePath!, JSON.stringify({
     format: 'studio-bundle',
     jobId: 'history-job',
     title: 'History Project',
+    project: entry.project,
+    script: entry.scriptJson,
+    storyBible: entry.project!.storyBible,
+    adaptationPackage: entry.adaptationPackage,
+    seriesPackage,
+    trailerPackage,
+    musicCuePackage,
+    agentGuidancePackage: entry.project!.agentGuidancePackage,
+    musicProvider: 'mock',
     artifactPaths: {
       outputPath: entry.outputPath,
       pdfPath: entry.pdfPath,
@@ -168,14 +186,15 @@ try {
       coverImagePath: entry.coverImagePath,
       projectPath: entry.projectPath,
       agentGuidancePath: '/tmp/history-job-agent-guidance.md',
+      agentPlaybookPath: entry.agentPlaybookPath,
       songSheetPath: entry.songSheetPath,
       songAudioPath: entry.songAudioPath,
       musicCuePackagePath: entry.musicCuePackagePath,
+      seriesPackagePath: entry.seriesPackagePath,
       storyboardPackagePath: entry.storyboardPackagePath,
       trailerPackagePath: entry.trailerPackagePath,
       animaticTimelinePath: entry.animaticTimelinePath,
       studioBundlePath: entry.studioBundlePath,
-      agentPlaybookPath: entry.agentPlaybookPath,
     },
     availability: {
       pdf: true,
@@ -183,31 +202,35 @@ try {
       coverImage: true,
       project: true,
       agentGuidance: true,
+      agentPlaybook: true,
       songSheet: true,
       songAudio: true,
       musicCuePackage: true,
+      seriesPackage: true,
       storyboardPackage: true,
       trailerPackage: true,
       animaticTimeline: true,
       studioBundle: true,
     },
   }), 'utf8');
+
   const resolved = await getJobManager().resolve('history-job');
   assert.equal(resolved?.status, 'done');
   assert.equal(resolved?.fromHistory, true);
   assert.equal(resolved?.result.project.renderProfile.outputProfile, 'storyboard-widescreen');
   assert.equal(resolved?.result.project.projectGoal, 'screen');
   assert.equal(Array.isArray(resolved?.result.adaptationPackage.sceneOutline), true);
-  assert.equal(Array.isArray(resolved?.result.adaptationPackage.screenplayScenes), true);
+  assert.equal(Array.isArray(resolved?.result.seriesPackage.episodeOutline), true);
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.cues), true);
-  assert.equal(Array.isArray(resolved?.result.musicCuePackage.sceneCueMap), true);
   assert.equal(resolved?.result.projectPath, '/tmp/history-job-project.json');
   assert.equal(resolved?.result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
   assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
   assert.equal(resolved?.result.songAudioPath, '/tmp/history-job-theme.wav');
   assert.equal(resolved?.result.musicCuePackagePath, '/tmp/history-job-music-cue-package.json');
+  assert.equal(resolved?.result.seriesPackagePath, '/tmp/history-job-series-package.json');
   assert.equal(resolved?.result.musicProvider, 'mock');
   assert.equal(resolved?.result.storyboardPackagePath, '/tmp/history-job-storyboard-package.json');
+  assert.equal(resolved?.result.trailerPackagePath, '/tmp/history-job-trailer-package.json');
   assert.equal(resolved?.result.animaticTimelinePath, '/tmp/history-job-animatic-timeline.json');
 
   const handle = await startWebUI({ port: 0, webuiDir: join(process.cwd(), 'webui') });
@@ -226,12 +249,12 @@ try {
     const updatedSettings = await updateSettingsRes.json() as { defaultProjectGoal?: string };
     assert.equal(updatedSettings.defaultProjectGoal, 'studio');
 
-    const res = await fetch(`http://127.0.0.1:${handle.port}/api/agent-playbook`);
-    assert.equal(res.ok, true);
-    assert.equal(res.headers.get('content-type')?.includes('text/markdown'), true);
-    const text = await res.text();
-    assert.equal(text.includes('Hermes + OpenClaw Playbook'), true);
-    assert.equal(text.includes('Music Handoff'), true);
+    const playbookRes = await fetch(`http://127.0.0.1:${handle.port}/api/agent-playbook`);
+    assert.equal(playbookRes.ok, true);
+    assert.equal(playbookRes.headers.get('content-type')?.includes('text/markdown'), true);
+    const playbookText = await playbookRes.text();
+    assert.equal(playbookText.includes('Hermes + OpenClaw Playbook'), true);
+    assert.equal(playbookText.includes('Music Handoff'), true);
 
     const bundleRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/studio-bundle`);
     assert.equal(bundleRes.ok, true);
@@ -242,9 +265,11 @@ try {
     assert.equal(bundle.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
     assert.equal(bundle.artifactPaths.studioBundlePath, entry.studioBundlePath);
     assert.equal(bundle.artifactPaths.musicCuePackagePath, entry.musicCuePackagePath);
+    assert.equal(bundle.artifactPaths.seriesPackagePath, entry.seriesPackagePath);
     assert.equal(bundle.artifactPaths.trailerPackagePath, entry.trailerPackagePath);
     assert.equal(bundle.availability.agentPlaybook, true);
     assert.equal(bundle.availability.musicCuePackage, true);
+    assert.equal(bundle.availability.seriesPackage, true);
     assert.equal(bundle.availability.storyboardPackage, true);
     assert.equal(bundle.availability.trailerPackage, true);
     assert.equal(bundle.availability.animaticTimeline, true);
@@ -253,16 +278,23 @@ try {
     const musicRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/music-cue-package`);
     assert.equal(musicRes.ok, true);
     assert.equal(musicRes.headers.get('content-type')?.includes('application/json'), true);
-    const musicCuePackage = await musicRes.json();
-    assert.equal(musicCuePackage.format, 'music-brief');
-    assert.equal(musicCuePackage.songDraft.title, 'History Theme');
+    const musicPayload = await musicRes.json();
+    assert.equal(musicPayload.format, 'music-brief');
+    assert.equal(musicPayload.songDraft.title, 'History Theme');
+
+    const seriesRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/series-package`);
+    assert.equal(seriesRes.ok, true);
+    assert.equal(seriesRes.headers.get('content-type')?.includes('application/json'), true);
+    const seriesPayload = await seriesRes.json();
+    assert.equal(seriesPayload.format, 'series-bible');
+    assert.equal(seriesPayload.targetFormat, 'series');
 
     const trailerRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/trailer-package`);
     assert.equal(trailerRes.ok, true);
     assert.equal(trailerRes.headers.get('content-type')?.includes('application/json'), true);
-    const trailerPackage = await trailerRes.json();
-    assert.equal(trailerPackage.format, 'trailer-package');
-    assert.equal(trailerPackage.logline.includes('History Project'), true);
+    const trailerPayload = await trailerRes.json();
+    assert.equal(trailerPayload.format, 'trailer-package');
+    assert.equal(trailerPayload.logline.includes('History Project'), true);
 
     const createRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic`, {
       method: 'POST',
@@ -296,12 +328,15 @@ try {
     assert.ok(generated, 'expected the generated job to finish');
     const generatedResult = generated?.result as {
       project?: { projectGoal?: string; renderProfile?: { outputProfile?: string } };
+      seriesPackage?: { targetFormat?: string };
     };
     assert.equal(generatedResult.project?.projectGoal, 'screen');
     assert.equal(generatedResult.project?.renderProfile?.outputProfile, 'storyboard-widescreen');
+    assert.equal(generatedResult.seriesPackage?.targetFormat, 'series');
   } finally {
     await handle.close();
   }
+
   console.log('PASS routes');
 } finally {
   await rm(storageDir, { recursive: true, force: true });

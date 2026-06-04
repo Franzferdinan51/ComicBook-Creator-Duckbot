@@ -22,6 +22,7 @@ import type {
   ComicScript,
   MusicCuePackage,
   ProjectGoal,
+  SeriesPackage,
   StoryProject,
   TrailerPackage,
 } from '../types.js';
@@ -53,6 +54,8 @@ export interface HistoryEntry {
   projectPath?: string;
   /** Screen/show adaptation artifact for the project. */
   adaptationPackage?: AdaptationPackage;
+  /** Series / episode planning artifact for the project. */
+  seriesPackage?: SeriesPackage;
   /** Trailer / teaser artifact for the project. */
   trailerPackage?: TrailerPackage;
   /** Music or song-development artifact for the project. */
@@ -69,6 +72,8 @@ export interface HistoryEntry {
   songAudioPath?: string;
   /** Path to the generated music cue package JSON. */
   musicCuePackagePath?: string;
+  /** Path to the generated series package JSON. */
+  seriesPackagePath?: string;
   /** Music provider used to generate the theme audio. */
   musicProvider?: string;
   /** Path to the generated storyboard package JSON. */
