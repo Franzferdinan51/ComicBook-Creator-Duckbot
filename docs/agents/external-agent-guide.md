@@ -44,7 +44,8 @@ For the most actionable workflow, start with the repo playbook at
   with the studio bundle first when resuming work, then open the series
   package when the next pass is show-focused, or open the trailer
   package when the screen pitch is the next priority. Use the music cue
-  package when the score is the next priority.
+  package when the score is the next priority. Use the screenplay handoff when
+  the next step is script editing, table reads, or scene-by-scene revision.
   The new Movie / Show tab is the fastest way to review pitch, trailer, story,
   series, script, shots, previs, timeline, music, agents, and deliverables for a film/show pass.
 - Library API: `createComic()` returns `project`, `storyBible`,
@@ -53,13 +54,14 @@ For the most actionable workflow, start with the repo playbook at
   The `projectGoal` field records the high-level creative focus used to shape
   the generated defaults and handoff language.
   `adaptationPackage` includes screenplay scenes and storyboard prompts.
-  `musicCuePackagePath`, `seriesPackagePath`, `storyboardPackagePath`, `trailerPackagePath`, and `animaticTimelinePath` point to generated
+  `screenplayPath`, `musicCuePackagePath`, `seriesPackagePath`, `storyboardPackagePath`, `trailerPackagePath`, and `animaticTimelinePath` point to generated
   production handoff JSON files. `musicCuePackagePath` is the score brief and
   is available through the CLI, MCP, WebUI, and history records. `seriesPackagePath`
   is the show-bible / episodic handoff and is available through the CLI, MCP,
   WebUI, and history records. `trailerPackagePath`
   is the teaser / pitch package and is available through the CLI, MCP, WebUI,
-  and history records.
+  and history records. `screenplayPath` is the readable script handoff and is
+  available through the CLI, MCP, WebUI, and history records.
   The Movie / Show board's Agents tab is the quickest place to inspect the
   Hermes/OpenClaw workflow, operator checklist, and agent-facing deliverables.
   `musicCuePackage` includes cue mapping, a song draft, lyrics, and a

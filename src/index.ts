@@ -50,6 +50,7 @@ export {
   normalizeRenderProfile,
   buildAgentGuidancePackage,
   renderAgentGuidanceMarkdown,
+  renderScreenplayMarkdown,
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
@@ -63,6 +64,7 @@ import { assembleComic } from './assembler/index.js';
 import {
   buildStoryProject,
   renderAgentGuidanceMarkdown,
+  renderScreenplayMarkdown,
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
@@ -229,6 +231,7 @@ export async function createComic(
   await mkdir(imageDir, { recursive: true });
   const projectPath = `${stemFromOutput}-project.json`;
   const agentGuidancePath = `${stemFromOutput}-agent-guidance.md`;
+  const screenplayPath = `${stemFromOutput}-screenplay.md`;
   const songSheetPath = `${stemFromOutput}-song-sheet.md`;
   const songAudioPath = `${stemFromOutput}-theme.${musicProvider.outputExtension}`;
   const musicCuePackagePath = `${stemFromOutput}-music-cue-package.json`;
@@ -240,6 +243,7 @@ export async function createComic(
   const agentPlaybookPath = join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md');
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
+  await writeFile(screenplayPath, renderScreenplayMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(musicCuePackagePath, JSON.stringify(project.musicCuePackage, null, 2), 'utf8');
   await writeFile(seriesPackagePath, JSON.stringify(project.seriesPackage, null, 2), 'utf8');
@@ -292,6 +296,7 @@ export async function createComic(
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
+    screenplayPath,
     agentPlaybookPath,
     songSheetPath,
     songAudioPath,

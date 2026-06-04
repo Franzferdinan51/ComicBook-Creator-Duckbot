@@ -66,6 +66,7 @@ export function History({ onOpen }) {
               musicCuePackage: bundle.musicCuePackage,
               agentGuidancePackage: bundle.agentGuidancePackage,
               agentGuidancePath: bundle.artifactPaths?.agentGuidancePath ?? null,
+              screenplayPath: bundle.artifactPaths?.screenplayPath ?? null,
               songSheetPath: bundle.artifactPaths?.songSheetPath ?? null,
               songAudioPath: bundle.artifactPaths?.songAudioPath ?? null,
               musicCuePackagePath: bundle.artifactPaths?.musicCuePackagePath ?? null,
@@ -95,6 +96,7 @@ export function History({ onOpen }) {
           musicCuePackage: entry.musicCuePackage || null,
           agentGuidancePackage: entry.agentGuidancePackage || null,
           agentGuidancePath: entry.agentGuidancePath || null,
+          screenplayPath: entry.screenplayPath || null,
           songSheetPath: entry.songSheetPath || null,
           songAudioPath: entry.songAudioPath || null,
           musicCuePackagePath: entry.musicCuePackagePath || null,
@@ -167,6 +169,18 @@ export function History({ onOpen }) {
     a.click();
     document.body.removeChild(a);
     showToast('Series package downloaded.', 'success');
+  }
+
+  function handleDownloadScreenplay(entry, e) {
+    e.stopPropagation();
+    if (!entry.screenplayPath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${entry.jobId}/screenplay`;
+    a.download = `${(entry.title || entry.jobId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-screenplay.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Screenplay downloaded.', 'success');
   }
 
   function handleDownloadAgentPlaybook(e) {
@@ -292,6 +306,13 @@ export function History({ onOpen }) {
                     onClick=${(e) => handleDownloadSeriesPackage(entry, e)}
                     title="Download the episodic series package for this history item"
                   >Series</button>
+                ` : null}
+                ${entry.screenplayPath ? html`
+                  <button
+                    type="button"
+                    onClick=${(e) => handleDownloadScreenplay(entry, e)}
+                    title="Download the screenplay for this history item"
+                  >Script</button>
                 ` : null}
                 <button
                   type="button"

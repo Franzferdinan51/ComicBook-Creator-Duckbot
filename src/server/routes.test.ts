@@ -70,6 +70,7 @@ const entry: HistoryEntry = {
   coverImagePath: '/tmp/history-job.images/cover.png',
   projectPath: '/tmp/history-job-project.json',
   agentPlaybookPath: '/tmp/docs/agents/hermes-openclaw-playbook.md',
+  screenplayPath: '/tmp/history-job-screenplay.md',
   songSheetPath: '/tmp/history-job-song-sheet.md',
   songAudioPath: '/tmp/history-job-theme.wav',
   musicCuePackagePath: '/tmp/history-job-music-cue-package.json',
@@ -166,6 +167,7 @@ try {
   await writeFile(entry.musicCuePackagePath!, JSON.stringify(musicCuePackage), 'utf8');
   await writeFile(entry.seriesPackagePath!, JSON.stringify(seriesPackage), 'utf8');
   await writeFile(entry.trailerPackagePath!, JSON.stringify(trailerPackage), 'utf8');
+  await writeFile(entry.screenplayPath!, '# History Project\n\n## Screenplay Handoff\n\nHistory screenplay text.', 'utf8');
   await writeFile(entry.studioBundlePath!, JSON.stringify({
     format: 'studio-bundle',
     jobId: 'history-job',
@@ -187,6 +189,7 @@ try {
       projectPath: entry.projectPath,
       agentGuidancePath: '/tmp/history-job-agent-guidance.md',
       agentPlaybookPath: entry.agentPlaybookPath,
+      screenplayPath: entry.screenplayPath,
       songSheetPath: entry.songSheetPath,
       songAudioPath: entry.songAudioPath,
       musicCuePackagePath: entry.musicCuePackagePath,
@@ -202,6 +205,7 @@ try {
       coverImage: true,
       project: true,
       agentGuidance: true,
+      screenplay: true,
       agentPlaybook: true,
       songSheet: true,
       songAudio: true,
@@ -224,6 +228,7 @@ try {
   assert.equal(Array.isArray(resolved?.result.musicCuePackage.cues), true);
   assert.equal(resolved?.result.projectPath, '/tmp/history-job-project.json');
   assert.equal(resolved?.result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
+  assert.equal(resolved?.result.screenplayPath, '/tmp/history-job-screenplay.md');
   assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
   assert.equal(resolved?.result.songAudioPath, '/tmp/history-job-theme.wav');
   assert.equal(resolved?.result.musicCuePackagePath, '/tmp/history-job-music-cue-package.json');
@@ -264,10 +269,12 @@ try {
     assert.equal(bundle.jobId, 'history-job');
     assert.equal(bundle.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
     assert.equal(bundle.artifactPaths.studioBundlePath, entry.studioBundlePath);
+    assert.equal(bundle.artifactPaths.screenplayPath, entry.screenplayPath);
     assert.equal(bundle.artifactPaths.musicCuePackagePath, entry.musicCuePackagePath);
     assert.equal(bundle.artifactPaths.seriesPackagePath, entry.seriesPackagePath);
     assert.equal(bundle.artifactPaths.trailerPackagePath, entry.trailerPackagePath);
     assert.equal(bundle.availability.agentPlaybook, true);
+    assert.equal(bundle.availability.screenplay, true);
     assert.equal(bundle.availability.musicCuePackage, true);
     assert.equal(bundle.availability.seriesPackage, true);
     assert.equal(bundle.availability.storyboardPackage, true);
@@ -288,6 +295,12 @@ try {
     const seriesPayload = await seriesRes.json();
     assert.equal(seriesPayload.format, 'series-bible');
     assert.equal(seriesPayload.targetFormat, 'series');
+
+    const screenplayRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/screenplay`);
+    assert.equal(screenplayRes.ok, true);
+    assert.equal(screenplayRes.headers.get('content-type')?.includes('text/markdown'), true);
+    const screenplayText = await screenplayRes.text();
+    assert.equal(screenplayText.includes('## Screenplay Handoff'), true);
 
     const trailerRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/trailer-package`);
     assert.equal(trailerRes.ok, true);

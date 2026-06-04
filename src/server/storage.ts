@@ -64,6 +64,8 @@ export interface HistoryEntry {
   agentGuidancePackage?: AgentGuidancePackage;
   /** Path to the generated markdown handoff for external agents. */
   agentGuidancePath?: string;
+  /** Path to the generated screenplay markdown handoff. */
+  screenplayPath?: string;
   /** Path to the repository playbook for Hermes/OpenClaw follow-up. */
   agentPlaybookPath?: string;
   /** Path to the generated song sheet markdown. */

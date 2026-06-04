@@ -54,6 +54,14 @@ const seriesResult = JSON.parse(seriesProbe.stdout);
 assert.equal(seriesResult.format, 'series-bible');
 assert.equal(Array.isArray(seriesResult.episodeOutline), true);
 
+const screenplayOutputPath = `/tmp/comic-creator-cli-screenplay-${Date.now()}.pdf`;
+const screenplayProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--screenplay', `--output=${screenplayOutputPath}`, '--pages=1', '--panels=3', 'A Screenplay package story'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+assert.equal(screenplayProbe.stdout.includes('## Screenplay Handoff'), true);
+assert.equal(screenplayProbe.stdout.includes('A Screenplay package story'), true);
+
 const outputPath = `/tmp/comic-creator-cli-${Date.now()}.pdf`;
 const result = await runCli({
   ...parsed,
@@ -70,6 +78,7 @@ assert.equal(result.agentGuidancePackage.externalInterfaces.includes('cli'), tru
 assert.equal(result.projectPath, outputPath.replace(/\.pdf$/, '-project.json'));
 assert.equal(result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
 assert.equal(result.agentGuidancePath, outputPath.replace(/\.pdf$/, '-agent-guidance.md'));
+assert.equal(result.screenplayPath, outputPath.replace(/\.pdf$/, '-screenplay.md'));
 assert.equal(result.songSheetPath, outputPath.replace(/\.pdf$/, '-song-sheet.md'));
 assert.equal(result.songAudioPath, outputPath.replace(/\.pdf$/, '-theme.wav'));
 assert.equal(result.musicCuePackagePath, outputPath.replace(/\.pdf$/, '-music-cue-package.json'));
@@ -81,6 +90,7 @@ assert.equal(result.studioBundlePath, outputPath.replace(/\.pdf$/, '-studio-bund
 await access(result.projectPath!);
 await access(result.agentPlaybookPath!);
 await access(result.agentGuidancePath!);
+await access(result.screenplayPath!);
 await access(result.songSheetPath!);
 await access(result.songAudioPath!);
 await access(result.musicCuePackagePath!);
@@ -99,6 +109,8 @@ assert.equal(pdfBytes.toString('latin1').includes('/MediaBox [0 0 960 540]'), tr
 const guidance = await readFile(result.agentGuidancePath!, 'utf8');
 assert.equal(guidance.includes('Hermes Agent'), true);
 assert.equal(guidance.includes('OpenClaw'), true);
+const screenplay = await readFile(result.screenplayPath!, 'utf8');
+assert.equal(screenplay.includes('## Screenplay Handoff'), true);
 const projectJson = JSON.parse(await readFile(result.projectPath!, 'utf8'));
 assert.equal(projectJson.title, result.project.title);
 assert.equal(projectJson.musicCuePackage.songDraft.title, result.musicCuePackage.songDraft.title);
@@ -115,6 +127,7 @@ assert.equal(seriesPackage.format, 'series-bible');
 const studioBundle = JSON.parse(await readFile(result.studioBundlePath!, 'utf8'));
 assert.equal(studioBundle.format, 'studio-bundle');
 assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
+assert.equal(studioBundle.artifactPaths.screenplayPath, result.screenplayPath);
 assert.equal(studioBundle.artifactPaths.musicCuePackagePath, result.musicCuePackagePath);
 assert.equal(studioBundle.artifactPaths.seriesPackagePath, result.seriesPackagePath);
 assert.equal(studioBundle.artifactPaths.trailerPackagePath, result.trailerPackagePath);
@@ -143,11 +156,13 @@ const stem = outputPath.replace(/\.[^./\\]+$/, '');
 const trailerStem = trailerOutputPath.replace(/\.[^./\\]+$/, '');
 const musicStem = musicOutputPath.replace(/\.[^./\\]+$/, '');
 const seriesStem = seriesOutputPath.replace(/\.[^./\\]+$/, '');
+const screenplayStem = screenplayOutputPath.replace(/\.[^./\\]+$/, '');
 await rm(outputPath, { force: true });
 if (result.cbzPath) await rm(result.cbzPath, { force: true });
 await rm(result.agentGuidancePath!, { force: true });
 await rm(result.projectPath!, { force: true });
 await rm(result.songSheetPath!, { force: true });
+await rm(result.screenplayPath!, { force: true });
 await rm(result.songAudioPath!, { force: true });
 await rm(result.musicCuePackagePath!, { force: true });
 await rm(result.seriesPackagePath!, { force: true });
@@ -195,5 +210,19 @@ await rm(`${seriesStem}-storyboard-package.json`, { force: true });
 await rm(`${seriesStem}-trailer-package.json`, { force: true });
 await rm(`${seriesStem}-animatic-timeline.json`, { force: true });
 await rm(`${seriesStem}-studio-bundle.json`, { force: true });
+await rm(screenplayOutputPath, { force: true });
+await rm(`${screenplayStem}.cbz`, { force: true });
+await rm(`${screenplayStem}.images`, { recursive: true, force: true });
+await rm(`${screenplayStem}-project.json`, { force: true });
+await rm(`${screenplayStem}-agent-guidance.md`, { force: true });
+await rm(`${screenplayStem}-screenplay.md`, { force: true });
+await rm(`${screenplayStem}-song-sheet.md`, { force: true });
+await rm(`${screenplayStem}-theme.wav`, { force: true });
+await rm(`${screenplayStem}-music-cue-package.json`, { force: true });
+await rm(`${screenplayStem}-series-package.json`, { force: true });
+await rm(`${screenplayStem}-storyboard-package.json`, { force: true });
+await rm(`${screenplayStem}-trailer-package.json`, { force: true });
+await rm(`${screenplayStem}-animatic-timeline.json`, { force: true });
+await rm(`${screenplayStem}-studio-bundle.json`, { force: true });
 
 console.log('PASS cli');

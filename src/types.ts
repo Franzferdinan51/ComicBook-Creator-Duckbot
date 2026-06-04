@@ -286,6 +286,8 @@ export interface ComicResult {
   agentGuidancePackage: AgentGuidancePackage;
   /** Absolute path to the generated agent guidance markdown handoff, if written. */
   agentGuidancePath: string | null;
+  /** Absolute path to the generated screenplay markdown handoff, if written. */
+  screenplayPath: string | null;
   /** Absolute path to the repository playbook for Hermes/OpenClaw agents. */
   agentPlaybookPath: string | null;
   /** Absolute path to the generated song sheet markdown handoff, if written. */

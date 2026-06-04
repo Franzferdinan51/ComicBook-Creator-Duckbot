@@ -25,6 +25,7 @@ assert.equal(registeredTools.includes('regenerate_comic'), true);
 assert.equal(registeredTools.includes('get_studio_bundle'), true);
 assert.equal(registeredTools.includes('get_music_cue_package'), true);
 assert.equal(registeredTools.includes('get_series_package'), true);
+assert.equal(registeredTools.includes('get_screenplay'), true);
 assert.equal(registeredTools.includes('get_trailer_package'), true);
 
 const storageDir = await mkdtemp(join(tmpdir(), 'comic-mcp-test-'));
@@ -68,6 +69,9 @@ try {
   const seriesPackage = JSON.parse(seriesJson.content[0].resource.text);
   assert.equal(seriesPackage.format, 'series-bible');
   assert.equal(Array.isArray(seriesPackage.episodeOutline), true);
+  const screenplayJson = await mcpServer._registeredTools.get_screenplay.handler({ jobId: job.jobId });
+  assert.equal(screenplayJson.content[0].resource.mimeType, 'text/markdown');
+  assert.equal(screenplayJson.content[0].resource.text.includes('## Screenplay Handoff'), true);
 } finally {
   await rm(storageDir, { recursive: true, force: true });
 }

@@ -1055,6 +1055,36 @@ export function buildRouter(): Router {
   });
 
   /**
+   * GET /api/comic/:jobId/screenplay
+   * Returns the generated screenplay markdown handoff.
+   * Headers: Content-Type: text/markdown
+   */
+  router.get('/comic/:jobId/screenplay', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const screenplayPath = record.result.screenplayPath;
+    if (!screenplayPath || !existsSync(screenplayPath)) {
+      return res.status(404).json({ error: 'no screenplay for this comic' });
+    }
+    const size = statSync(screenplayPath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-screenplay.md"`);
+    const buf = await readFile(screenplayPath, 'utf8');
+    res.end(buf);
+  });
+
+  /**
    * GET /api/comic/:jobId/storyboard-package
    * Returns the generated storyboard package JSON.
    */

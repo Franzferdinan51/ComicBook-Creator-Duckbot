@@ -253,6 +253,7 @@ class JobManager {
       studioBundlePath: entry.studioBundlePath ?? `${entry.outputPath.replace(/\.[^./\\]+$/, '')}-studio-bundle.json`,
       project,
       projectPath: entry.projectPath ?? null,
+      screenplayPath: entry.screenplayPath ?? null,
       agentPlaybookPath: entry.agentPlaybookPath ?? join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md'),
       storyBible: entry.project?.storyBible ?? {
         premise: entry.scriptJson.title,
@@ -416,6 +417,7 @@ class JobManager {
         seriesPackage: result.seriesPackage,
         agentGuidancePackage: result.agentGuidancePackage,
         agentGuidancePath: result.agentGuidancePath ?? undefined,
+        screenplayPath: result.screenplayPath ?? undefined,
         songSheetPath: result.songSheetPath ?? undefined,
         songAudioPath: result.songAudioPath ?? undefined,
         musicCuePackagePath: result.musicCuePackagePath ?? undefined,

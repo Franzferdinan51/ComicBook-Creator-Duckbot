@@ -37,6 +37,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | POST   | `/api/comic`                            | Kick off a new comic generation  |
 | GET    | `/api/comic/:jobId`                     | Poll job status                  |
 | GET    | `/api/comic/:jobId/pdf`                 | Stream the generated PDF         |
+| GET    | `/api/comic/:jobId/screenplay`          | Stream the screenplay markdown   |
 | GET    | `/api/comic/:jobId/music-cue-package`   | Stream the music cue JSON        |
 | GET    | `/api/comic/:jobId/series-package`      | Stream the episodic series JSON  |
 | GET    | `/api/comic/:jobId/trailer-package`     | Stream the trailer / teaser JSON |
@@ -210,6 +211,18 @@ The `mock` provider is always available.
 
 ---
 
+### `GET /api/comic/:jobId/screenplay`
+
+Streams the generated screenplay markdown handoff.
+
+**Success response headers**
+- `Content-Type: text/markdown; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-screenplay.md"`
+
+**404** if the job is unknown or no screenplay exists for that comic.
+
+---
+
 ### `GET /api/comic/:jobId/series-package`
 
 Streams the generated episodic show-bible JSON.
@@ -301,6 +314,7 @@ a future version).
     "pageCount": 4,
     "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
     "agentPlaybookPath": "/Users/duckets/Desktop/ComicBook-Creator-Duckbot-main/docs/agents/hermes-openclaw-playbook.md",
+    "screenplayPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-screenplay.md",
     "musicCuePackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-music-cue-package.json",
     "seriesPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-series-package.json",
     "trailerPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-trailer-package.json",

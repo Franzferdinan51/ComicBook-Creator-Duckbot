@@ -414,6 +414,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     downloadJsonArtifact('project', result.project, 'Project JSON downloaded.');
   }
 
+  function handleDownloadScreenplay() {
+    if (!result?.screenplayPath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/screenplay`;
+    a.download = `${localSlug(result.script?.title)}-screenplay.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Screenplay downloaded.', 'success');
+  }
+
   function handleDownloadAdaptation() {
     if (!result?.adaptationPackage) return;
     downloadJsonArtifact('adaptation', result.adaptationPackage, 'Adaptation outline downloaded.');
@@ -716,6 +727,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
         <section class="panel artifact-panel">
           <h3>Adaptation</h3>
           <p>${result.adaptationPackage?.screenplayScenes?.length || result.adaptationPackage?.sceneOutline?.length || 0} screenplay scenes prepared.</p>
+          ${result.screenplayPath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>
+              Download screenplay
+            </button>
+          ` : null}
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAdaptation}>
             Download adaptation JSON
           </button>
