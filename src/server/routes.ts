@@ -1085,6 +1085,36 @@ export function buildRouter(): Router {
   });
 
   /**
+   * GET /api/comic/:jobId/director-brief
+   * Returns the generated director brief markdown handoff.
+   * Headers: Content-Type: text/markdown
+   */
+  router.get('/comic/:jobId/director-brief', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const directorBriefPath = record.result.directorBriefPath;
+    if (!directorBriefPath || !existsSync(directorBriefPath)) {
+      return res.status(404).json({ error: 'no director brief for this comic' });
+    }
+    const size = statSync(directorBriefPath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-director-brief.md"`);
+    const buf = await readFile(directorBriefPath, 'utf8');
+    res.end(buf);
+  });
+
+  /**
    * GET /api/comic/:jobId/storyboard-package
    * Returns the generated storyboard package JSON.
    */

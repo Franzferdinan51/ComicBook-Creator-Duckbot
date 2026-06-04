@@ -21,6 +21,7 @@ import {
   buildStoryProject,
   renderAgentGuidanceMarkdown,
   renderScreenplayMarkdown,
+  renderDirectorBriefMarkdown,
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
@@ -71,6 +72,7 @@ interface ParsedArgs {
   json: boolean;
   studioBundle: boolean;
   screenplay: boolean;
+  directorBrief: boolean;
   seriesPackage: boolean;
   trailerPackage: boolean;
   musicCuePackage: boolean;
@@ -105,6 +107,7 @@ Options:
   --json                    Print the full ComicResult JSON and exit
   --studio-bundle           Print the unified studio bundle JSON and exit
   --screenplay              Print the generated screenplay markdown and exit
+  --director-brief          Print the generated director brief markdown and exit
   --series-package          Print the episodic series package JSON and exit
   --trailer-package         Print the trailer package JSON and exit
   --music-cue-package       Print the music cue package JSON and exit
@@ -142,6 +145,7 @@ function defaultArgs(): ParsedArgs {
     json: false,
     studioBundle: false,
     screenplay: false,
+    directorBrief: false,
     seriesPackage: false,
     trailerPackage: false,
     musicCuePackage: false,
@@ -238,7 +242,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
 
 /**
  * Minimal arg parser: --key=value flags, then positional <story>.
- * Recognises --help / --version / --json / --studio-bundle / --screenplay / --series-package / --trailer-package / --music-cue-package / --agent-playbook (and -h / -V).
+ * Recognises --help / --version / --json / --studio-bundle / --screenplay / --director-brief / --series-package / --trailer-package / --music-cue-package / --agent-playbook (and -h / -V).
  */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = defaultArgs();
@@ -255,6 +259,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.studioBundle = true;
     } else if (arg === '--screenplay') {
       args.screenplay = true;
+    } else if (arg === '--director-brief') {
+      args.directorBrief = true;
     } else if (arg === '--series-package') {
       args.seriesPackage = true;
     } else if (arg === '--trailer-package') {
@@ -422,6 +428,7 @@ export async function runCli(
   const projectPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-project.json`;
   const agentGuidancePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-guidance.md`;
   const screenplayPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-screenplay.md`;
+  const directorBriefPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-director-brief.md`;
   const songSheetPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-song-sheet.md`;
   const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.${musicProvider.outputExtension}`;
   const musicCuePackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-music-cue-package.json`;
@@ -433,6 +440,7 @@ export async function runCli(
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(screenplayPath, renderScreenplayMarkdown(project), 'utf8');
+  await writeFile(directorBriefPath, renderDirectorBriefMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(musicCuePackagePath, JSON.stringify(project.musicCuePackage, null, 2), 'utf8');
   await writeFile(seriesPackagePath, JSON.stringify(project.seriesPackage, null, 2), 'utf8');
@@ -514,6 +522,7 @@ export async function runCli(
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
     screenplayPath,
+    directorBriefPath,
     agentPlaybookPath: PLAYBOOK_PATH,
     songSheetPath,
     songAudioPath,
@@ -567,6 +576,10 @@ async function main(): Promise<void> {
     }
     if (args.screenplay) {
       process.stdout.write(await readFile(result.screenplayPath!, 'utf8'));
+      return;
+    }
+    if (args.directorBrief) {
+      process.stdout.write(await readFile(result.directorBriefPath!, 'utf8'));
       return;
     }
     if (args.seriesPackage) {

@@ -21,6 +21,7 @@ export interface StudioBundle {
     projectPath: string | null;
     agentGuidancePath: string | null;
     screenplayPath: string | null;
+    directorBriefPath: string | null;
     agentPlaybookPath: string | null;
     songSheetPath: string | null;
     songAudioPath: string | null;
@@ -38,6 +39,7 @@ export interface StudioBundle {
     project: boolean;
     agentGuidance: boolean;
     screenplay: boolean;
+    directorBrief: boolean;
     agentPlaybook: boolean;
     songSheet: boolean;
     songAudio: boolean;
@@ -72,6 +74,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       projectPath: result.projectPath,
       agentGuidancePath: result.agentGuidancePath,
       screenplayPath: result.screenplayPath,
+      directorBriefPath: result.directorBriefPath,
       agentPlaybookPath: result.agentPlaybookPath,
       songSheetPath: result.songSheetPath,
       songAudioPath: result.songAudioPath,
@@ -89,6 +92,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       project: Boolean(result.projectPath),
       agentGuidance: Boolean(result.agentGuidancePath),
       screenplay: Boolean(result.screenplayPath),
+      directorBrief: Boolean(result.directorBriefPath),
       agentPlaybook: Boolean(result.agentPlaybookPath),
       songSheet: Boolean(result.songSheetPath),
       songAudio: Boolean(result.songAudioPath),

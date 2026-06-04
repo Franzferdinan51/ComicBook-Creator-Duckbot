@@ -51,6 +51,7 @@ export {
   buildAgentGuidancePackage,
   renderAgentGuidanceMarkdown,
   renderScreenplayMarkdown,
+  renderDirectorBriefMarkdown,
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
@@ -65,6 +66,7 @@ import {
   buildStoryProject,
   renderAgentGuidanceMarkdown,
   renderScreenplayMarkdown,
+  renderDirectorBriefMarkdown,
   renderSongSheetMarkdown,
   buildStoryboardPackage,
   buildAnimaticTimeline,
@@ -232,6 +234,7 @@ export async function createComic(
   const projectPath = `${stemFromOutput}-project.json`;
   const agentGuidancePath = `${stemFromOutput}-agent-guidance.md`;
   const screenplayPath = `${stemFromOutput}-screenplay.md`;
+  const directorBriefPath = `${stemFromOutput}-director-brief.md`;
   const songSheetPath = `${stemFromOutput}-song-sheet.md`;
   const songAudioPath = `${stemFromOutput}-theme.${musicProvider.outputExtension}`;
   const musicCuePackagePath = `${stemFromOutput}-music-cue-package.json`;
@@ -244,6 +247,7 @@ export async function createComic(
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(screenplayPath, renderScreenplayMarkdown(project), 'utf8');
+  await writeFile(directorBriefPath, renderDirectorBriefMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
   await writeFile(musicCuePackagePath, JSON.stringify(project.musicCuePackage, null, 2), 'utf8');
   await writeFile(seriesPackagePath, JSON.stringify(project.seriesPackage, null, 2), 'utf8');
@@ -297,6 +301,7 @@ export async function createComic(
     agentGuidancePackage: project.agentGuidancePackage,
     agentGuidancePath,
     screenplayPath,
+    directorBriefPath,
     agentPlaybookPath,
     songSheetPath,
     songAudioPath,

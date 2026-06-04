@@ -254,6 +254,7 @@ class JobManager {
       project,
       projectPath: entry.projectPath ?? null,
       screenplayPath: entry.screenplayPath ?? null,
+      directorBriefPath: entry.directorBriefPath ?? null,
       agentPlaybookPath: entry.agentPlaybookPath ?? join(process.cwd(), 'docs', 'agents', 'hermes-openclaw-playbook.md'),
       storyBible: entry.project?.storyBible ?? {
         premise: entry.scriptJson.title,
@@ -418,6 +419,7 @@ class JobManager {
         agentGuidancePackage: result.agentGuidancePackage,
         agentGuidancePath: result.agentGuidancePath ?? undefined,
         screenplayPath: result.screenplayPath ?? undefined,
+        directorBriefPath: result.directorBriefPath ?? undefined,
         songSheetPath: result.songSheetPath ?? undefined,
         songAudioPath: result.songAudioPath ?? undefined,
         musicCuePackagePath: result.musicCuePackagePath ?? undefined,

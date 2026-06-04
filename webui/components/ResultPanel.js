@@ -425,6 +425,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     showToast('Screenplay downloaded.', 'success');
   }
 
+  function handleDownloadDirectorBrief() {
+    if (!result?.directorBriefPath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/director-brief`;
+    a.download = `${localSlug(result.script?.title)}-director-brief.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Director brief downloaded.', 'success');
+  }
+
   function handleDownloadAdaptation() {
     if (!result?.adaptationPackage) return;
     downloadJsonArtifact('adaptation', result.adaptationPackage, 'Adaptation outline downloaded.');
@@ -730,6 +741,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
           ${result.screenplayPath ? html`
             <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>
               Download screenplay
+            </button>
+          ` : null}
+          ${result.directorBriefPath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>
+              Download director brief
             </button>
           ` : null}
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAdaptation}>

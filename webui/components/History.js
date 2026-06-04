@@ -67,6 +67,7 @@ export function History({ onOpen }) {
               agentGuidancePackage: bundle.agentGuidancePackage,
               agentGuidancePath: bundle.artifactPaths?.agentGuidancePath ?? null,
               screenplayPath: bundle.artifactPaths?.screenplayPath ?? null,
+              directorBriefPath: bundle.artifactPaths?.directorBriefPath ?? null,
               songSheetPath: bundle.artifactPaths?.songSheetPath ?? null,
               songAudioPath: bundle.artifactPaths?.songAudioPath ?? null,
               musicCuePackagePath: bundle.artifactPaths?.musicCuePackagePath ?? null,
@@ -97,6 +98,7 @@ export function History({ onOpen }) {
           agentGuidancePackage: entry.agentGuidancePackage || null,
           agentGuidancePath: entry.agentGuidancePath || null,
           screenplayPath: entry.screenplayPath || null,
+          directorBriefPath: entry.directorBriefPath || null,
           songSheetPath: entry.songSheetPath || null,
           songAudioPath: entry.songAudioPath || null,
           musicCuePackagePath: entry.musicCuePackagePath || null,
@@ -181,6 +183,18 @@ export function History({ onOpen }) {
     a.click();
     document.body.removeChild(a);
     showToast('Screenplay downloaded.', 'success');
+  }
+
+  function handleDownloadDirectorBrief(entry, e) {
+    e.stopPropagation();
+    if (!entry.directorBriefPath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${entry.jobId}/director-brief`;
+    a.download = `${(entry.title || entry.jobId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-director-brief.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Director brief downloaded.', 'success');
   }
 
   function handleDownloadAgentPlaybook(e) {
@@ -313,6 +327,13 @@ export function History({ onOpen }) {
                     onClick=${(e) => handleDownloadScreenplay(entry, e)}
                     title="Download the screenplay for this history item"
                   >Script</button>
+                ` : null}
+                ${entry.directorBriefPath ? html`
+                  <button
+                    type="button"
+                    onClick=${(e) => handleDownloadDirectorBrief(entry, e)}
+                    title="Download the director brief for this history item"
+                  >Brief</button>
                 ` : null}
                 <button
                   type="button"

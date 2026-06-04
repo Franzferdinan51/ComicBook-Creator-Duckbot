@@ -369,6 +369,43 @@ export function buildMcpServer(): McpServer {
   );
 
   server.tool(
+    'get_director_brief',
+    'Fetch the generated director brief markdown for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.directorBriefPath;
+        if (!path || !existsSync(path)) {
+          return errResult(`director brief not available for job ${jobId}`);
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.director-brief.md`,
+                mimeType: 'text/markdown',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_director_brief failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
     'get_agent_playbook',
     'Fetch the repository-level Hermes/OpenClaw playbook for external agents.',
     {},

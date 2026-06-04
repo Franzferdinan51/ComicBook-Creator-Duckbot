@@ -38,6 +38,7 @@ async function main(): Promise<void> {
   assert.equal(result.agentGuidancePath?.endsWith('-agent-guidance.md'), true);
   assert.equal(result.agentGuidancePath != null, true);
   assert.equal(result.screenplayPath?.endsWith('-screenplay.md'), true);
+  assert.equal(result.directorBriefPath?.endsWith('-director-brief.md'), true);
   assert.equal(result.songSheetPath?.endsWith('-song-sheet.md'), true);
   assert.equal(result.songAudioPath?.endsWith('-theme.wav'), true);
   assert.equal(result.musicCuePackagePath?.endsWith('-music-cue-package.json'), true);
@@ -54,6 +55,7 @@ async function main(): Promise<void> {
   await access(result.coverImagePath!);
   await access(result.agentGuidancePath!);
   await access(result.screenplayPath!);
+  await access(result.directorBriefPath!);
   await access(result.projectPath!);
   await access(result.agentPlaybookPath!);
   await access(result.songSheetPath!);
@@ -89,6 +91,9 @@ async function main(): Promise<void> {
   const screenplay = await readFile(result.screenplayPath!, 'utf8');
   assert.equal(screenplay.includes('## Screenplay Handoff'), true);
   assert.equal(screenplay.includes(result.project.title), true);
+  const directorBrief = await readFile(result.directorBriefPath!, 'utf8');
+  assert.equal(directorBrief.includes('## Director Brief'), true);
+  assert.equal(directorBrief.includes(result.project.title), true);
   const songSheet = await readFile(result.songSheetPath!, 'utf8');
   assert.equal(songSheet.includes(result.musicCuePackage.songDraft.lyrics), true);
   const musicCuePackage = JSON.parse(await readFile(result.musicCuePackagePath!, 'utf8'));
@@ -116,6 +121,7 @@ async function main(): Promise<void> {
   assert.equal(studioBundle.jobId, result.project.id);
   assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
   assert.equal(studioBundle.artifactPaths.screenplayPath, result.screenplayPath);
+  assert.equal(studioBundle.artifactPaths.directorBriefPath, result.directorBriefPath);
   assert.equal(studioBundle.artifactPaths.musicCuePackagePath, result.musicCuePackagePath);
   assert.equal(studioBundle.artifactPaths.seriesPackagePath, result.seriesPackagePath);
   assert.equal(studioBundle.artifactPaths.agentPlaybookPath, result.agentPlaybookPath);
@@ -125,6 +131,7 @@ async function main(): Promise<void> {
   if (result.cbzPath) await rm(result.cbzPath, { force: true });
   await rm(result.agentGuidancePath!, { force: true });
   await rm(result.screenplayPath!, { force: true });
+  await rm(result.directorBriefPath!, { force: true });
   await rm(result.projectPath!, { force: true });
   await rm(result.songSheetPath!, { force: true });
   await rm(result.songAudioPath!, { force: true });

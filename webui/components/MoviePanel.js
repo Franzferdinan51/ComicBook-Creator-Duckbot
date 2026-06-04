@@ -154,6 +154,12 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       hint: 'Readable screenplay handoff for the show/movie version.',
     },
     {
+      label: 'Director brief',
+      href: jobId && result.directorBriefPath ? `/api/comic/${jobId}/director-brief` : null,
+      filename: `${localSlug(title)}-director-brief.md`,
+      hint: 'Human-readable production brief tying together story, visuals, trailer, and score.',
+    },
+    {
       label: 'Storyboard package',
       href: jobId ? `/api/comic/${jobId}/storyboard-package` : null,
       filename: `${localSlug(title)}-storyboard-package.json`,
@@ -239,6 +245,15 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       `/api/comic/${jobId}/screenplay`,
       `${localSlug(title)}-screenplay.md`,
       'Screenplay downloaded.'
+    );
+  }
+
+  function handleDownloadDirectorBrief() {
+    if (!jobId || !result?.directorBriefPath) return;
+    download(
+      `/api/comic/${jobId}/director-brief`,
+      `${localSlug(title)}-director-brief.md`,
+      'Director brief downloaded.'
     );
   }
 
@@ -355,6 +370,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
             <div class="action-row">
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSeriesPackage}>Download series package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStoryboardPackage}>Download storyboard package</button>
@@ -555,6 +571,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
             <p class="movie-pitch-line">Use the screenplay handoff to move directly from comic structure into script-driven development.</p>
             <div class="action-row">
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
             </div>
           </section>
           ${screenplayScenes.map((scene) => html`
@@ -753,6 +770,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         <div class="action-row">
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSeriesPackage}>Download series package</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
@@ -784,6 +802,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
             <div class="action-row">
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
             </div>
@@ -801,6 +820,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
         </div>
       </section>

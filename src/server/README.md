@@ -38,6 +38,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | GET    | `/api/comic/:jobId`                     | Poll job status                  |
 | GET    | `/api/comic/:jobId/pdf`                 | Stream the generated PDF         |
 | GET    | `/api/comic/:jobId/screenplay`          | Stream the screenplay markdown   |
+| GET    | `/api/comic/:jobId/director-brief`      | Stream the director brief markdown |
 | GET    | `/api/comic/:jobId/music-cue-package`   | Stream the music cue JSON        |
 | GET    | `/api/comic/:jobId/series-package`      | Stream the episodic series JSON  |
 | GET    | `/api/comic/:jobId/trailer-package`     | Stream the trailer / teaser JSON |
@@ -223,6 +224,18 @@ Streams the generated screenplay markdown handoff.
 
 ---
 
+### `GET /api/comic/:jobId/director-brief`
+
+Streams the generated director brief markdown handoff.
+
+**Success response headers**
+- `Content-Type: text/markdown; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-director-brief.md"`
+
+**404** if the job is unknown or no director brief exists for that comic.
+
+---
+
 ### `GET /api/comic/:jobId/series-package`
 
 Streams the generated episodic show-bible JSON.
@@ -315,6 +328,7 @@ a future version).
     "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
     "agentPlaybookPath": "/Users/duckets/Desktop/ComicBook-Creator-Duckbot-main/docs/agents/hermes-openclaw-playbook.md",
     "screenplayPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-screenplay.md",
+    "directorBriefPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-director-brief.md",
     "musicCuePackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-music-cue-package.json",
     "seriesPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-series-package.json",
     "trailerPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-trailer-package.json",
