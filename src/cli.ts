@@ -70,6 +70,7 @@ interface ParsedArgs {
   json: boolean;
   studioBundle: boolean;
   trailerPackage: boolean;
+  musicCuePackage: boolean;
   help: boolean;
   version: boolean;
   agentPlaybook: boolean;
@@ -101,6 +102,7 @@ Options:
   --json                    Print the full ComicResult JSON and exit
   --studio-bundle           Print the unified studio bundle JSON and exit
   --trailer-package         Print the trailer package JSON and exit
+  --music-cue-package       Print the music cue package JSON and exit
   --agent-playbook          Print the repo-level Hermes/OpenClaw playbook and exit
   --help                    Print this help and exit
   --version                 Print version and exit
@@ -135,6 +137,7 @@ function defaultArgs(): ParsedArgs {
     json: false,
     studioBundle: false,
     trailerPackage: false,
+    musicCuePackage: false,
     help: false,
     version: false,
     agentPlaybook: false,
@@ -228,7 +231,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
 
 /**
  * Minimal arg parser: --key=value flags, then positional <story>.
- * Recognises --help / --version / --json / --studio-bundle / --trailer-package / --agent-playbook (and -h / -V).
+ * Recognises --help / --version / --json / --studio-bundle / --trailer-package / --music-cue-package / --agent-playbook (and -h / -V).
  */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = defaultArgs();
@@ -245,6 +248,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.studioBundle = true;
     } else if (arg === '--trailer-package') {
       args.trailerPackage = true;
+    } else if (arg === '--music-cue-package') {
+      args.musicCuePackage = true;
     } else if (arg === '--agent-playbook') {
       args.agentPlaybook = true;
     } else if (arg.startsWith('--') && arg.includes('=')) {
@@ -407,6 +412,7 @@ export async function runCli(
   const agentGuidancePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-guidance.md`;
   const songSheetPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-song-sheet.md`;
   const songAudioPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-theme.${musicProvider.outputExtension}`;
+  const musicCuePackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-music-cue-package.json`;
   const storyboardPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-storyboard-package.json`;
   const trailerPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-trailer-package.json`;
   const animaticTimelinePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-animatic-timeline.json`;
@@ -414,6 +420,7 @@ export async function runCli(
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
+  await writeFile(musicCuePackagePath, JSON.stringify(project.musicCuePackage, null, 2), 'utf8');
   await writeFile(songAudioPath, await musicProvider.generate(project, { seed: args.seed }));
   const pages: Array<{
     page: typeof script.pages[number];
@@ -493,6 +500,7 @@ export async function runCli(
     agentPlaybookPath: PLAYBOOK_PATH,
     songSheetPath,
     songAudioPath,
+    musicCuePackagePath,
     musicProvider: musicProvider.name,
     storyboardPackagePath,
     trailerPackagePath,
@@ -541,6 +549,10 @@ async function main(): Promise<void> {
     }
     if (args.trailerPackage) {
       process.stdout.write(await readFile(result.trailerPackagePath!, 'utf8'));
+      return;
+    }
+    if (args.musicCuePackage) {
+      process.stdout.write(await readFile(result.musicCuePackagePath!, 'utf8'));
       return;
     }
     if (args.json) {

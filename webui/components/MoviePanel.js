@@ -162,6 +162,12 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       hint: 'Lyrics and song structure.',
     },
     {
+      label: 'Music package',
+      href: jobId && result.musicCuePackagePath ? `/api/comic/${jobId}/music-cue-package` : null,
+      filename: `${localSlug(title)}-music-cue-package.json`,
+      hint: 'Score brief and cue map for the film/show pass.',
+    },
+    {
       label: 'Theme audio',
       href: jobId ? `/api/comic/${jobId}/theme-audio` : null,
       filename: `${localSlug(title)}-theme.${String(result.songAudioPath || '').toLowerCase().endsWith('.mp3') ? 'mp3' : 'wav'}`,
@@ -580,6 +586,14 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
           </section>
         </div>
         <div class="action-row">
+          ${result.musicCuePackagePath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${() => {
+              if (!jobId || !result?.musicCuePackagePath) return;
+              download(`/api/comic/${jobId}/music-cue-package`, `${localSlug(title)}-music-cue-package.json`, 'Music cue package downloaded.');
+            }}>
+              Download music package
+            </button>
+          ` : null}
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSongSheet}>Download song sheet</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadThemeAudio}>Download theme audio</button>
         </div>
@@ -597,7 +611,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
                     <p class="muted small">${item.hint}</p>
                   </div>
                   ${item.href ? html`
-                    <a class="btn btn-ghost btn-sm" href=${item.href} download=${item.filename}>Download trailer package</a>
+                    <a class="btn btn-ghost btn-sm" href=${item.href} download=${item.filename}>Download ${item.label.toLowerCase()}</a>
                   ` : html`
                     <span class="movie-deliverable-state">Missing</span>
                   `}

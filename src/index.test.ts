@@ -36,6 +36,7 @@ async function main(): Promise<void> {
   assert.equal(result.agentGuidancePath != null, true);
   assert.equal(result.songSheetPath?.endsWith('-song-sheet.md'), true);
   assert.equal(result.songAudioPath?.endsWith('-theme.wav'), true);
+  assert.equal(result.musicCuePackagePath?.endsWith('-music-cue-package.json'), true);
   assert.equal(result.storyboardPackagePath?.endsWith('-storyboard-package.json'), true);
   assert.equal(result.trailerPackagePath?.endsWith('-trailer-package.json'), true);
   assert.equal(result.animaticTimelinePath?.endsWith('-animatic-timeline.json'), true);
@@ -51,6 +52,7 @@ async function main(): Promise<void> {
   await access(result.agentPlaybookPath!);
   await access(result.songSheetPath!);
   await access(result.songAudioPath!);
+  await access(result.musicCuePackagePath!);
   await access(result.storyboardPackagePath!);
   await access(result.trailerPackagePath!);
   await access(result.animaticTimelinePath!);
@@ -79,6 +81,9 @@ async function main(): Promise<void> {
   assert.equal(projectJson.agentGuidancePackage.frameworks.openClaw.repository, 'https://github.com/openclaw/openclaw');
   const songSheet = await readFile(result.songSheetPath!, 'utf8');
   assert.equal(songSheet.includes(result.musicCuePackage.songDraft.lyrics), true);
+  const musicCuePackage = JSON.parse(await readFile(result.musicCuePackagePath!, 'utf8'));
+  assert.equal(musicCuePackage.format, 'music-brief');
+  assert.equal(musicCuePackage.songDraft.title, result.musicCuePackage.songDraft.title);
   const wav = await readFile(result.songAudioPath!);
   assert.equal(wav.subarray(0, 4).toString('ascii'), 'RIFF');
   assert.equal(wav.subarray(8, 12).toString('ascii'), 'WAVE');
@@ -97,6 +102,7 @@ async function main(): Promise<void> {
   assert.equal(studioBundle.format, 'studio-bundle');
   assert.equal(studioBundle.jobId, result.project.id);
   assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
+  assert.equal(studioBundle.artifactPaths.musicCuePackagePath, result.musicCuePackagePath);
   assert.equal(studioBundle.artifactPaths.agentPlaybookPath, result.agentPlaybookPath);
 
   const stem = result.outputPath.replace(/\.[^./\\]+$/, '');
@@ -106,6 +112,7 @@ async function main(): Promise<void> {
   await rm(result.projectPath!, { force: true });
   await rm(result.songSheetPath!, { force: true });
   await rm(result.songAudioPath!, { force: true });
+  await rm(result.musicCuePackagePath!, { force: true });
   await rm(result.storyboardPackagePath!, { force: true });
   await rm(result.trailerPackagePath!, { force: true });
   await rm(result.animaticTimelinePath!, { force: true });

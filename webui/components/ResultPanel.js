@@ -421,7 +421,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
 
   function handleDownloadMusic() {
     if (!result?.musicCuePackage) return;
-    downloadJsonArtifact('music', result.musicCuePackage, 'Music brief downloaded.');
+    if (result?.musicCuePackagePath) {
+      const a = document.createElement('a');
+      a.href = `/api/comic/${jobId}/music-cue-package`;
+      a.download = `${localSlug(result.script?.title)}-music-cue-package.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Music cue package downloaded.', 'success');
+      return;
+    }
+    downloadJsonArtifact('music', result.musicCuePackage, 'Music cue package downloaded.');
   }
 
   function handleDownloadSongSheet() {
@@ -709,9 +719,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
         <section class="panel artifact-panel">
           <h3>Music</h3>
           <p>${result.musicCuePackage?.songDraft?.sections?.length || 0} song sections and ${result.musicCuePackage?.cues?.length || 0} cues prepared.</p>
-          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadMusic}>
-            Download music brief
-          </button>
+          ${result.musicCuePackagePath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadMusic}>
+              Download music cue package
+            </button>
+          ` : null}
           ${result.songSheetPath ? html`
             <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSongSheet}>
               Download song sheet

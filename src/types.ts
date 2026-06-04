@@ -272,6 +272,8 @@ export interface ComicResult {
   songSheetPath: string | null;
   /** Absolute path to the generated mock theme WAV, if written. */
   songAudioPath: string | null;
+  /** Absolute path to the generated music cue package JSON, if written. */
+  musicCuePackagePath: string | null;
   /** Music-generation provider used for the song audio artifact. */
   musicProvider: string;
   /** Absolute path to the generated storyboard package JSON, if written. */

@@ -229,6 +229,7 @@ export async function createComic(
   const agentGuidancePath = `${stemFromOutput}-agent-guidance.md`;
   const songSheetPath = `${stemFromOutput}-song-sheet.md`;
   const songAudioPath = `${stemFromOutput}-theme.${musicProvider.outputExtension}`;
+  const musicCuePackagePath = `${stemFromOutput}-music-cue-package.json`;
   const storyboardPackagePath = `${stemFromOutput}-storyboard-package.json`;
   const trailerPackagePath = `${stemFromOutput}-trailer-package.json`;
   const animaticTimelinePath = `${stemFromOutput}-animatic-timeline.json`;
@@ -237,6 +238,7 @@ export async function createComic(
   await writeFile(projectPath, JSON.stringify(project, null, 2), 'utf8');
   await writeFile(agentGuidancePath, renderAgentGuidanceMarkdown(project), 'utf8');
   await writeFile(songSheetPath, renderSongSheetMarkdown(project), 'utf8');
+  await writeFile(musicCuePackagePath, JSON.stringify(project.musicCuePackage, null, 2), 'utf8');
   await writeFile(songAudioPath, await musicProvider.generate(project, { seed: opts.seed }));
   const pageImages: ComicResult['pages'] = [];
   for (const page of script.pages) {
@@ -288,6 +290,7 @@ export async function createComic(
     agentPlaybookPath,
     songSheetPath,
     songAudioPath,
+    musicCuePackagePath,
     musicProvider: musicProvider.name,
     storyboardPackagePath,
     trailerPackagePath,

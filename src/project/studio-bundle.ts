@@ -22,6 +22,7 @@ export interface StudioBundle {
     agentPlaybookPath: string | null;
     songSheetPath: string | null;
     songAudioPath: string | null;
+    musicCuePackagePath: string | null;
     storyboardPackagePath: string | null;
     trailerPackagePath: string | null;
     animaticTimelinePath: string | null;
@@ -36,6 +37,7 @@ export interface StudioBundle {
     agentPlaybook: boolean;
     songSheet: boolean;
     songAudio: boolean;
+    musicCuePackage: boolean;
     storyboardPackage: boolean;
     trailerPackage: boolean;
     animaticTimeline: boolean;
@@ -66,6 +68,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       agentPlaybookPath: result.agentPlaybookPath,
       songSheetPath: result.songSheetPath,
       songAudioPath: result.songAudioPath,
+      musicCuePackagePath: result.musicCuePackagePath,
       storyboardPackagePath: result.storyboardPackagePath,
       trailerPackagePath: result.trailerPackagePath,
       animaticTimelinePath: result.animaticTimelinePath,
@@ -80,6 +83,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       agentPlaybook: Boolean(result.agentPlaybookPath),
       songSheet: Boolean(result.songSheetPath),
       songAudio: Boolean(result.songAudioPath),
+      musicCuePackage: Boolean(result.musicCuePackagePath),
       storyboardPackage: Boolean(result.storyboardPackagePath),
       trailerPackage: Boolean(result.trailerPackagePath),
       animaticTimeline: Boolean(result.animaticTimelinePath),

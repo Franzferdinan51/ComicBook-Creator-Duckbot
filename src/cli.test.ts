@@ -36,6 +36,15 @@ assert.equal(trailerResult.format, 'trailer-package');
 assert.equal(trailerResult.durationSeconds > 0, true);
 assert.equal(Array.isArray(trailerResult.teaserBeats), true);
 
+const musicOutputPath = `/tmp/comic-creator-cli-music-${Date.now()}.pdf`;
+const musicProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--music-cue-package', `--output=${musicOutputPath}`, '--pages=1', '--panels=3', 'A Music package story'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+const musicResult = JSON.parse(musicProbe.stdout);
+assert.equal(musicResult.format, 'music-brief');
+assert.equal(Array.isArray(musicResult.cues), true);
+
 const outputPath = `/tmp/comic-creator-cli-${Date.now()}.pdf`;
 const result = await runCli({
   ...parsed,
@@ -54,6 +63,7 @@ assert.equal(result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-pla
 assert.equal(result.agentGuidancePath, outputPath.replace(/\.pdf$/, '-agent-guidance.md'));
 assert.equal(result.songSheetPath, outputPath.replace(/\.pdf$/, '-song-sheet.md'));
 assert.equal(result.songAudioPath, outputPath.replace(/\.pdf$/, '-theme.wav'));
+assert.equal(result.musicCuePackagePath, outputPath.replace(/\.pdf$/, '-music-cue-package.json'));
 assert.equal(result.storyboardPackagePath, outputPath.replace(/\.pdf$/, '-storyboard-package.json'));
 assert.equal(result.trailerPackagePath, outputPath.replace(/\.pdf$/, '-trailer-package.json'));
 assert.equal(result.animaticTimelinePath, outputPath.replace(/\.pdf$/, '-animatic-timeline.json'));
@@ -63,6 +73,7 @@ await access(result.agentPlaybookPath!);
 await access(result.agentGuidancePath!);
 await access(result.songSheetPath!);
 await access(result.songAudioPath!);
+await access(result.musicCuePackagePath!);
 await access(result.storyboardPackagePath!);
 await access(result.trailerPackagePath!);
 await access(result.animaticTimelinePath!);
@@ -86,9 +97,12 @@ const timeline = JSON.parse(await readFile(result.animaticTimelinePath!, 'utf8')
 assert.equal(timeline.tracks.audio[0].audioPath, result.songAudioPath);
 const trailer = JSON.parse(await readFile(result.trailerPackagePath!, 'utf8'));
 assert.equal(trailer.format, 'trailer-package');
+const musicCuePackage = JSON.parse(await readFile(result.musicCuePackagePath!, 'utf8'));
+assert.equal(musicCuePackage.format, 'music-brief');
 const studioBundle = JSON.parse(await readFile(result.studioBundlePath!, 'utf8'));
 assert.equal(studioBundle.format, 'studio-bundle');
 assert.equal(studioBundle.artifactPaths.studioBundlePath, result.studioBundlePath);
+assert.equal(studioBundle.artifactPaths.musicCuePackagePath, result.musicCuePackagePath);
 assert.equal(studioBundle.artifactPaths.trailerPackagePath, result.trailerPackagePath);
 
 const jsonProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--json', '--pages=1', '--panels=3', 'A JSON agent story'], {
@@ -112,27 +126,42 @@ assert.equal(bundleResult.artifactPaths.agentPlaybookPath.endsWith('docs/agents/
 
 const stem = outputPath.replace(/\.[^./\\]+$/, '');
 const trailerStem = trailerOutputPath.replace(/\.[^./\\]+$/, '');
+const musicStem = musicOutputPath.replace(/\.[^./\\]+$/, '');
 await rm(outputPath, { force: true });
 if (result.cbzPath) await rm(result.cbzPath, { force: true });
 await rm(result.agentGuidancePath!, { force: true });
 await rm(result.projectPath!, { force: true });
 await rm(result.songSheetPath!, { force: true });
 await rm(result.songAudioPath!, { force: true });
+await rm(result.musicCuePackagePath!, { force: true });
 await rm(result.storyboardPackagePath!, { force: true });
 await rm(result.trailerPackagePath!, { force: true });
 await rm(result.animaticTimelinePath!, { force: true });
 await rm(result.studioBundlePath!, { force: true });
 await rm(`${stem}.images`, { recursive: true, force: true });
 await rm(trailerOutputPath, { force: true });
+await rm(musicOutputPath, { force: true });
 await rm(`${trailerStem}.cbz`, { force: true });
 await rm(`${trailerStem}.images`, { recursive: true, force: true });
 await rm(`${trailerStem}-project.json`, { force: true });
 await rm(`${trailerStem}-agent-guidance.md`, { force: true });
 await rm(`${trailerStem}-song-sheet.md`, { force: true });
 await rm(`${trailerStem}-theme.wav`, { force: true });
+await rm(`${trailerStem}-music-cue-package.json`, { force: true });
 await rm(`${trailerStem}-storyboard-package.json`, { force: true });
 await rm(`${trailerStem}-trailer-package.json`, { force: true });
 await rm(`${trailerStem}-animatic-timeline.json`, { force: true });
 await rm(`${trailerStem}-studio-bundle.json`, { force: true });
+await rm(`${musicStem}.cbz`, { force: true });
+await rm(`${musicStem}.images`, { recursive: true, force: true });
+await rm(`${musicStem}-project.json`, { force: true });
+await rm(`${musicStem}-agent-guidance.md`, { force: true });
+await rm(`${musicStem}-song-sheet.md`, { force: true });
+await rm(`${musicStem}-theme.wav`, { force: true });
+await rm(`${musicStem}-music-cue-package.json`, { force: true });
+await rm(`${musicStem}-storyboard-package.json`, { force: true });
+await rm(`${musicStem}-trailer-package.json`, { force: true });
+await rm(`${musicStem}-animatic-timeline.json`, { force: true });
+await rm(`${musicStem}-studio-bundle.json`, { force: true });
 
 console.log('PASS cli');

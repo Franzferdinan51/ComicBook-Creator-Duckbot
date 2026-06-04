@@ -66,6 +66,7 @@ export function History({ onOpen }) {
               agentGuidancePath: bundle.artifactPaths?.agentGuidancePath ?? null,
               songSheetPath: bundle.artifactPaths?.songSheetPath ?? null,
               songAudioPath: bundle.artifactPaths?.songAudioPath ?? null,
+              musicCuePackagePath: bundle.artifactPaths?.musicCuePackagePath ?? null,
               musicProvider: bundle.musicProvider || entry.musicProvider || 'mock',
               storyboardPackagePath: bundle.artifactPaths?.storyboardPackagePath ?? null,
               animaticTimelinePath: bundle.artifactPaths?.animaticTimelinePath ?? null,
@@ -90,6 +91,7 @@ export function History({ onOpen }) {
           agentGuidancePath: entry.agentGuidancePath || null,
           songSheetPath: entry.songSheetPath || null,
           songAudioPath: entry.songAudioPath || null,
+          musicCuePackagePath: entry.musicCuePackagePath || null,
           musicProvider: entry.musicProvider || 'mock',
           storyboardPackagePath: entry.storyboardPackagePath || null,
           animaticTimelinePath: entry.animaticTimelinePath || null,
@@ -133,6 +135,18 @@ export function History({ onOpen }) {
     a.click();
     document.body.removeChild(a);
     showToast('Studio bundle downloaded.', 'success');
+  }
+
+  function handleDownloadMusicCuePackage(entry, e) {
+    e.stopPropagation();
+    if (!entry.musicCuePackagePath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${entry.jobId}/music-cue-package`;
+    a.download = `${(entry.title || entry.jobId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-music-cue-package.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Music cue package downloaded.', 'success');
   }
 
   function handleDownloadAgentPlaybook(e) {
@@ -245,6 +259,13 @@ export function History({ onOpen }) {
                   onClick=${handleDownloadAgentPlaybook}
                   title="Download the repo-level Hermes/OpenClaw playbook"
                 >Playbook</button>
+                ${entry.musicCuePackagePath ? html`
+                  <button
+                    type="button"
+                    onClick=${(e) => handleDownloadMusicCuePackage(entry, e)}
+                    title="Download the music cue package for this history item"
+                  >Music</button>
+                ` : null}
                 <button
                   type="button"
                   onClick=${(e) => handleDownloadStudioBundle(entry, e)}

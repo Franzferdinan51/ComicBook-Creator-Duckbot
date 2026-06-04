@@ -37,6 +37,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | POST   | `/api/comic`                            | Kick off a new comic generation  |
 | GET    | `/api/comic/:jobId`                     | Poll job status                  |
 | GET    | `/api/comic/:jobId/pdf`                 | Stream the generated PDF         |
+| GET    | `/api/comic/:jobId/music-cue-package`   | Stream the music cue JSON        |
 | GET    | `/api/comic/:jobId/trailer-package`     | Stream the trailer / teaser JSON |
 | GET    | `/api/comic/:jobId/images/:panelId`     | Stream a single panel PNG        |
 | POST   | `/api/comic/:jobId/regenerate`          | Re-run with new options          |
@@ -223,6 +224,20 @@ workspace.
 
 ---
 
+### `GET /api/comic/:jobId/music-cue-package`
+
+**Response 200** — streams the music cue / score brief JSON.
+- `Content-Type: application/json`
+- `Content-Disposition: attachment; filename="<jobId>-music-cue-package.json"`
+
+This package is the score-planning handoff. It packages the cue map, song
+draft, and generation prompt used by the Movie / Show workspace.
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+**410** if the on-disk file is gone.
+
+---
+
 ### `GET /api/comic/:jobId/images/:panelId`
 
 **Response 200** — streams the panel PNG.
@@ -273,6 +288,7 @@ a future version).
     "pageCount": 4,
     "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
     "agentPlaybookPath": "/Users/duckets/Desktop/ComicBook-Creator-Duckbot-main/docs/agents/hermes-openclaw-playbook.md",
+    "musicCuePackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-music-cue-package.json",
     "trailerPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-trailer-package.json",
     "studioBundlePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-studio-bundle.json",
     "scriptJson": { "title": "...", "artStyle": "manga", "pages": [ ... ] }

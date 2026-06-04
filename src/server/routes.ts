@@ -19,6 +19,7 @@
  *   GET    /api/comic/:jobId/pdf       — stream the PDF (Content-Type: application/pdf)
  *   GET    /api/comic/:jobId/images/:panelId — single panel PNG/JPEG
  *   GET    /api/comic/:jobId/cover           — cover/title-page image (if generated)
+ *   GET    /api/comic/:jobId/music-cue-package — music cue / score brief JSON
  *   GET    /api/comic/:jobId/studio-bundle    — unified project/adaptation/music JSON
  *   GET    /api/comic/:jobId/trailer-package   — teaser / pitch trailer JSON
  *   GET    /api/agent-playbook       — repo-level Hermes/OpenClaw playbook
@@ -1165,6 +1166,35 @@ export function buildRouter(): Router {
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-studio-bundle.json"`);
     res.end(body);
+  });
+
+  /**
+   * GET /api/comic/:jobId/music-cue-package
+   * Returns the generated music cue package JSON.
+   */
+  router.get('/comic/:jobId/music-cue-package', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const musicCuePackagePath = record.result.musicCuePackagePath;
+    if (!musicCuePackagePath || !existsSync(musicCuePackagePath)) {
+      return res.status(404).json({ error: 'no music cue package for this comic' });
+    }
+    const size = statSync(musicCuePackagePath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-music-cue-package.json"`);
+    const buf = await readFile(musicCuePackagePath, 'utf8');
+    res.end(buf);
   });
 
   /**

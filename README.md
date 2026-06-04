@@ -32,6 +32,7 @@ npm start
 | `storyboardPackagePath` | Shot-by-shot show/movie storyboard package |
 | `animaticTimelinePath` | Video/audio timing timeline for rough animatics |
 | `songSheetPath` | Markdown song sheet for music follow-up |
+| `musicCuePackagePath` | Music cue / score brief JSON for show/movie handoff |
 | `songAudioPath` | Generated theme audio from the selected music provider |
 | `agentGuidancePath` | Markdown handoff so external agents keep working from the same project |
 
@@ -155,6 +156,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--json` | off | Print the full `ComicResult` JSON |
 | `--studio-bundle` | off | Print the unified studio bundle JSON |
 | `--trailer-package` | off | Print the trailer package JSON |
+| `--music-cue-package` | off | Print the music cue package JSON |
 | `--agent-playbook` | off | Print the repo-level Hermes/OpenClaw playbook |
 
 ## MCP server
@@ -165,9 +167,9 @@ External agents (OpenClaw, Claude Desktop, etc.) can invoke the pipeline via MCP
 comic-creator-mcp
 ```
 
-Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_trailer_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
+Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_music_cue_package`, `get_trailer_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
 
-The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed.
+The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed. When score planning is the next step, grab the music cue package before the theme audio.
 
 ## Agent playbook
 

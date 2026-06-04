@@ -26,6 +26,7 @@ const entry: HistoryEntry = {
   agentPlaybookPath: '/tmp/docs/agents/hermes-openclaw-playbook.md',
   songSheetPath: '/tmp/history-job-song-sheet.md',
   songAudioPath: '/tmp/history-job-theme.wav',
+  musicCuePackagePath: '/tmp/history-job-music-cue-package.json',
   musicProvider: 'mock',
   storyboardPackagePath: '/tmp/history-job-storyboard-package.json',
   trailerPackagePath: '/tmp/history-job-trailer-package.json',
@@ -141,6 +142,21 @@ const entry: HistoryEntry = {
 
 try {
   await upsertHistoryEntry(entry);
+  await writeFile(entry.musicCuePackagePath!, JSON.stringify({
+    format: 'music-brief',
+    cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
+    sceneCueMap: [{ sceneId: 'scene-1', cueId: 'cue-1', timing: '00:00-00:30', purpose: 'History purpose' }],
+    songDraft: {
+      title: 'History Theme',
+      genre: 'cinematic pop',
+      bpm: 96,
+      key: 'A minor',
+      sections: ['verse', 'chorus'],
+      lyrics: 'History Project chorus',
+    },
+    themeSongPrompt: 'Theme prompt',
+    musicGenerationPrompt: 'Generate music with instrumentation for History Project.',
+  }), 'utf8');
   await writeFile(entry.studioBundlePath!, JSON.stringify({
     format: 'studio-bundle',
     jobId: 'history-job',
@@ -154,6 +170,7 @@ try {
       agentGuidancePath: '/tmp/history-job-agent-guidance.md',
       songSheetPath: entry.songSheetPath,
       songAudioPath: entry.songAudioPath,
+      musicCuePackagePath: entry.musicCuePackagePath,
       storyboardPackagePath: entry.storyboardPackagePath,
       trailerPackagePath: entry.trailerPackagePath,
       animaticTimelinePath: entry.animaticTimelinePath,
@@ -168,6 +185,7 @@ try {
       agentGuidance: true,
       songSheet: true,
       songAudio: true,
+      musicCuePackage: true,
       storyboardPackage: true,
       trailerPackage: true,
       animaticTimeline: true,
@@ -187,6 +205,7 @@ try {
   assert.equal(resolved?.result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
   assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
   assert.equal(resolved?.result.songAudioPath, '/tmp/history-job-theme.wav');
+  assert.equal(resolved?.result.musicCuePackagePath, '/tmp/history-job-music-cue-package.json');
   assert.equal(resolved?.result.musicProvider, 'mock');
   assert.equal(resolved?.result.storyboardPackagePath, '/tmp/history-job-storyboard-package.json');
   assert.equal(resolved?.result.animaticTimelinePath, '/tmp/history-job-animatic-timeline.json');
@@ -222,12 +241,21 @@ try {
     assert.equal(bundle.jobId, 'history-job');
     assert.equal(bundle.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
     assert.equal(bundle.artifactPaths.studioBundlePath, entry.studioBundlePath);
+    assert.equal(bundle.artifactPaths.musicCuePackagePath, entry.musicCuePackagePath);
     assert.equal(bundle.artifactPaths.trailerPackagePath, entry.trailerPackagePath);
     assert.equal(bundle.availability.agentPlaybook, true);
+    assert.equal(bundle.availability.musicCuePackage, true);
     assert.equal(bundle.availability.storyboardPackage, true);
     assert.equal(bundle.availability.trailerPackage, true);
     assert.equal(bundle.availability.animaticTimeline, true);
     assert.equal(bundle.availability.studioBundle, true);
+
+    const musicRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/music-cue-package`);
+    assert.equal(musicRes.ok, true);
+    assert.equal(musicRes.headers.get('content-type')?.includes('application/json'), true);
+    const musicCuePackage = await musicRes.json();
+    assert.equal(musicCuePackage.format, 'music-brief');
+    assert.equal(musicCuePackage.songDraft.title, 'History Theme');
 
     const trailerRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/trailer-package`);
     assert.equal(trailerRes.ok, true);
