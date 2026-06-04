@@ -19,6 +19,7 @@ const TABS = [
   { id: 'previs', label: 'Previs' },
   { id: 'timeline', label: 'Timeline' },
   { id: 'music', label: 'Music' },
+  { id: 'agents', label: 'Agents' },
   { id: 'deliverables', label: 'Deliverables' },
 ];
 
@@ -97,6 +98,11 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
   const sceneBeats = result.storyBible?.sceneBeats || [];
   const songSections = result.musicCuePackage?.songDraft?.sections || [];
   const trailerPackage = result.trailerPackage;
+  const agentGuidance = result.agentGuidancePackage || {};
+  const agentWorkflowSteps = agentGuidance.workflowSteps || [];
+  const agentChecklist = agentGuidance.operatorChecklist || [];
+  const agentInterfaces = agentGuidance.externalInterfaces || [];
+  const agentDeliverables = agentGuidance.deliverables || [];
   const trailerBeats = [
     {
       label: 'Hook',
@@ -127,6 +133,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
     { label: 'Previs', tab: 'previs' },
     { label: 'Animatic', tab: 'timeline' },
     { label: 'Score', tab: 'music' },
+    { label: 'Agents', tab: 'agents' },
     { label: 'Bundle', tab: 'deliverables' },
   ];
 
@@ -596,6 +603,51 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
           ` : null}
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadSongSheet}>Download song sheet</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadThemeAudio}>Download theme audio</button>
+        </div>
+      ` : null}
+
+      ${activeTab === 'agents' ? html`
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card">
+            <h3>Hermes / OpenClaw workspace</h3>
+            <p class="movie-pitch-line">${agentGuidance.systemPrompt || 'No agent guidance has been generated yet.'}</p>
+            <div class="movie-pitch-tags">
+              ${agentInterfaces.length > 0
+                ? agentInterfaces.map((item) => html`<span class="movie-chip subtle" key=${item}>${item}</span>`)
+                : html`<span class="movie-chip subtle">No interfaces yet</span>`}
+            </div>
+          </section>
+          <section class="movie-card">
+            <h3>Workflow steps</h3>
+            <ol class="movie-list">
+              ${agentWorkflowSteps.length > 0
+                ? agentWorkflowSteps.map((item) => html`<li key=${item}>${item}</li>`)
+                : html`<li>No workflow steps yet.</li>`}
+            </ol>
+          </section>
+        </div>
+        <div class="movie-grid movie-grid-two">
+          <section class="movie-card">
+            <h3>Operator checklist</h3>
+            <ol class="movie-list">
+              ${agentChecklist.length > 0
+                ? agentChecklist.map((item) => html`<li key=${item}>${item}</li>`)
+                : html`<li>No checklist yet.</li>`}
+            </ol>
+          </section>
+          <section class="movie-card">
+            <h3>Agent deliverables</h3>
+            <ul class="movie-list">
+              ${agentDeliverables.length > 0
+                ? agentDeliverables.map((item) => html`<li key=${item}>${item}</li>`)
+                : html`<li>No deliverables yet.</li>`}
+            </ul>
+          </section>
+        </div>
+        <div class="action-row">
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>Download studio bundle</button>
         </div>
       ` : null}
 

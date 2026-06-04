@@ -123,7 +123,7 @@ open start.command
 The WebUI gives you:
 - Story input + style/format/provider options
 - Project goal preset for comic / screen / music / studio workflows
-- Movie / Show tab with pitch, trailer, story, script, shots, previs, timeline, music, and deliverables tabs
+- Movie / Show tab with pitch, trailer, story, script, shots, previs, timeline, music, agents, and deliverables tabs
 - Live job status and progress
 - PDF preview with page navigation and thumbnails
 - Download as PDF or CBZ, or grab all panel images as a ZIP

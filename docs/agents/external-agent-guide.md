@@ -44,7 +44,7 @@ For the most actionable workflow, start with the repo playbook at
   package when the screen pitch is the next priority. Use the music cue
   package when the score is the next priority.
   The new Movie / Show tab is the fastest way to review pitch, trailer, story,
-  script, shots, previs, timeline, music, and deliverables for a film/show pass.
+  script, shots, previs, timeline, music, agents, and deliverables for a film/show pass.
 - Library API: `createComic()` returns `project`, `storyBible`,
   `adaptationPackage`, `musicCuePackage`, `agentGuidancePackage`, and
   `projectPath`, `agentPlaybookPath`, plus `agentGuidancePath`.
@@ -56,6 +56,8 @@ For the most actionable workflow, start with the repo playbook at
   is available through the CLI, MCP, WebUI, and history records. `trailerPackagePath`
   is the teaser / pitch package and is available through the CLI, MCP, WebUI,
   and history records.
+  The Movie / Show board's Agents tab is the quickest place to inspect the
+  Hermes/OpenClaw workflow, operator checklist, and agent-facing deliverables.
   `musicCuePackage` includes cue mapping, a song draft, lyrics, and a
   music-generation prompt. `songSheetPath` and `songAudioPath` point to the
   generated markdown sheet and provider-generated theme audio. `musicProvider`
