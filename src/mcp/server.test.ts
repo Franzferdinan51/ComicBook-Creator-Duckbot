@@ -22,6 +22,7 @@ assert.equal(audioMimeTypeForPath('/tmp/theme.wav'), 'audio/wav');
 const registeredTools = Object.keys(buildMcpServer()._registeredTools);
 assert.equal(registeredTools.includes('regenerate_comic'), true);
 assert.equal(registeredTools.includes('get_studio_bundle'), true);
+assert.equal(registeredTools.includes('get_trailer_package'), true);
 
 const storageDir = await mkdtemp(join(tmpdir(), 'comic-mcp-test-'));
 setStorageDir(storageDir);

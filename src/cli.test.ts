@@ -26,6 +26,16 @@ const playbookProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--a
 assert.equal(playbookProbe.stdout.includes('# Hermes + OpenClaw Playbook'), true);
 assert.equal(playbookProbe.stdout.includes('Use Hermes Agent to decompose'), true);
 
+const trailerOutputPath = `/tmp/comic-creator-cli-trailer-${Date.now()}.pdf`;
+const trailerProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--trailer-package', `--output=${trailerOutputPath}`, '--pages=1', '--panels=3', 'A Trailer package story'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+const trailerResult = JSON.parse(trailerProbe.stdout);
+assert.equal(trailerResult.format, 'trailer-package');
+assert.equal(trailerResult.durationSeconds > 0, true);
+assert.equal(Array.isArray(trailerResult.teaserBeats), true);
+
 const outputPath = `/tmp/comic-creator-cli-${Date.now()}.pdf`;
 const result = await runCli({
   ...parsed,
@@ -101,6 +111,7 @@ assert.equal(bundleResult.artifactPaths.trailerPackagePath.endsWith('-trailer-pa
 assert.equal(bundleResult.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
 
 const stem = outputPath.replace(/\.[^./\\]+$/, '');
+const trailerStem = trailerOutputPath.replace(/\.[^./\\]+$/, '');
 await rm(outputPath, { force: true });
 if (result.cbzPath) await rm(result.cbzPath, { force: true });
 await rm(result.agentGuidancePath!, { force: true });
@@ -112,5 +123,16 @@ await rm(result.trailerPackagePath!, { force: true });
 await rm(result.animaticTimelinePath!, { force: true });
 await rm(result.studioBundlePath!, { force: true });
 await rm(`${stem}.images`, { recursive: true, force: true });
+await rm(trailerOutputPath, { force: true });
+await rm(`${trailerStem}.cbz`, { force: true });
+await rm(`${trailerStem}.images`, { recursive: true, force: true });
+await rm(`${trailerStem}-project.json`, { force: true });
+await rm(`${trailerStem}-agent-guidance.md`, { force: true });
+await rm(`${trailerStem}-song-sheet.md`, { force: true });
+await rm(`${trailerStem}-theme.wav`, { force: true });
+await rm(`${trailerStem}-storyboard-package.json`, { force: true });
+await rm(`${trailerStem}-trailer-package.json`, { force: true });
+await rm(`${trailerStem}-animatic-timeline.json`, { force: true });
+await rm(`${trailerStem}-studio-bundle.json`, { force: true });
 
 console.log('PASS cli');

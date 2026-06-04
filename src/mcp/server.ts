@@ -11,6 +11,7 @@
  *   - get_agent_guidance  — fetch the Hermes/OpenClaw markdown handoff
  *   - get_agent_playbook  — fetch the repository-level Hermes/OpenClaw playbook
  *   - get_studio_bundle   — fetch the unified project/adaptation/music bundle
+ *   - get_trailer_package  — fetch the screen pitch / teaser package
  *   - get_comic_cover     — fetch the cover/title image as base64
  *   - list_providers      — discover available text + image + music providers
  *   - get_history         — recent comics (persisted on disk)
@@ -95,7 +96,8 @@ export function buildMcpServer(): McpServer {
       capabilities: { tools: {} },
       instructions:
         'Comic creator MCP server. Use create_comic to start, get_comic to poll, ' +
-        'get_comic_pdf for the PDF, get_comic_image for a single panel PNG.',
+        'get_comic_pdf for the PDF, get_comic_image for a single panel PNG, ' +
+        'and get_studio_bundle or get_trailer_package for the reusable screen handoff.',
     }
   );
 
@@ -384,6 +386,43 @@ export function buildMcpServer(): McpServer {
         return jsonResult(buildStudioBundle(jobId, record.result));
       } catch (e) {
         return errResult(`get_studio_bundle failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
+    'get_trailer_package',
+    'Fetch the generated trailer / teaser package JSON for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.trailerPackagePath;
+        if (!path || !existsSync(path)) {
+          return errResult(`trailer package not available for job ${jobId}`);
+        }
+        const text = await readFile(path, 'utf8');
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.trailer-package.json`,
+                mimeType: 'application/json',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_trailer_package failed: ${(e as Error).message}`);
       }
     }
   );

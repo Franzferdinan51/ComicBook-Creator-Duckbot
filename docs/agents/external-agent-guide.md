@@ -28,16 +28,18 @@ For the most actionable workflow, start with the repo playbook at
   Use `--agent-playbook` to print the repo-level Hermes/OpenClaw playbook
   directly from the CLI. Use `--json` when an external agent needs a
   machine-readable result payload. Use `--studio-bundle` when the agent wants
-  the unified bundle JSON directly from the CLI.
+  the unified bundle JSON directly from the CLI. Use `--trailer-package` when
+  the next pass is specifically about the pitch / teaser handoff.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `regenerate_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
-  `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_song_sheet`,
+  `get_project`, `get_agent_guidance`, `get_agent_playbook`, `get_studio_bundle`, `get_trailer_package`, `get_song_sheet`,
   and `get_theme_audio` for complete agent workflows. Use
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
 - WebUI: the result panel exposes project, adaptation, music, and agent
   guidance downloads, plus a unified studio bundle for one-shot handoff. Start
-  with the studio bundle first when resuming work.
+  with the studio bundle first when resuming work, then open the trailer
+  package when the screen pitch is the next priority.
   The new Movie / Show tab is the fastest way to review pitch, trailer, story,
   script, shots, previs, timeline, music, and deliverables for a film/show pass.
 - Library API: `createComic()` returns `project`, `storyBible`,
@@ -47,7 +49,8 @@ For the most actionable workflow, start with the repo playbook at
   the generated defaults and handoff language.
   `adaptationPackage` includes screenplay scenes and storyboard prompts.
   `storyboardPackagePath`, `trailerPackagePath`, and `animaticTimelinePath` point to generated
-  production handoff JSON files.
+  production handoff JSON files. `trailerPackagePath` is the teaser / pitch
+  package and is available through the CLI, MCP, WebUI, and history records.
   `musicCuePackage` includes cue mapping, a song draft, lyrics, and a
   music-generation prompt. `songSheetPath` and `songAudioPath` point to the
   generated markdown sheet and provider-generated theme audio. `musicProvider`

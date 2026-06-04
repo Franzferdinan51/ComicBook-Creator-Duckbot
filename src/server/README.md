@@ -37,6 +37,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | POST   | `/api/comic`                            | Kick off a new comic generation  |
 | GET    | `/api/comic/:jobId`                     | Poll job status                  |
 | GET    | `/api/comic/:jobId/pdf`                 | Stream the generated PDF         |
+| GET    | `/api/comic/:jobId/trailer-package`     | Stream the trailer / teaser JSON |
 | GET    | `/api/comic/:jobId/images/:panelId`     | Stream a single panel PNG        |
 | POST   | `/api/comic/:jobId/regenerate`          | Re-run with new options          |
 | GET    | `/api/history`                          | List recent jobs                 |
@@ -201,6 +202,21 @@ The `mock` provider is always available.
 - `Content-Type: application/pdf`
 - `Content-Length: <size>`
 - `Content-Disposition: inline; filename="<jobId>.pdf"`
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+**410** if the on-disk file is gone.
+
+---
+
+### `GET /api/comic/:jobId/trailer-package`
+
+**Response 200** — streams the trailer / teaser JSON.
+- `Content-Type: application/json`
+- `Content-Disposition: attachment; filename="<jobId>-trailer-package.json"`
+
+The trailer package is the screen-adaptation pitch handoff. It packages the
+logline, teaser beats, voice-over, and cut list used by the Movie / Show
+workspace.
 
 **404** if the job is unknown. **409** if the job isn't `done` yet.
 **410** if the on-disk file is gone.
