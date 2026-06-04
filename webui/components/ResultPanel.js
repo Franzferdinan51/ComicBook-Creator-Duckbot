@@ -526,6 +526,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     showToast('Studio bundle downloaded.', 'success');
   }
 
+  function handleDownloadAgentWorkflowPackage() {
+    if (!result?.agentWorkflowPackagePath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/agent-workflow-package`;
+    a.download = `${localSlug(result.script?.title)}-agent-workflow-package.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Agent workflow package downloaded.', 'success');
+  }
+
   function handleDownloadAgentGuidance() {
     if (result?.agentGuidancePath) {
       const a = document.createElement('a');
@@ -744,6 +755,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStudioBundle}>
             Download studio bundle
           </button>
+          ${result.agentWorkflowPackagePath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>
+              Download agent workflow package
+            </button>
+          ` : null}
         </section>
 
         <section class="panel artifact-panel">
@@ -810,6 +826,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>
             Download agent playbook
           </button>
+          ${result.agentWorkflowPackagePath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>
+              Download agent workflow package
+            </button>
+          ` : null}
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>
             Download agent guidance
           </button>

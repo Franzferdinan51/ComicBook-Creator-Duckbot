@@ -1055,6 +1055,38 @@ export function buildRouter(): Router {
   });
 
   /**
+   * GET /api/comic/:jobId/agent-workflow-package
+   * Returns the generated Hermes/OpenClaw workflow package JSON.
+   */
+  router.get('/comic/:jobId/agent-workflow-package', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const workflowPath = record.result.agentWorkflowPackagePath;
+    if (!workflowPath || !existsSync(workflowPath)) {
+      return res.status(404).json({ error: 'no agent workflow package for this comic' });
+    }
+    const size = statSync(workflowPath).size;
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', String(size));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${titleSlug}-agent-workflow-package.json"`
+    );
+    const buf = await readFile(workflowPath, 'utf8');
+    res.end(buf);
+  });
+
+  /**
    * GET /api/comic/:jobId/screenplay
    * Returns the generated screenplay markdown handoff.
    * Headers: Content-Type: text/markdown

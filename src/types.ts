@@ -197,6 +197,37 @@ export interface AgentGuidancePackage {
   systemPrompt: string;
 }
 
+export interface AgentWorkflowPackage {
+  format: 'agent-workflow-package';
+  jobId: string;
+  title: string;
+  projectGoal: ProjectGoal;
+  frameworks: AgentGuidancePackage['frameworks'];
+  entrypoints: Array<{
+    label: string;
+    path: string | null;
+    purpose: string;
+  }>;
+  tracks: Array<{
+    trackId: 'story' | 'video' | 'music';
+    title: string;
+    objective: string;
+    hermesTasks: string[];
+    openClawActions: string[];
+    artifacts: Array<{
+      label: string;
+      path: string | null;
+    }>;
+    verification: string[];
+  }>;
+  commandBlueprints: {
+    cli: string[];
+    mcp: string[];
+    webui: string[];
+    minimax: string[];
+  };
+}
+
 export interface StoryProject {
   id: string;
   title: string;
@@ -313,8 +344,12 @@ export interface ComicResult {
   musicCuePackage: MusicCuePackage;
   /** Convenience alias for `project.agentGuidancePackage`. */
   agentGuidancePackage: AgentGuidancePackage;
+  /** Structured Hermes/OpenClaw execution plan for the generated assets. */
+  agentWorkflowPackage: AgentWorkflowPackage;
   /** Absolute path to the generated agent guidance markdown handoff, if written. */
   agentGuidancePath: string | null;
+  /** Absolute path to the generated agent workflow package JSON, if written. */
+  agentWorkflowPackagePath: string | null;
   /** Absolute path to the generated screenplay markdown handoff, if written. */
   screenplayPath: string | null;
   /** Absolute path to the generated director brief markdown handoff, if written. */

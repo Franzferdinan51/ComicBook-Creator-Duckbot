@@ -13,6 +13,7 @@ export interface StudioBundle {
   videoPackage: ComicResult['videoPackage'];
   musicCuePackage: ComicResult['musicCuePackage'];
   agentGuidancePackage: ComicResult['agentGuidancePackage'];
+  agentWorkflowPackage: ComicResult['agentWorkflowPackage'];
   musicProvider: string;
   artifactPaths: {
     outputPath: string;
@@ -21,6 +22,7 @@ export interface StudioBundle {
     coverImagePath: string | null;
     projectPath: string | null;
     agentGuidancePath: string | null;
+    agentWorkflowPackagePath: string | null;
     screenplayPath: string | null;
     directorBriefPath: string | null;
     agentPlaybookPath: string | null;
@@ -40,6 +42,7 @@ export interface StudioBundle {
     coverImage: boolean;
     project: boolean;
     agentGuidance: boolean;
+    agentWorkflowPackage: boolean;
     screenplay: boolean;
     directorBrief: boolean;
     agentPlaybook: boolean;
@@ -69,6 +72,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
     videoPackage: result.videoPackage,
     musicCuePackage: result.musicCuePackage,
     agentGuidancePackage: result.agentGuidancePackage,
+    agentWorkflowPackage: result.agentWorkflowPackage,
     musicProvider: result.musicProvider,
     artifactPaths: {
       outputPath: result.outputPath,
@@ -77,6 +81,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       coverImagePath: result.coverImagePath,
       projectPath: result.projectPath,
       agentGuidancePath: result.agentGuidancePath,
+      agentWorkflowPackagePath: result.agentWorkflowPackagePath,
       screenplayPath: result.screenplayPath,
       directorBriefPath: result.directorBriefPath,
       agentPlaybookPath: result.agentPlaybookPath,
@@ -96,6 +101,7 @@ export function buildStudioBundle(jobId: string, result: ComicResult): StudioBun
       coverImage: Boolean(result.coverImagePath),
       project: Boolean(result.projectPath),
       agentGuidance: Boolean(result.agentGuidancePath),
+      agentWorkflowPackage: Boolean(result.agentWorkflowPackagePath),
       screenplay: Boolean(result.screenplayPath),
       directorBrief: Boolean(result.directorBriefPath),
       agentPlaybook: Boolean(result.agentPlaybookPath),

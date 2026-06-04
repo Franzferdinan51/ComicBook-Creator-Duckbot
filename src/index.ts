@@ -49,6 +49,7 @@ export {
   buildStoryProject,
   normalizeRenderProfile,
   buildAgentGuidancePackage,
+  buildAgentWorkflowPackage,
   renderAgentGuidanceMarkdown,
   renderScreenplayMarkdown,
   renderDirectorBriefMarkdown,
@@ -66,6 +67,7 @@ import { assembleComic } from './assembler/index.js';
 import {
   buildStoryProject,
   renderAgentGuidanceMarkdown,
+  buildAgentWorkflowPackage,
   renderScreenplayMarkdown,
   renderDirectorBriefMarkdown,
   renderSongSheetMarkdown,
@@ -235,6 +237,7 @@ export async function createComic(
   await mkdir(imageDir, { recursive: true });
   const projectPath = `${stemFromOutput}-project.json`;
   const agentGuidancePath = `${stemFromOutput}-agent-guidance.md`;
+  const agentWorkflowPackagePath = `${stemFromOutput}-agent-workflow-package.json`;
   const screenplayPath = `${stemFromOutput}-screenplay.md`;
   const directorBriefPath = `${stemFromOutput}-director-brief.md`;
   const songSheetPath = `${stemFromOutput}-song-sheet.md`;
@@ -305,7 +308,9 @@ export async function createComic(
     videoPackage,
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
+    agentWorkflowPackage: {} as ComicResult['agentWorkflowPackage'],
     agentGuidancePath,
+    agentWorkflowPackagePath,
     screenplayPath,
     directorBriefPath,
     agentPlaybookPath,
@@ -321,6 +326,8 @@ export async function createComic(
     studioBundlePath,
     pages: pageImages,
   };
+  result.agentWorkflowPackage = buildAgentWorkflowPackage(project.id, result);
+  await writeFile(agentWorkflowPackagePath, JSON.stringify(result.agentWorkflowPackage, null, 2), 'utf8');
   await writeFile(studioBundlePath, JSON.stringify(buildStudioBundle(project.id, result), null, 2), 'utf8');
 
   return result;

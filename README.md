@@ -24,6 +24,7 @@ npm start
 | `studioBundlePath` | Unified JSON handoff for external agents; start here first |
 | `projectPath` | Full `*-project.json` source-of-truth handoff for external agents |
 | `agentPlaybookPath` | Repo playbook path for Hermes/OpenClaw agent follow-up |
+| `agentWorkflowPackagePath` | Structured Hermes/OpenClaw execution pack across story, video, and music |
 | `coverImagePath` | AI-generated cover page image |
 | `storyBible` | Premise, synopsis, chapter outline, scene beats |
 | `adaptationPackage` | Per-scene screenplay summaries + visual goals |
@@ -159,6 +160,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--output=<path>` | auto | Override output path |
 | `--json` | off | Print the full `ComicResult` JSON |
 | `--studio-bundle` | off | Print the unified studio bundle JSON |
+| `--agent-workflow-package` | off | Print the Hermes/OpenClaw workflow package JSON |
 | `--screenplay` | off | Print the generated screenplay markdown |
 | `--director-brief` | off | Print the generated director brief markdown |
 | `--video-package` | off | Print the generated MiniMax-ready video package JSON |
@@ -175,9 +177,9 @@ External agents (OpenClaw, Claude Desktop, etc.) can invoke the pipeline via MCP
 comic-creator-mcp
 ```
 
-Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
+Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
 
-The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package to drive `mmx video` clip generation.
+The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed. The workflow package is the next best handoff when Hermes/OpenClaw needs a track-by-track execution plan across story, video, and music. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package to drive `mmx video` clip generation.
 
 ## Agent playbook
 

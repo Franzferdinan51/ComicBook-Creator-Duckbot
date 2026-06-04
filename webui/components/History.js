@@ -67,6 +67,8 @@ export function History({ onOpen }) {
               musicCuePackage: bundle.musicCuePackage,
               agentGuidancePackage: bundle.agentGuidancePackage,
               agentGuidancePath: bundle.artifactPaths?.agentGuidancePath ?? null,
+              agentWorkflowPackage: bundle.agentWorkflowPackage,
+              agentWorkflowPackagePath: bundle.artifactPaths?.agentWorkflowPackagePath ?? null,
               screenplayPath: bundle.artifactPaths?.screenplayPath ?? null,
               directorBriefPath: bundle.artifactPaths?.directorBriefPath ?? null,
               songSheetPath: bundle.artifactPaths?.songSheetPath ?? null,
@@ -100,6 +102,8 @@ export function History({ onOpen }) {
           musicCuePackage: entry.musicCuePackage || null,
           agentGuidancePackage: entry.agentGuidancePackage || null,
           agentGuidancePath: entry.agentGuidancePath || null,
+          agentWorkflowPackage: entry.agentWorkflowPackage || null,
+          agentWorkflowPackagePath: entry.agentWorkflowPackagePath || null,
           screenplayPath: entry.screenplayPath || null,
           directorBriefPath: entry.directorBriefPath || null,
           songSheetPath: entry.songSheetPath || null,
@@ -224,6 +228,18 @@ export function History({ onOpen }) {
     showToast('Agent playbook downloaded.', 'success');
   }
 
+  function handleDownloadAgentWorkflowPackage(entry, e) {
+    e.stopPropagation();
+    if (!entry.agentWorkflowPackagePath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${entry.jobId}/agent-workflow-package`;
+    a.download = `${(entry.title || entry.jobId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-agent-workflow-package.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Agent workflow package downloaded.', 'success');
+  }
+
   if (loading) {
     return html`
       <section class="panel" aria-labelledby="history-title">
@@ -323,6 +339,13 @@ export function History({ onOpen }) {
                   onClick=${handleDownloadAgentPlaybook}
                   title="Download the repo-level Hermes/OpenClaw playbook"
                 >Playbook</button>
+                ${entry.agentWorkflowPackagePath ? html`
+                  <button
+                    type="button"
+                    onClick=${(e) => handleDownloadAgentWorkflowPackage(entry, e)}
+                    title="Download the Hermes/OpenClaw workflow package for this history item"
+                  >Workflow</button>
+                ` : null}
                 ${entry.musicCuePackagePath ? html`
                   <button
                     type="button"

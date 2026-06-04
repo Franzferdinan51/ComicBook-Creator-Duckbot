@@ -216,6 +216,12 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       hint: 'Repo-aware operator instructions.',
     },
     {
+      label: 'Agent workflow package',
+      href: jobId && result.agentWorkflowPackagePath ? `/api/comic/${jobId}/agent-workflow-package` : null,
+      filename: `${localSlug(title)}-agent-workflow-package.json`,
+      hint: 'Structured Hermes/OpenClaw execution plan with CLI, MCP, WebUI, and MiniMax steps.',
+    },
+    {
       label: 'Studio bundle',
       href: jobId ? `/api/comic/${jobId}/studio-bundle` : null,
       filename: `${localSlug(title)}-studio-bundle.json`,
@@ -297,6 +303,15 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
   function handleDownloadAgentGuidance() {
     if (!jobId || !result?.agentGuidancePath) return;
     download(`/api/comic/${jobId}/agent-guidance`, `${localSlug(title)}-agent-guidance.md`, 'Agent guidance downloaded.');
+  }
+
+  function handleDownloadAgentWorkflowPackage() {
+    if (!jobId || !result?.agentWorkflowPackagePath) return;
+    download(
+      `/api/comic/${jobId}/agent-workflow-package`,
+      `${localSlug(title)}-agent-workflow-package.json`,
+      'Agent workflow package downloaded.'
+    );
   }
 
   function handleDownloadStudioBundle() {
@@ -831,6 +846,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         </div>
         <div class="action-row">
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>Download workflow package</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
@@ -867,6 +883,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>Download workflow package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
             </div>
             <p class="muted small" style="margin-top: .75rem;">
@@ -882,6 +899,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         <div class="action-row">
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>Download workflow package</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>

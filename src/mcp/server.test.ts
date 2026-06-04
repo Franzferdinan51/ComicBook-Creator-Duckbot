@@ -27,6 +27,7 @@ assert.equal(registeredTools.includes('get_music_cue_package'), true);
 assert.equal(registeredTools.includes('get_series_package'), true);
 assert.equal(registeredTools.includes('get_screenplay'), true);
 assert.equal(registeredTools.includes('get_director_brief'), true);
+assert.equal(registeredTools.includes('get_agent_workflow_package'), true);
 assert.equal(registeredTools.includes('get_trailer_package'), true);
 assert.equal(registeredTools.includes('get_video_package'), true);
 
@@ -77,6 +78,10 @@ try {
   const directorBriefJson = await mcpServer._registeredTools.get_director_brief.handler({ jobId: job.jobId });
   assert.equal(directorBriefJson.content[0].resource.mimeType, 'text/markdown');
   assert.equal(directorBriefJson.content[0].resource.text.includes('## Director Brief'), true);
+  const workflowJson = await mcpServer._registeredTools.get_agent_workflow_package.handler({ jobId: job.jobId });
+  const workflowPackage = JSON.parse(workflowJson.content[0].resource.text);
+  assert.equal(workflowPackage.format, 'agent-workflow-package');
+  assert.equal(Array.isArray(workflowPackage.tracks), true);
   const videoPackageJson = await mcpServer._registeredTools.get_video_package.handler({ jobId: job.jobId });
   const videoPackage = JSON.parse(videoPackageJson.content[0].resource.text);
   assert.equal(videoPackage.format, 'video-generation-package');

@@ -28,7 +28,9 @@ For the most actionable workflow, start with the repo playbook at
   Use `--agent-playbook` to print the repo-level Hermes/OpenClaw playbook
   directly from the CLI. Use `--json` when an external agent needs a
   machine-readable result payload. Use `--studio-bundle` when the agent wants
-  the unified bundle JSON directly from the CLI. Use `--series-package` when
+  the unified bundle JSON directly from the CLI. Use
+  `--agent-workflow-package` when Hermes/OpenClaw needs a structured execution
+  plan across story, video, and music. Use `--series-package` when
   the next pass is specifically about episodic planning or a show bible. Use `--trailer-package` when
   the next pass is specifically about the pitch / teaser handoff. Use
   `--director-brief` when a human-readable production handoff is the next
@@ -38,13 +40,14 @@ For the most actionable workflow, start with the repo playbook at
   song planning.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `regenerate_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
-  `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`,
+  `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`,
   and `get_theme_audio` for complete agent workflows. Use
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
 - WebUI: the result panel exposes project, adaptation, music, and agent
   guidance downloads, plus a unified studio bundle for one-shot handoff. Start
-  with the studio bundle first when resuming work, then open the series
+  with the studio bundle first when resuming work, then open the workflow
+  package when Hermes/OpenClaw needs a concrete execution checklist, then open the series
   package when the next pass is show-focused, or open the trailer
   package when the screen pitch is the next priority. Use the music cue
   package when the score is the next priority. Use the screenplay handoff when
@@ -61,7 +64,7 @@ For the most actionable workflow, start with the repo playbook at
   The `projectGoal` field records the high-level creative focus used to shape
   the generated defaults and handoff language.
   `adaptationPackage` includes screenplay scenes and storyboard prompts.
-  `screenplayPath`, `directorBriefPath`, `musicCuePackagePath`, `seriesPackagePath`, `storyboardPackagePath`, `trailerPackagePath`, `videoPackagePath`, and `animaticTimelinePath` point to generated
+  `screenplayPath`, `directorBriefPath`, `agentWorkflowPackagePath`, `musicCuePackagePath`, `seriesPackagePath`, `storyboardPackagePath`, `trailerPackagePath`, `videoPackagePath`, and `animaticTimelinePath` point to generated
   production handoff artifacts. `musicCuePackagePath` is the score brief and
   is available through the CLI, MCP, WebUI, and history records. `seriesPackagePath`
   is the show-bible / episodic handoff and is available through the CLI, MCP,
@@ -72,6 +75,8 @@ For the most actionable workflow, start with the repo playbook at
   `directorBriefPath` is the readable production brief and is available through
   the CLI, MCP, WebUI, and history records. `videoPackagePath` is the
   MiniMax-ready motion handoff and is available through the CLI, MCP, WebUI,
+  and history records. `agentWorkflowPackagePath` is the structured
+  Hermes/OpenClaw execution pack and is available through the CLI, MCP, WebUI,
   and history records.
   The Movie / Show board's Agents tab is the quickest place to inspect the
   Hermes/OpenClaw workflow, operator checklist, and agent-facing deliverables.

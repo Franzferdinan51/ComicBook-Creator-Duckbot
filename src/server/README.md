@@ -37,6 +37,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | POST   | `/api/comic`                            | Kick off a new comic generation  |
 | GET    | `/api/comic/:jobId`                     | Poll job status                  |
 | GET    | `/api/comic/:jobId/pdf`                 | Stream the generated PDF         |
+| GET    | `/api/comic/:jobId/agent-workflow-package` | Stream the Hermes/OpenClaw workflow JSON |
 | GET    | `/api/comic/:jobId/screenplay`          | Stream the screenplay markdown   |
 | GET    | `/api/comic/:jobId/director-brief`      | Stream the director brief markdown |
 | GET    | `/api/comic/:jobId/music-cue-package`   | Stream the music cue JSON        |
@@ -213,6 +214,21 @@ The `mock` provider is always available.
 
 ---
 
+### `GET /api/comic/:jobId/agent-workflow-package`
+
+**Response 200** — streams the Hermes/OpenClaw workflow package JSON.
+- `Content-Type: application/json`
+- `Content-Disposition: attachment; filename="<jobId>-agent-workflow-package.json"`
+
+This package is the structured execution handoff. It organizes story,
+video, and music tracks, plus CLI, MCP, WebUI, and MiniMax command
+blueprints for follow-up agents.
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+**410** if the on-disk file is gone.
+
+---
+
 ### `GET /api/comic/:jobId/screenplay`
 
 Streams the generated screenplay markdown handoff.
@@ -343,6 +359,7 @@ a future version).
     "pageCount": 4,
     "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
     "agentPlaybookPath": "/Users/duckets/Desktop/ComicBook-Creator-Duckbot-main/docs/agents/hermes-openclaw-playbook.md",
+    "agentWorkflowPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-agent-workflow-package.json",
     "screenplayPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-screenplay.md",
     "directorBriefPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-director-brief.md",
     "musicCuePackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-music-cue-package.json",

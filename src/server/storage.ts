@@ -19,6 +19,7 @@ import { join, dirname } from 'node:path';
 import type {
   AdaptationPackage,
   AgentGuidancePackage,
+  AgentWorkflowPackage,
   ComicScript,
   MusicCuePackage,
   ProjectGoal,
@@ -65,8 +66,12 @@ export interface HistoryEntry {
   musicCuePackage?: MusicCuePackage;
   /** Agent orchestration guidance artifact for the project. */
   agentGuidancePackage?: AgentGuidancePackage;
+  /** Hermes/OpenClaw execution workflow artifact for the project. */
+  agentWorkflowPackage?: AgentWorkflowPackage;
   /** Path to the generated markdown handoff for external agents. */
   agentGuidancePath?: string;
+  /** Path to the generated agent workflow package JSON. */
+  agentWorkflowPackagePath?: string;
   /** Path to the generated screenplay markdown handoff. */
   screenplayPath?: string;
   /** Path to the generated director brief markdown handoff. */
