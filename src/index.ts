@@ -157,9 +157,12 @@ export async function createComic(
   let coverImage: Buffer | undefined = opts.coverImage;
 
   if (!coverImage && opts.generateCover) {
+    // Normalize the art style to a single lowercase token so the cover prompt
+    // is stable regardless of how the user typed it ("Manga", "manga", "MANGA"
+    // all yield "manga"). Empty artStyle falls back to "comic book".
+    const artStyle = (opts.artStyle || 'comic book').trim().toLowerCase();
     const coverPrompt = [
-      opts.artStyle === 'anime' ? 'anime' : opts.artStyle,
-      'style.',
+      `${artStyle} style.`,
       'A dramatic wide cinematic comic book cover illustration.',
       `Title: "${script.title}"`,
       'Bold typography, vibrant colors, epic composition.',
