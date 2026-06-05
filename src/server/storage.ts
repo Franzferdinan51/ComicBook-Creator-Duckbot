@@ -228,6 +228,22 @@ function historyFile(): string {
   return join(getStorageDir(), 'history.json');
 }
 
+// In-process lock that serializes history mutations. Multiple comic jobs can
+// finish in parallel and each tries to append; without this lock, two
+// concurrent read-modify-write operations race and the second write clobbers
+// the first. The lock is a promise chain — each .then() chains off the
+// previous operation so they execute strictly in order. This is sufficient
+// for a single-server WebUI; a multi-instance deploy would need a real
+// filesystem lock or a database.
+let _historyLock: Promise<unknown> = Promise.resolve();
+function withHistoryLock<T>(op: () => Promise<T>): Promise<T> {
+  const next = _historyLock.then(op, op);
+  // Swallow rejections in the chain so one failure doesn't break all
+  // future calls. The .catch() lives on `next` itself, not the lock.
+  _historyLock = next.catch(() => undefined);
+  return next;
+}
+
 /** Read the full history. */
 export async function loadHistory(): Promise<HistoryEntry[]> {
   const list = await readJson<HistoryEntry[]>(historyFile(), []);
@@ -236,35 +252,41 @@ export async function loadHistory(): Promise<HistoryEntry[]> {
 
 /** Prepend a new entry. Trims the list to MAX_HISTORY. */
 export async function appendHistory(entry: HistoryEntry): Promise<void> {
-  const list = await loadHistory();
-  // Newest first
-  list.unshift(entry);
-  if (list.length > MAX_HISTORY) {
-    list.length = MAX_HISTORY;
-  }
-  await writeJsonAtomic(historyFile(), list);
+  return withHistoryLock(async () => {
+    const list = await loadHistory();
+    // Newest first
+    list.unshift(entry);
+    if (list.length > MAX_HISTORY) {
+      list.length = MAX_HISTORY;
+    }
+    await writeJsonAtomic(historyFile(), list);
+  });
 }
 
 /** Remove a single entry by jobId. Returns true if something was removed. */
 export async function removeHistoryEntry(jobId: string): Promise<boolean> {
-  const list = await loadHistory();
-  const next = list.filter((e) => e.jobId !== jobId);
-  if (next.length === list.length) return false;
-  await writeJsonAtomic(historyFile(), next);
-  return true;
+  return withHistoryLock(async () => {
+    const list = await loadHistory();
+    const next = list.filter((e) => e.jobId !== jobId);
+    if (next.length === list.length) return false;
+    await writeJsonAtomic(historyFile(), next);
+    return true;
+  });
 }
 
 /** Update an existing entry by jobId, or insert if not found. */
 export async function upsertHistoryEntry(entry: HistoryEntry): Promise<void> {
-  const list = await loadHistory();
-  const idx = list.findIndex((e) => e.jobId === entry.jobId);
-  if (idx >= 0) {
-    list[idx] = entry;
-  } else {
-    list.unshift(entry);
-    if (list.length > MAX_HISTORY) list.length = MAX_HISTORY;
-  }
-  await writeJsonAtomic(historyFile(), list);
+  return withHistoryLock(async () => {
+    const list = await loadHistory();
+    const idx = list.findIndex((e) => e.jobId === entry.jobId);
+    if (idx >= 0) {
+      list[idx] = entry;
+    } else {
+      list.unshift(entry);
+      if (list.length > MAX_HISTORY) list.length = MAX_HISTORY;
+    }
+    await writeJsonAtomic(historyFile(), list);
+  });
 }
 
 /** Find one history entry. */
