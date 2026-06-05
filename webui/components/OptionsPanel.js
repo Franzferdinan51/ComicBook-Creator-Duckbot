@@ -258,10 +258,12 @@ export function OptionsPanel({ options = {}, providers, onChange, disabled = fal
         aspectRatio=${options.imageAspectRatio}
         promptOptimizer=${!!options.imagePromptOptimizer}
         aigcWatermark=${!!options.imageAigcWatermark}
+        generateCover=${options.generateCover !== false}
         disabled=${disabled}
         onAspectChange=${(r) => set({ imageAspectRatio: r })}
         onPromptOptimizerChange=${(v) => set({ imagePromptOptimizer: v ? true : undefined })}
         onAigcWatermarkChange=${(v) => set({ imageAigcWatermark: v ? true : undefined })}
+        onGenerateCoverChange=${(v) => set({ generateCover: v ? true : false })}
       />
 
       <div class="field">
@@ -473,8 +475,8 @@ const ASPECT_CHIPS = [
 ];
 
 function ImageAspectPicker({
-  aspectRatio, promptOptimizer, aigcWatermark, disabled,
-  onAspectChange, onPromptOptimizerChange, onAigcWatermarkChange,
+  aspectRatio, promptOptimizer, aigcWatermark, generateCover, disabled,
+  onAspectChange, onPromptOptimizerChange, onAigcWatermarkChange, onGenerateCoverChange,
 }) {
   return html`
     <div class="field model-picker image-aspect-picker">
@@ -525,6 +527,16 @@ function ImageAspectPicker({
           />
           <span>AIGC watermark</span>
           <span class="muted small">(embed AI-generated marker)</span>
+        </label>
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            disabled=${disabled}
+            checked=${!!generateCover}
+            onChange=${(e) => onGenerateCoverChange(e.target.checked)}
+          />
+          <span>Generate cover</span>
+          <span class="muted small">(AI-generated title page image)</span>
         </label>
       </div>
     </div>

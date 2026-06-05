@@ -67,6 +67,7 @@ interface ParsedArgs {
   imageAspectRatio: string | null;
   imagePromptOptimizer: boolean;
   imageAigcWatermark: boolean;
+  generateCover: boolean;
   outputProfile: OutputProfile;
   outputProfileExplicit: boolean;
   output: string | null;
@@ -105,6 +106,7 @@ Options:
   --image-aspect-ratio=<r>  Aspect ratio for image gen (e.g. 16:9, 1:1, 4:3). Default: 1:1. Equivalent to the MiniMax CLI's --aspect-ratio.
   --image-prompt-optimizer  Let MiniMax rewrite the prompt before generation. Equivalent to the MiniMax CLI's --prompt-optimizer.
   --image-aigc-watermark    Embed an AI-generated watermark in the output image. Equivalent to the MiniMax CLI's --aigc-watermark.
+  --generate-cover=<bool>   Generate an AI cover image for the title page. Default: true
   --output-profile=<name>   comic-print | digital-portrait | storyboard-widescreen. Default: comic-print
   --output=<path>           Output file path. Default: ~/.openclaw/workspace/output/comics/<title>-<ts>.<format>
   --seed=<n>                Deterministic seed (mock provider). Default: 0
@@ -144,6 +146,7 @@ function defaultArgs(): ParsedArgs {
     imageAspectRatio: null,
     imagePromptOptimizer: false,
     imageAigcWatermark: false,
+    generateCover: true,
     outputProfile: 'comic-print',
     outputProfileExplicit: false,
     output: null,
@@ -226,6 +229,15 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
       break;
     case 'image-aigc-watermark':
       args.imageAigcWatermark = true;
+      break;
+    case 'generate-cover':
+      if (value === 'true' || value === '1' || value === 'yes') {
+        args.generateCover = true;
+      } else if (value === 'false' || value === '0' || value === 'no') {
+        args.generateCover = false;
+      } else {
+        throw new Error(`--generate-cover must be true|false, got "${value}"`);
+      }
       break;
     case 'output-profile':
       if (value !== 'comic-print' && value !== 'digital-portrait' && value !== 'storyboard-widescreen') {
@@ -380,6 +392,8 @@ export async function runCli(
     ...(args.imageAspectRatio ? { imageAspectRatio: args.imageAspectRatio } : {}),
     ...(args.imagePromptOptimizer ? { imagePromptOptimizer: true } : {}),
     ...(args.imageAigcWatermark ? { imageAigcWatermark: true } : {}),
+    // Forward both true and false — explicit false is meaningful (skip cover).
+    generateCover: args.generateCover,
   };
 
   log(`comic-creator: ${args.pages} page(s) × ${panelsPerPage} panel(s) in "${args.style}" style`);

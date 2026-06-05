@@ -809,6 +809,14 @@ export function buildRouter(): Router {
         }
         if (options.imageAigcWatermark === true) safeOptions.imageAigcWatermark = true;
       }
+      if (options.generateCover != null) {
+        if (typeof options.generateCover !== 'boolean') {
+          return res.status(400).json({ error: 'generateCover must be a boolean' });
+        }
+        // Forward both true and false — a user may explicitly want to skip
+        // cover generation to save time or credits on the image provider.
+        safeOptions.generateCover = options.generateCover;
+      }
       // NOTE: `outputPath` is intentionally NOT honored — the server picks
       // the output location under its own state directory. A client-supplied
       // path would let a caller write a multi-MB PDF anywhere the server
