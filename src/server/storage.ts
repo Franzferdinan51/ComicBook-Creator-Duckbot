@@ -320,10 +320,22 @@ export async function loadSettings(): Promise<Settings> {
   return { ...effective, ...raw };
 }
 
+// In-process lock for settings mutations — same pattern as `_historyLock`
+// above. Concurrent settings saves (e.g. the debounced auto-save in the
+// WebUI racing with a manual PUT) would otherwise clobber each other.
+let _settingsLock: Promise<unknown> = Promise.resolve();
+function withSettingsLock<T>(op: () => Promise<T>): Promise<T> {
+  const next = _settingsLock.then(op, op);
+  _settingsLock = next.catch(() => undefined);
+  return next;
+}
+
 /** Persist new settings. Merges with existing (so PUT with a partial body works). */
 export async function saveSettings(patch: Partial<Settings>): Promise<Settings> {
-  const current = await loadSettings();
-  const next: Settings = { ...current, ...patch };
-  await writeJsonAtomic(settingsFile(), next);
-  return next;
+  return withSettingsLock(async () => {
+    const current = await loadSettings();
+    const next: Settings = { ...current, ...patch };
+    await writeJsonAtomic(settingsFile(), next);
+    return next;
+  });
 }
