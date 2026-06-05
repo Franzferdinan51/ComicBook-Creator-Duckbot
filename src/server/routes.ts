@@ -22,6 +22,7 @@
  *   GET    /api/comic/:jobId/cover           — cover/title-page image (if generated)
  *   GET    /api/comic/:jobId/music-cue-package — music cue / score brief JSON
  *   GET    /api/comic/:jobId/studio-bundle    — unified project/adaptation/music JSON
+ *   GET    /api/comic/:jobId/production-run-manifest — MiniMax production run manifest JSON
  *   GET    /api/comic/:jobId/trailer-package   — teaser / pitch trailer JSON
  *   GET    /api/agent-playbook       — repo-level Hermes/OpenClaw playbook
  *   POST   /api/comic/:jobId/regenerate — re-run with new options
@@ -1102,6 +1103,41 @@ export function buildRouter(): Router {
     );
     const buf = await readFile(workflowPath, 'utf8');
     res.end(buf);
+  });
+
+  /**
+   * GET /api/comic/:jobId/production-run-manifest
+   * Returns the generated MiniMax/Hermes/OpenClaw production run manifest JSON.
+   */
+  router.get('/comic/:jobId/production-run-manifest', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const record = await jobs.resolve(jobId);
+    if (!record) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (record.status !== 'done' || !record.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${record.status})` });
+    }
+    const manifestPath = record.result.productionRunManifestPath;
+    const body = manifestPath && existsSync(manifestPath)
+      ? await readFile(manifestPath, 'utf8')
+      : record.result.productionRunManifest
+        ? JSON.stringify(record.result.productionRunManifest, null, 2)
+        : null;
+    if (!body) {
+      return res.status(404).json({ error: 'no production run manifest for this comic' });
+    }
+    const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Length', String(Buffer.byteLength(body)));
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${titleSlug}-production-run-manifest.json"`
+    );
+    res.end(body);
   });
 
   /**

@@ -228,6 +228,43 @@ export interface AgentWorkflowPackage {
   };
 }
 
+export interface ProductionRunManifest {
+  format: 'production-run-manifest';
+  provider: 'minimax';
+  jobId: string;
+  title: string;
+  projectGoal: ProjectGoal;
+  entrypoints: {
+    studioBundlePath: string | null;
+    agentWorkflowPackagePath: string | null;
+    videoPackagePath: string | null;
+    musicCuePackagePath: string | null;
+    animaticTimelinePath: string | null;
+    themeAudioPath: string | null;
+  };
+  gates: Array<{
+    gateId: string;
+    label: string;
+    command: string;
+    successSignal: string;
+  }>;
+  phases: Array<{
+    phaseId: 'preflight' | 'music-theme' | 'video-clips' | 'review-package';
+    title: string;
+    objective: string;
+    commands: string[];
+    dependsOn: string[];
+    outputs: string[];
+    verification: string[];
+  }>;
+  agentInstructions: {
+    hermes: string;
+    openClaw: string;
+    externalAgent: string;
+  };
+  reviewChecklist: string[];
+}
+
 export interface StoryProject {
   id: string;
   title: string;
@@ -346,10 +383,14 @@ export interface ComicResult {
   agentGuidancePackage: AgentGuidancePackage;
   /** Structured Hermes/OpenClaw execution plan for the generated assets. */
   agentWorkflowPackage: AgentWorkflowPackage;
+  /** Concrete MiniMax/OpenClaw/Hermes production run order for movie/music generation. */
+  productionRunManifest: ProductionRunManifest;
   /** Absolute path to the generated agent guidance markdown handoff, if written. */
   agentGuidancePath: string | null;
   /** Absolute path to the generated agent workflow package JSON, if written. */
   agentWorkflowPackagePath: string | null;
+  /** Absolute path to the generated production run manifest JSON, if written. */
+  productionRunManifestPath: string | null;
   /** Absolute path to the generated screenplay markdown handoff, if written. */
   screenplayPath: string | null;
   /** Absolute path to the generated director brief markdown handoff, if written. */

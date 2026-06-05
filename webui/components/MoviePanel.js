@@ -222,6 +222,12 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       hint: 'Structured Hermes/OpenClaw execution plan with CLI, MCP, WebUI, and MiniMax steps.',
     },
     {
+      label: 'Production run manifest',
+      href: jobId && result.productionRunManifestPath ? `/api/comic/${jobId}/production-run-manifest` : null,
+      filename: `${localSlug(title)}-production-run-manifest.json`,
+      hint: 'Concrete MiniMax run order with preflight gates, music commands, video task polling, and review checks.',
+    },
+    {
       label: 'Studio bundle',
       href: jobId ? `/api/comic/${jobId}/studio-bundle` : null,
       filename: `${localSlug(title)}-studio-bundle.json`,
@@ -320,6 +326,15 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       `/api/comic/${jobId}/agent-workflow-package`,
       `${localSlug(title)}-agent-workflow-package.json`,
       'Agent workflow package downloaded.'
+    );
+  }
+
+  function handleDownloadProductionRunManifest() {
+    if (!jobId || !result?.productionRunManifestPath) return;
+    download(
+      `/api/comic/${jobId}/production-run-manifest`,
+      `${localSlug(title)}-production-run-manifest.json`,
+      'Production run manifest downloaded.'
     );
   }
 
@@ -861,6 +876,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         <div class="action-row">
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>Download workflow package</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProductionRunManifest}>Download production run manifest</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
@@ -898,6 +914,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>Download workflow package</button>
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProductionRunManifest}>Download production run manifest</button>
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
             </div>
             <p class="muted small" style="margin-top: .75rem;">
@@ -914,6 +931,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>Download agent guidance</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>Download workflow package</button>
+          <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProductionRunManifest}>Download production run manifest</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadScreenplay}>Download screenplay</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadDirectorBrief}>Download director brief</button>
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>

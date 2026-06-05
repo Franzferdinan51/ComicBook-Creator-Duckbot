@@ -21,6 +21,7 @@ import {
   buildStoryProject,
   renderAgentGuidanceMarkdown,
   buildAgentWorkflowPackage,
+  buildProductionRunManifest,
   renderScreenplayMarkdown,
   renderDirectorBriefMarkdown,
   renderSongSheetMarkdown,
@@ -76,6 +77,7 @@ interface ParsedArgs {
   json: boolean;
   studioBundle: boolean;
   agentWorkflowPackage: boolean;
+  productionRunManifest: boolean;
   screenplay: boolean;
   directorBrief: boolean;
   videoPackage: boolean;
@@ -115,6 +117,7 @@ Options:
   --json                    Print the full ComicResult JSON and exit
   --studio-bundle           Print the unified studio bundle JSON and exit
   --agent-workflow-package  Print the Hermes/OpenClaw workflow package JSON and exit
+  --production-run-manifest Print the MiniMax production run manifest JSON and exit
   --screenplay              Print the generated screenplay markdown and exit
   --director-brief          Print the generated director brief markdown and exit
   --video-package           Print the generated MiniMax-ready video package JSON and exit
@@ -157,6 +160,7 @@ function defaultArgs(): ParsedArgs {
     json: false,
     studioBundle: false,
     agentWorkflowPackage: false,
+    productionRunManifest: false,
     screenplay: false,
     directorBrief: false,
     videoPackage: false,
@@ -266,7 +270,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
 
 /**
  * Minimal arg parser: --key=value flags, then positional <story>.
- * Recognises --help / --version / --json / --studio-bundle / --agent-workflow-package / --screenplay / --director-brief / --video-package / --series-package / --trailer-package / --music-cue-package / --agent-playbook / --preflight (and -h / -V).
+ * Recognises --help / --version / --json / --studio-bundle / --agent-workflow-package / --production-run-manifest / --screenplay / --director-brief / --video-package / --series-package / --trailer-package / --music-cue-package / --agent-playbook / --preflight (and -h / -V).
  */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = defaultArgs();
@@ -283,6 +287,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.studioBundle = true;
     } else if (arg === '--agent-workflow-package') {
       args.agentWorkflowPackage = true;
+    } else if (arg === '--production-run-manifest') {
+      args.productionRunManifest = true;
     } else if (arg === '--screenplay') {
       args.screenplay = true;
     } else if (arg === '--director-brief') {
@@ -460,6 +466,7 @@ export async function runCli(
   const projectPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-project.json`;
   const agentGuidancePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-guidance.md`;
   const agentWorkflowPackagePath = `${finalPath.replace(/\.[^./\\]+$/, '')}-agent-workflow-package.json`;
+  const productionRunManifestPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-production-run-manifest.json`;
   const screenplayPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-screenplay.md`;
   const directorBriefPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-director-brief.md`;
   const songSheetPath = `${finalPath.replace(/\.[^./\\]+$/, '')}-song-sheet.md`;
@@ -558,8 +565,10 @@ export async function runCli(
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentWorkflowPackage: {} as ComicResult['agentWorkflowPackage'],
+    productionRunManifest: {} as ComicResult['productionRunManifest'],
     agentGuidancePath,
     agentWorkflowPackagePath,
+    productionRunManifestPath,
     screenplayPath,
     directorBriefPath,
     agentPlaybookPath: PLAYBOOK_PATH,
@@ -576,7 +585,9 @@ export async function runCli(
     pages,
   };
   result.agentWorkflowPackage = buildAgentWorkflowPackage(project.id, result);
+  result.productionRunManifest = buildProductionRunManifest(project.id, result);
   await writeFile(agentWorkflowPackagePath, JSON.stringify(result.agentWorkflowPackage, null, 2), 'utf8');
+  await writeFile(productionRunManifestPath, JSON.stringify(result.productionRunManifest, null, 2), 'utf8');
   await writeFile(studioBundlePath, JSON.stringify(buildStudioBundle(project.id, result), null, 2), 'utf8');
   return result;
 }
@@ -622,6 +633,10 @@ async function main(): Promise<void> {
     }
     if (args.agentWorkflowPackage) {
       process.stdout.write(await readFile(result.agentWorkflowPackagePath!, 'utf8'));
+      return;
+    }
+    if (args.productionRunManifest) {
+      process.stdout.write(await readFile(result.productionRunManifestPath!, 'utf8'));
       return;
     }
     if (args.screenplay) {

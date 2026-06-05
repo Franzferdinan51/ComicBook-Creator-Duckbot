@@ -11,6 +11,7 @@
  *   - get_agent_guidance  — fetch the Hermes/OpenClaw markdown handoff
  *   - get_agent_playbook  — fetch the repository-level Hermes/OpenClaw playbook
  *   - get_studio_bundle   — fetch the unified project/adaptation/music bundle
+ *   - get_production_run_manifest — fetch the MiniMax/Hermes/OpenClaw run manifest
  *   - get_music_cue_package — fetch the music cue / score brief
  *   - get_trailer_package  — fetch the screen pitch / teaser package
  *   - get_comic_cover     — fetch the cover/title image as base64
@@ -396,6 +397,47 @@ export function buildMcpServer(): McpServer {
         };
       } catch (e) {
         return errResult(`get_agent_workflow_package failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  server.tool(
+    'get_production_run_manifest',
+    'Fetch the generated MiniMax/Hermes/OpenClaw production run manifest JSON for a completed comic.',
+    {
+      jobId: z.string().min(1).describe('The jobId of a completed comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const path = record.result.productionRunManifestPath;
+        const text = path && existsSync(path)
+          ? await readFile(path, 'utf8')
+          : record.result.productionRunManifest
+            ? JSON.stringify(record.result.productionRunManifest, null, 2)
+            : null;
+        if (!text) {
+          return errResult(`production run manifest not available for job ${jobId}`);
+        }
+        return {
+          content: [
+            {
+              type: 'resource' as const,
+              resource: {
+                uri: `comic://${jobId}.production-run-manifest.json`,
+                mimeType: 'application/json',
+                text,
+              },
+            },
+            { type: 'text' as const, text },
+          ],
+        };
+      } catch (e) {
+        return errResult(`get_production_run_manifest failed: ${(e as Error).message}`);
       }
     }
   );

@@ -165,6 +165,7 @@ After `npm install -g .` (or `npm link` from the skill dir) the
 | `--output-profile=<name>` | `comic-print` | `comic-print` \| `digital-portrait` \| `storyboard-widescreen` |
 | `--output=<path>` | auto | Override the output path (default: `~/.openclaw/workspace/output/comics/<title>-<ts>.pdf`) |
 | `--seed=<n>` | `0` | Deterministic seed (mock provider) |
+| `--production-run-manifest` | — | Print the MiniMax production run manifest JSON and exit |
 | `--preflight` | — | Print production readiness diagnostics JSON and exit |
 | `--help` | — | Print usage and exit |
 | `--version` | — | Print version and exit |
@@ -276,6 +277,7 @@ frontend from the same origin. Key endpoints:
 - `GET  /api/history` — list recent comics (persisted to disk)
 - `GET  /api/providers` — list available text + image + music providers
 - `GET  /api/preflight` — production readiness diagnostics
+- `GET  /api/comic/:jobId/production-run-manifest` — MiniMax production run manifest
 - `GET  /api/settings` / `PUT /api/settings` — user preferences (persisted)
 
 ### State

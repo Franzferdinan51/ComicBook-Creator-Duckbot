@@ -68,6 +68,47 @@ const videoPackage = {
   workflowNotes: ['Generate asynchronously', 'Use cue map', 'Avoid slideshow motion'],
 };
 
+const productionRunManifest = {
+  format: 'production-run-manifest' as const,
+  provider: 'minimax' as const,
+  jobId: 'history-job',
+  title: 'History Project',
+  projectGoal: 'screen' as const,
+  entrypoints: {
+    studioBundlePath: '/tmp/history-job-studio-bundle.json',
+    agentWorkflowPackagePath: '/tmp/history-job-agent-workflow-package.json',
+    videoPackagePath: '/tmp/history-job-video-package.json',
+    musicCuePackagePath: '/tmp/history-job-music-cue-package.json',
+    animaticTimelinePath: '/tmp/history-job-animatic-timeline.json',
+    themeAudioPath: '/tmp/history-job-theme.wav',
+  },
+  gates: [
+    {
+      gateId: 'minimax-auth',
+      label: 'MiniMax CLI authentication',
+      command: 'mmx auth status',
+      successSignal: 'CLI reports an active MiniMax account.',
+    },
+  ],
+  phases: [
+    {
+      phaseId: 'video-clips' as const,
+      title: 'Generate actual motion clips',
+      objective: 'Create real motion, not a slideshow.',
+      commands: ['mmx video generate --prompt "History cinematic opening clip." --async'],
+      dependsOn: ['/tmp/history-job-video-package.json'],
+      outputs: ['history-project-clip.mp4'],
+      verification: ['not a slideshow'],
+    },
+  ],
+  agentInstructions: {
+    hermes: 'decompose the production run',
+    openClaw: 'use gateway/status checks before CLI execution',
+    externalAgent: 'start after preflight',
+  },
+  reviewChecklist: ['video is not a slideshow'],
+};
+
 const musicCuePackage = {
   format: 'music-brief' as const,
   cues: [{ cueId: 'cue-1', title: 'Cue 1', mood: 'hopeful', placement: 'opening', sceneId: 'scene-1' }],
@@ -97,6 +138,7 @@ const entry: HistoryEntry = {
   projectPath: '/tmp/history-job-project.json',
   agentPlaybookPath: '/tmp/docs/agents/hermes-openclaw-playbook.md',
   agentWorkflowPackagePath: '/tmp/history-job-agent-workflow-package.json',
+  productionRunManifestPath: '/tmp/history-job-production-run-manifest.json',
   screenplayPath: '/tmp/history-job-screenplay.md',
   directorBriefPath: '/tmp/history-job-director-brief.md',
   songSheetPath: '/tmp/history-job-song-sheet.md',
@@ -205,6 +247,7 @@ const entry: HistoryEntry = {
     tracks: [],
     commandBlueprints: { cli: [], mcp: [], webui: [], minimax: [] },
   },
+  productionRunManifest,
   scriptJson: {
     title: 'History Project',
     artStyle: 'manga',
@@ -219,6 +262,7 @@ try {
   await writeFile(entry.trailerPackagePath!, JSON.stringify(trailerPackage), 'utf8');
   await writeFile(entry.videoPackagePath!, JSON.stringify(videoPackage), 'utf8');
   await writeFile(entry.agentWorkflowPackagePath!, JSON.stringify(entry.agentWorkflowPackage), 'utf8');
+  await writeFile(entry.productionRunManifestPath!, JSON.stringify(productionRunManifest), 'utf8');
   await writeFile(entry.screenplayPath!, '# History Project\n\n## Screenplay Handoff\n\nHistory screenplay text.', 'utf8');
   await writeFile(entry.directorBriefPath!, '# History Project\n\n## Director Brief\n\nHistory director brief text.', 'utf8');
   await writeFile(entry.studioBundlePath!, JSON.stringify({
@@ -235,6 +279,7 @@ try {
     musicCuePackage,
     agentGuidancePackage: entry.project!.agentGuidancePackage,
     agentWorkflowPackage: entry.agentWorkflowPackage,
+    productionRunManifest,
     musicProvider: 'mock',
     artifactPaths: {
       outputPath: entry.outputPath,
@@ -244,6 +289,7 @@ try {
       projectPath: entry.projectPath,
       agentGuidancePath: '/tmp/history-job-agent-guidance.md',
       agentWorkflowPackagePath: entry.agentWorkflowPackagePath,
+      productionRunManifestPath: entry.productionRunManifestPath,
       agentPlaybookPath: entry.agentPlaybookPath,
       screenplayPath: entry.screenplayPath,
       directorBriefPath: entry.directorBriefPath,
@@ -264,6 +310,7 @@ try {
       project: true,
       agentGuidance: true,
       agentWorkflowPackage: true,
+      productionRunManifest: true,
       screenplay: true,
       directorBrief: true,
       agentPlaybook: true,
@@ -290,6 +337,8 @@ try {
   assert.equal(resolved?.result.projectPath, '/tmp/history-job-project.json');
   assert.equal(resolved?.result.agentPlaybookPath?.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
   assert.equal(resolved?.result.agentWorkflowPackagePath, '/tmp/history-job-agent-workflow-package.json');
+  assert.equal(resolved?.result.productionRunManifestPath, '/tmp/history-job-production-run-manifest.json');
+  assert.equal(resolved?.result.productionRunManifest.format, 'production-run-manifest');
   assert.equal(resolved?.result.screenplayPath, '/tmp/history-job-screenplay.md');
   assert.equal(resolved?.result.directorBriefPath, '/tmp/history-job-director-brief.md');
   assert.equal(resolved?.result.songSheetPath, '/tmp/history-job-song-sheet.md');
@@ -340,6 +389,7 @@ try {
     assert.equal(bundle.artifactPaths.agentPlaybookPath.endsWith('docs/agents/hermes-openclaw-playbook.md'), true);
     assert.equal(bundle.artifactPaths.studioBundlePath, entry.studioBundlePath);
     assert.equal(bundle.artifactPaths.agentWorkflowPackagePath, entry.agentWorkflowPackagePath);
+    assert.equal(bundle.artifactPaths.productionRunManifestPath, entry.productionRunManifestPath);
     assert.equal(bundle.artifactPaths.screenplayPath, entry.screenplayPath);
     assert.equal(bundle.artifactPaths.directorBriefPath, entry.directorBriefPath);
     assert.equal(bundle.artifactPaths.musicCuePackagePath, entry.musicCuePackagePath);
@@ -348,6 +398,7 @@ try {
     assert.equal(bundle.artifactPaths.videoPackagePath, entry.videoPackagePath);
     assert.equal(bundle.availability.agentPlaybook, true);
     assert.equal(bundle.availability.agentWorkflowPackage, true);
+    assert.equal(bundle.availability.productionRunManifest, true);
     assert.equal(bundle.availability.screenplay, true);
     assert.equal(bundle.availability.directorBrief, true);
     assert.equal(bundle.availability.musicCuePackage, true);
@@ -389,6 +440,13 @@ try {
     assert.equal(workflowRes.headers.get('content-type')?.includes('application/json'), true);
     const workflowPayload = await workflowRes.json();
     assert.equal(workflowPayload.format, 'agent-workflow-package');
+
+    const manifestRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/production-run-manifest`);
+    assert.equal(manifestRes.ok, true);
+    assert.equal(manifestRes.headers.get('content-type')?.includes('application/json'), true);
+    const manifestPayload = await manifestRes.json();
+    assert.equal(manifestPayload.format, 'production-run-manifest');
+    assert.equal(manifestPayload.provider, 'minimax');
 
     const trailerRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/trailer-package`);
     assert.equal(trailerRes.ok, true);

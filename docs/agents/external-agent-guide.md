@@ -34,15 +34,17 @@ For the most actionable workflow, start with the repo playbook at
   the next pass is specifically about episodic planning or a show bible. Use `--trailer-package` when
   the next pass is specifically about the pitch / teaser handoff. Use
   `--director-brief` when a human-readable production handoff is the next
-  priority. Use `--video-package` when the next pass is specifically about
-  generating real motion clips through MiniMax video. Use
+  priority. Use `--production-run-manifest` when the next pass is ready for
+  concrete MiniMax CLI execution with preflight gates, music generation, video
+  task polling, downloads, and review checks. Use `--video-package` when the
+  next pass is specifically about generating real motion clips through MiniMax video. Use
   `--music-cue-package` when the next pass is specifically about score or
   song planning. Use `--preflight` before production runs to verify Node.js,
   output paths, package entrypoints, provider readiness, MiniMax CLI
   availability, and the Hermes/OpenClaw guidance files.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `regenerate_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
-  `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`,
+  `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_production_run_manifest`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`,
   `get_theme_audio`, and `get_preflight` for complete agent workflows. Use
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
@@ -51,7 +53,9 @@ For the most actionable workflow, start with the repo playbook at
   exposes project, adaptation, music, and agent guidance downloads, plus a
   unified studio bundle for one-shot handoff. Start with preflight, then the
   studio bundle when resuming work, then open the workflow
-  package when Hermes/OpenClaw needs a concrete execution checklist, then open the series
+  package when Hermes/OpenClaw needs a concrete execution checklist. Open the
+  production run manifest when the next operator is ready to run MiniMax music
+  and video tasks instead of only revising story artifacts. Then open the series
   package when the next pass is show-focused, or open the trailer
   package when the screen pitch is the next priority. Use the music cue
   package when the score is the next priority. Use the screenplay handoff when
@@ -96,9 +100,10 @@ For the most actionable workflow, start with the repo playbook at
 2. Read the repo playbook and the studio bundle first.
 3. Pull the project JSON and confirm the current output paths.
 4. Use Hermes Agent to split work into story, show/movie, and music tracks.
-5. Use OpenClaw to run the concrete CLI or MCP actions.
-6. Write decisions back into the project artifact before starting the next pass.
-7. Re-run the verification commands and refresh the README when a user-facing
+5. Use the production run manifest before executing MiniMax music/video work.
+6. Use OpenClaw to run the concrete CLI or MCP actions.
+7. Write decisions back into the project artifact before starting the next pass.
+8. Re-run the verification commands and refresh the README when a user-facing
    surface changes.
 
 ## Agent Contract

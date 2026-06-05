@@ -69,6 +69,8 @@ export function History({ onOpen }) {
               agentGuidancePath: bundle.artifactPaths?.agentGuidancePath ?? null,
               agentWorkflowPackage: bundle.agentWorkflowPackage,
               agentWorkflowPackagePath: bundle.artifactPaths?.agentWorkflowPackagePath ?? null,
+              productionRunManifest: bundle.productionRunManifest,
+              productionRunManifestPath: bundle.artifactPaths?.productionRunManifestPath ?? null,
               screenplayPath: bundle.artifactPaths?.screenplayPath ?? null,
               directorBriefPath: bundle.artifactPaths?.directorBriefPath ?? null,
               songSheetPath: bundle.artifactPaths?.songSheetPath ?? null,
@@ -104,6 +106,8 @@ export function History({ onOpen }) {
           agentGuidancePath: entry.agentGuidancePath || null,
           agentWorkflowPackage: entry.agentWorkflowPackage || null,
           agentWorkflowPackagePath: entry.agentWorkflowPackagePath || null,
+          productionRunManifest: entry.productionRunManifest || null,
+          productionRunManifestPath: entry.productionRunManifestPath || null,
           screenplayPath: entry.screenplayPath || null,
           directorBriefPath: entry.directorBriefPath || null,
           songSheetPath: entry.songSheetPath || null,
@@ -240,6 +244,18 @@ export function History({ onOpen }) {
     showToast('Agent workflow package downloaded.', 'success');
   }
 
+  function handleDownloadProductionRunManifest(entry, e) {
+    e.stopPropagation();
+    if (!entry.productionRunManifestPath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${entry.jobId}/production-run-manifest`;
+    a.download = `${(entry.title || entry.jobId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}-production-run-manifest.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Production run manifest downloaded.', 'success');
+  }
+
   if (loading) {
     return html`
       <section class="panel" aria-labelledby="history-title">
@@ -353,6 +369,13 @@ export function History({ onOpen }) {
                     onClick=${(e) => handleDownloadAgentWorkflowPackage(entry, e)}
                     title="Download the Hermes/OpenClaw workflow package for this history item"
                   >Workflow</button>
+                ` : null}
+                ${entry.productionRunManifestPath ? html`
+                  <button
+                    type="button"
+                    onClick=${(e) => handleDownloadProductionRunManifest(entry, e)}
+                    title="Download the MiniMax production run manifest for this history item"
+                  >Run</button>
                 ` : null}
                 ${entry.musicCuePackagePath ? html`
                   <button

@@ -17,6 +17,7 @@
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import type { ComicOptions, ComicResult, StoryProject } from '../types.js';
+import { buildProductionRunManifest } from '../project/index.js';
 import { upsertHistoryEntry, type HistoryEntry } from './storage.js';
 
 export type JobStatus = 'pending' | 'done' | 'error';
@@ -371,8 +372,10 @@ class JobManager {
         tracks: [],
         commandBlueprints: { cli: [], mcp: [], webui: [], minimax: [] },
       },
+      productionRunManifest: {} as ComicResult['productionRunManifest'],
       agentGuidancePath: entry.agentGuidancePath ?? null,
       agentWorkflowPackagePath: entry.agentWorkflowPackagePath ?? null,
+      productionRunManifestPath: entry.productionRunManifestPath ?? null,
       songSheetPath: entry.songSheetPath ?? null,
       songAudioPath: entry.songAudioPath ?? null,
       musicCuePackagePath: entry.musicCuePackagePath ?? null,
@@ -411,6 +414,7 @@ class JobManager {
         })
       ),
     };
+    result.productionRunManifest = entry.productionRunManifest ?? buildProductionRunManifest(jobId, result);
     return {
       jobId,
       status: 'done',
@@ -471,8 +475,10 @@ class JobManager {
         seriesPackage: result.seriesPackage,
         agentGuidancePackage: result.agentGuidancePackage,
         agentWorkflowPackage: result.agentWorkflowPackage,
+        productionRunManifest: result.productionRunManifest,
         agentGuidancePath: result.agentGuidancePath ?? undefined,
         agentWorkflowPackagePath: result.agentWorkflowPackagePath ?? undefined,
+        productionRunManifestPath: result.productionRunManifestPath ?? undefined,
         screenplayPath: result.screenplayPath ?? undefined,
         directorBriefPath: result.directorBriefPath ?? undefined,
         songSheetPath: result.songSheetPath ?? undefined,

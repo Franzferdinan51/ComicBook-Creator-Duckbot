@@ -562,6 +562,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     showToast('Agent workflow package downloaded.', 'success');
   }
 
+  function handleDownloadProductionRunManifest() {
+    if (!result?.productionRunManifestPath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/production-run-manifest`;
+    a.download = `${localSlug(result.script?.title)}-production-run-manifest.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Production run manifest downloaded.', 'success');
+  }
+
   function handleDownloadAgentGuidance() {
     if (result?.agentGuidancePath) {
       const a = document.createElement('a');
@@ -915,6 +926,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
               Download agent workflow package
             </button>
           ` : null}
+          ${result.productionRunManifestPath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProductionRunManifest}>
+              Download production run manifest
+            </button>
+          ` : null}
         </section>
 
         <section class="panel artifact-panel">
@@ -989,6 +1005,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
           ${result.agentWorkflowPackagePath ? html`
             <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentWorkflowPackage}>
               Download agent workflow package
+            </button>
+          ` : null}
+          ${result.productionRunManifestPath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProductionRunManifest}>
+              Download production run manifest
             </button>
           ` : null}
           <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentGuidance}>

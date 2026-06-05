@@ -44,6 +44,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | GET    | `/api/comic/:jobId/project`             | Stream the full project JSON     |
 | GET    | `/api/comic/:jobId/agent-guidance`      | Stream the agent guidance markdown |
 | GET    | `/api/comic/:jobId/agent-workflow-package` | Stream the Hermes/OpenClaw workflow JSON |
+| GET    | `/api/comic/:jobId/production-run-manifest` | Stream the MiniMax production run manifest JSON |
 | GET    | `/api/comic/:jobId/screenplay`          | Stream the screenplay markdown   |
 | GET    | `/api/comic/:jobId/director-brief`      | Stream the director brief markdown |
 | GET    | `/api/comic/:jobId/storyboard-package`  | Stream the storyboard JSON       |
@@ -339,6 +340,23 @@ blueprints for follow-up agents.
 
 ---
 
+### `GET /api/comic/:jobId/production-run-manifest`
+
+**Response 200** — streams the MiniMax/Hermes/OpenClaw production run
+manifest JSON.
+- `Content-Type: application/json`
+- `Content-Disposition: attachment; filename="<jobId>-production-run-manifest.json"`
+
+This is the concrete operator run order for real production passes. It includes
+preflight gates, `mmx auth status`, music generation, video generation,
+MiniMax video polling/download commands, and review checks that explicitly
+guard against slideshow-only output.
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+**410** if the on-disk file is gone.
+
+---
+
 ### `GET /api/comic/:jobId/screenplay`
 
 Streams the generated screenplay markdown handoff.
@@ -548,6 +566,7 @@ entries remain available through `GET /api/history`.
     "outputPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904.pdf",
     "agentPlaybookPath": "/Users/duckets/Desktop/ComicBook-Creator-Duckbot-main/docs/agents/hermes-openclaw-playbook.md",
     "agentWorkflowPackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-agent-workflow-package.json",
+    "productionRunManifestPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-production-run-manifest.json",
     "screenplayPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-screenplay.md",
     "directorBriefPath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-director-brief.md",
     "musicCuePackagePath": "/Users/duckets/.openclaw/workspace/output/comics/1717268904-music-cue-package.json",

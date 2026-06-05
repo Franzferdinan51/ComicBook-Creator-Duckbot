@@ -22,6 +22,7 @@ import type {
   AgentWorkflowPackage,
   ComicScript,
   MusicCuePackage,
+  ProductionRunManifest,
   ProjectGoal,
   SeriesPackage,
   StoryProject,
@@ -68,10 +69,14 @@ export interface HistoryEntry {
   agentGuidancePackage?: AgentGuidancePackage;
   /** Hermes/OpenClaw execution workflow artifact for the project. */
   agentWorkflowPackage?: AgentWorkflowPackage;
+  /** MiniMax/OpenClaw/Hermes concrete production run manifest. */
+  productionRunManifest?: ProductionRunManifest;
   /** Path to the generated markdown handoff for external agents. */
   agentGuidancePath?: string;
   /** Path to the generated agent workflow package JSON. */
   agentWorkflowPackagePath?: string;
+  /** Path to the generated production run manifest JSON. */
+  productionRunManifestPath?: string;
   /** Path to the generated screenplay markdown handoff. */
   screenplayPath?: string;
   /** Path to the generated director brief markdown handoff. */

@@ -25,6 +25,7 @@ npm start
 | `projectPath` | Full `*-project.json` source-of-truth handoff for external agents |
 | `agentPlaybookPath` | Repo playbook path for Hermes/OpenClaw agent follow-up |
 | `agentWorkflowPackagePath` | Structured Hermes/OpenClaw execution pack across story, video, and music |
+| `productionRunManifestPath` | MiniMax/Hermes/OpenClaw run order with preflight gates, music commands, video polling, and review checks |
 | `coverImagePath` | AI-generated cover page image |
 | `storyBible` | Premise, synopsis, chapter outline, scene beats |
 | `adaptationPackage` | Per-scene screenplay summaries + visual goals |
@@ -164,6 +165,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--json` | off | Print the full `ComicResult` JSON |
 | `--studio-bundle` | off | Print the unified studio bundle JSON |
 | `--agent-workflow-package` | off | Print the Hermes/OpenClaw workflow package JSON |
+| `--production-run-manifest` | off | Print the MiniMax production run manifest JSON |
 | `--screenplay` | off | Print the generated screenplay markdown |
 | `--director-brief` | off | Print the generated director brief markdown |
 | `--video-package` | off | Print the generated MiniMax-ready video package JSON |
@@ -181,13 +183,13 @@ External agents (OpenClaw, Claude Desktop, etc.) can invoke the pipeline via MCP
 comic-creator-mcp
 ```
 
-Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_preflight`, `get_history`, `get_settings`, `update_settings`.
+Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_production_run_manifest`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_preflight`, `get_history`, `get_settings`, `update_settings`.
 
 MCP provider fields are registry-based, not hard-coded. Agents should call `list_providers` first, then pass any registered text/image/music provider name into `create_comic` or `regenerate_comic`, including built-ins such as `xai`, `gemini`, `comfyui`, `minimax`, and WebUI-created custom OpenAI-compatible providers.
 
 Run `comic-creator --preflight`, `GET /api/preflight`, MCP `get_preflight`, or the WebUI Production readiness panel in Settings before production runs. The report checks Node.js, output directory writability, package entrypoints, provider readiness, MiniMax CLI availability, and the Hermes/OpenClaw guidance files.
 
-The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from preflight, then the studio bundle, then open the specialized files as needed. The workflow package is the next best handoff when Hermes/OpenClaw needs a track-by-track execution plan across story, video, and music. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package to drive `mmx video` clip generation.
+The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from preflight, then the studio bundle, then open the specialized files as needed. The workflow package is the next best handoff when Hermes/OpenClaw needs a track-by-track execution plan across story, video, and music. The production run manifest is the concrete next handoff when an agent is ready to run MiniMax music/video generation with `mmx auth status`, `mmx music generate`, `mmx video generate`, `mmx video task get`, and `mmx video download`. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package and production run manifest to drive `mmx video` clip generation.
 
 ## Agent playbook
 

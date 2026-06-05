@@ -35,6 +35,7 @@ export type {
   TrailerPackage,
   MusicCuePackage,
   AgentGuidancePackage,
+  ProductionRunManifest,
   ProjectGoal,
   OutputProfile,
 } from './types.js';
@@ -51,6 +52,7 @@ export {
   normalizeRenderProfile,
   buildAgentGuidancePackage,
   buildAgentWorkflowPackage,
+  buildProductionRunManifest,
   renderAgentGuidanceMarkdown,
   renderScreenplayMarkdown,
   renderDirectorBriefMarkdown,
@@ -70,6 +72,7 @@ import {
   buildStoryProject,
   renderAgentGuidanceMarkdown,
   buildAgentWorkflowPackage,
+  buildProductionRunManifest,
   renderScreenplayMarkdown,
   renderDirectorBriefMarkdown,
   renderSongSheetMarkdown,
@@ -240,6 +243,7 @@ export async function createComic(
   const projectPath = `${stemFromOutput}-project.json`;
   const agentGuidancePath = `${stemFromOutput}-agent-guidance.md`;
   const agentWorkflowPackagePath = `${stemFromOutput}-agent-workflow-package.json`;
+  const productionRunManifestPath = `${stemFromOutput}-production-run-manifest.json`;
   const screenplayPath = `${stemFromOutput}-screenplay.md`;
   const directorBriefPath = `${stemFromOutput}-director-brief.md`;
   const songSheetPath = `${stemFromOutput}-song-sheet.md`;
@@ -311,8 +315,10 @@ export async function createComic(
     musicCuePackage: project.musicCuePackage,
     agentGuidancePackage: project.agentGuidancePackage,
     agentWorkflowPackage: {} as ComicResult['agentWorkflowPackage'],
+    productionRunManifest: {} as ComicResult['productionRunManifest'],
     agentGuidancePath,
     agentWorkflowPackagePath,
+    productionRunManifestPath,
     screenplayPath,
     directorBriefPath,
     agentPlaybookPath,
@@ -329,7 +335,9 @@ export async function createComic(
     pages: pageImages,
   };
   result.agentWorkflowPackage = buildAgentWorkflowPackage(project.id, result);
+  result.productionRunManifest = buildProductionRunManifest(project.id, result);
   await writeFile(agentWorkflowPackagePath, JSON.stringify(result.agentWorkflowPackage, null, 2), 'utf8');
+  await writeFile(productionRunManifestPath, JSON.stringify(result.productionRunManifest, null, 2), 'utf8');
   await writeFile(studioBundlePath, JSON.stringify(buildStudioBundle(project.id, result), null, 2), 'utf8');
 
   return result;
