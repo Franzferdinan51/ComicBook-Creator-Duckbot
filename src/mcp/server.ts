@@ -36,6 +36,8 @@ import {
   loadHistory,
   loadSettings,
   saveSettings,
+  filterHistory,
+  patchHistoryEntryMeta,
 } from '../server/storage.js';
 import {
   allTextProviderNames,
@@ -1070,6 +1072,140 @@ export function buildMcpServer(): McpServer {
         return jsonResult(await loadSettings());
       } catch (e) {
         return errResult(`get_settings failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // get_share_card
+  // -------------------------------------------------------------------------
+  server.tool(
+    'get_share_card',
+    'Read the public share-card for a comic: title, art style, project goal, page/panel counts, and the public URL paths for every artifact. Safe to share — no secrets, no panel images.',
+    {
+      jobId: z.string().min(1).describe('The jobId returned by create_comic.'),
+    },
+    async ({ jobId }) => {
+      try {
+        const record = await getJobManager().resolve(jobId);
+        if (!record) return errResult(`job ${jobId} not found`);
+        if (record.status !== 'done' || !record.result) {
+          return errResult(`job ${jobId} not done (status: ${record.status})`);
+        }
+        const r = record.result;
+        const panelCount = (r.script?.pages || []).reduce(
+          (acc, p) => acc + (p.panels?.length || 0), 0
+        );
+        return jsonResult({
+          format: 'share-card',
+          jobId: r.project?.id || jobId,
+          title: r.script?.title || 'Untitled',
+          artStyle: r.script?.artStyle || '—',
+          projectGoal: r.project?.projectGoal || 'comic',
+          outputProfile: r.project?.renderProfile?.outputProfile || 'comic-print',
+          pageCount: r.script?.pages?.length || 0,
+          panelCount,
+          preview: {
+            cover: r.coverImagePath ? `/api/comic/${jobId}/cover` : null,
+            pdf: r.pdfPath ? `/api/comic/${jobId}/pdf` : null,
+            cbz: r.cbzPath ? `/api/comic/${jobId}/cbz` : null,
+          },
+          artifacts: {
+            studioBundle: r.studioBundlePath ? `/api/comic/${jobId}/studio-bundle` : null,
+            project: r.projectPath ? `/api/comic/${jobId}/project` : null,
+            screenplay: r.screenplayPath ? `/api/comic/${jobId}/screenplay` : null,
+            directorBrief: r.directorBriefPath ? `/api/comic/${jobId}/director-brief` : null,
+            storyboardPackage: r.storyboardPackagePath ? `/api/comic/${jobId}/storyboard-package` : null,
+            videoPackage: r.videoPackagePath ? `/api/comic/${jobId}/video-package` : null,
+            trailerPackage: r.trailerPackagePath ? `/api/comic/${jobId}/trailer-package` : null,
+            seriesPackage: r.seriesPackagePath ? `/api/comic/${jobId}/series-package` : null,
+            musicCuePackage: r.musicCuePackagePath ? `/api/comic/${jobId}/music-cue-package` : null,
+            songSheet: r.songSheetPath ? `/api/comic/${jobId}/song-sheet` : null,
+            themeAudio: r.songAudioPath ? `/api/comic/${jobId}/theme-audio` : null,
+            agentGuidance: r.agentGuidancePath ? `/api/comic/${jobId}/agent-guidance` : null,
+            agentWorkflowPackage: r.agentWorkflowPackagePath
+              ? `/api/comic/${jobId}/agent-workflow-package`
+              : null,
+            productionRunManifest: r.productionRunManifestPath
+              ? `/api/comic/${jobId}/production-run-manifest`
+              : null,
+          },
+          storyBible: {
+            premise: r.storyBible?.premise || '',
+            synopsis: r.storyBible?.synopsis || '',
+            chapterCount: r.storyBible?.chapterOutline?.length || 0,
+          },
+        });
+      } catch (e) {
+        return errResult(`get_share_card failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // patch_history_meta
+  // -------------------------------------------------------------------------
+  server.tool(
+    'patch_history_meta',
+    'Star/unstar a comic, set free-form tags, or override the project goal on a history entry. Returns the updated entry.',
+    {
+      jobId: z.string().min(1).describe('The jobId of the history entry to patch.'),
+      favorite: z.boolean().optional().describe('Set true to star, false to unstar.'),
+      tags: z
+        .array(z.string())
+        .optional()
+        .describe('Free-form tags. Lowercased, deduped, capped at 16.'),
+      projectGoal: z.enum(['comic', 'screen', 'music', 'studio']).optional(),
+    },
+    async ({ jobId, favorite, tags, projectGoal }) => {
+      const patch: { favorite?: boolean; tags?: string[]; projectGoal?: 'comic' | 'screen' | 'music' | 'studio' } = {};
+      if (favorite !== undefined) patch.favorite = favorite;
+      if (tags !== undefined) patch.tags = tags;
+      if (projectGoal !== undefined) patch.projectGoal = projectGoal;
+      if (Object.keys(patch).length === 0) {
+        return errResult('patch_history_meta needs at least one of: favorite, tags, projectGoal');
+      }
+      try {
+        const next = await patchHistoryEntryMeta(jobId, patch);
+        if (!next) return errResult(`history entry ${jobId} not found`);
+        return jsonResult(next);
+      } catch (e) {
+        return errResult(`patch_history_meta failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // search_history
+  // -------------------------------------------------------------------------
+  server.tool(
+    'search_history',
+    'Search and filter the on-disk comic history. Combines text search, project goal, art style, favorite, and tag filters in one call.',
+    {
+      q: z.string().optional().describe('Free-text search across title + tags (case-insensitive).'),
+      projectGoal: z.enum(['comic', 'screen', 'music', 'studio']).optional(),
+      artStyle: z.string().optional().describe('Substring match on the art style.'),
+      favorite: z.boolean().optional().describe('Set true to return only starred comics.'),
+      tags: z
+        .array(z.string())
+        .optional()
+        .describe('Filter by tags (every supplied tag must match — AND).'),
+      limit: z.number().int().min(1).max(50).optional().describe('Max results to return (default 20).'),
+    },
+    async ({ q, projectGoal, artStyle, favorite, tags, limit }) => {
+      try {
+        const list = await loadHistory();
+        const filtered = filterHistory(list, {
+          q,
+          projectGoal,
+          artStyle,
+          favorite,
+          tags,
+          limit: limit ?? 20,
+        });
+        return jsonResult(filtered);
+      } catch (e) {
+        return errResult(`search_history failed: ${(e as Error).message}`);
       }
     }
   );

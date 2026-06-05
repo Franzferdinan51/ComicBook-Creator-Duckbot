@@ -27,6 +27,14 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
   const [stageIdx, setStageIdx] = useState(0);
   const [progressPct, setProgressPct] = useState(0);
   const [error, setError] = useState(null);
+  // Wall-clock start time of the worker, returned by the server. Used to
+  // compute an ETA by tracking elapsed time and how far through the
+  // visual progress we are. Stays null while the job is still queued.
+  const [startedAt, setStartedAt] = useState(null);
+  // Number of seconds the worker has been running — used to render the
+  // ETA line. Bumped from a 1s interval so it ticks even when the
+  // server is slow to respond.
+  const [elapsedSec, setElapsedSec] = useState(0);
   const cancelRef = useRef(false);
 
   const tooShort = !story || story.trim().length < 3;
@@ -45,12 +53,23 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalJobId]);
 
+  // Tick a 1s timer while loading so the ETA line updates even between polls.
+  useEffect(() => {
+    if (!loading) {
+      setElapsedSec(0);
+      return undefined;
+    }
+    const interval = setInterval(() => setElapsedSec((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [loading]);
+
   async function pollLoop(jid) {
     cancelRef.current = false;
     setLoading(true);
     setError(null);
     setProgressPct(0);
     setStageIdx(0);
+    setStartedAt(null);
 
     let lastUpdate = 0;
     for (let i = 0; !cancelRef.current; i++) {
@@ -66,6 +85,13 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
         setLoading(false);
         onError && onError(err);
         return;
+      }
+
+      // Track the worker's start time so the ETA can compare elapsed to
+      // progress. The first response usually has null (job still queued);
+      // we keep polling until the server reports a startedAt.
+      if (data.startedAt && !startedAt) {
+        setStartedAt(data.startedAt);
       }
 
       if (data.status === 'done') {
@@ -140,6 +166,27 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [story, options, loading, tooShort]);
 
+  // Compute the ETA string. We need both `startedAt` (from the server)
+  // and some real progress — anything before startedAt is just queue
+  // time, which we don't count. After the worker starts, the visual
+  // percentage is roughly the fraction of work done, so:
+  //   eta_seconds ≈ (elapsed / progress_fraction) - elapsed
+  // We only show the ETA once we have at least 8% of progress so the
+  // first second doesn't display a wildly inflated estimate.
+  let etaLabel = '';
+  if (loading && startedAt && progressPct >= 8) {
+    const elapsedMs = Date.now() - new Date(startedAt).getTime();
+    const elapsedSec = Math.max(1, Math.floor(elapsedMs / 1000));
+    const fraction = progressPct / 100;
+    const totalSec = elapsedSec / fraction;
+    const remainingSec = Math.max(0, Math.round(totalSec - elapsedSec));
+    etaLabel = `~${formatDuration(remainingSec)} left`;
+  } else if (loading) {
+    // Worker hasn't started yet — show the elapsed "queue + run" time
+    // so the user sees something moving.
+    etaLabel = `${formatDuration(elapsedSec)} elapsed`;
+  }
+
   return html`
     <section class="panel" aria-labelledby="generate-title">
       <header class="panel-title">
@@ -150,7 +197,7 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
         <div class="progress-wrap" role="status" aria-live="polite">
           <div class="progress-label">
             <span>${STAGES[stageIdx]}…</span>
-            <span>${progressPct}%</span>
+            <span>${progressPct}%${etaLabel ? ` · ${etaLabel}` : ''}</span>
           </div>
           <div class="progress-bar" aria-hidden="true">
             <div class="progress-fill" style=${{ width: `${progressPct}%` }}></div>
@@ -168,7 +215,7 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
         </div>
         <button class="btn btn-full" type="button" disabled>
           <span class="spinner" aria-hidden="true"></span>
-          Generating…
+          Generating… ${etaLabel ? `· ${etaLabel}` : ''}
         </button>
         <p class="muted small">Press Esc to stop watching (the job will keep running).</p>
       ` : html`
@@ -187,4 +234,19 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
       ${error ? html`<p class="error-text" role="alert">⚠ ${error}</p>` : null}
     </section>
   `;
+}
+
+/** Human-friendly "1m 23s" / "47s" / "2h" formatter for the ETA line.
+ *  Mirrors the one in Settings.js but lives here so this component is
+ *  self-contained. */
+function formatDuration(seconds) {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s ? `${m}m ${s}s` : `${m}m`;
+  }
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return m ? `${h}h ${m}m` : `${h}h`;
 }

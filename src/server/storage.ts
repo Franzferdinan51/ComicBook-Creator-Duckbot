@@ -105,6 +105,16 @@ export interface HistoryEntry {
   studioBundlePath?: string;
   scriptJson: ComicScript;  // the full script (so the frontend can re-render)
   thumbnailPath?: string;   // optional — reserved for future
+  /** Project goal at the time of generation — used for filtering in the
+   *  history view. Optional for legacy entries; defaults to "comic". */
+  projectGoal?: ProjectGoal;
+  /** User-applied tags. Free-form lowercase strings ("hero", "noir",
+   *  "draft-v2", "client-acme"). Empty array = no tags. */
+  tags?: string[];
+  /** Whether the user has starred this comic. */
+  favorite?: boolean;
+  /** ISO timestamp of the last edit (fav/tag toggle, etc). */
+  updatedAt?: string;
 }
 
 /** User-editable settings. */
@@ -298,6 +308,85 @@ export async function upsertHistoryEntry(entry: HistoryEntry): Promise<void> {
 export async function findHistoryEntry(jobId: string): Promise<HistoryEntry | undefined> {
   const list = await loadHistory();
   return list.find((e) => e.jobId === jobId);
+}
+
+export interface HistoryFilter {
+  /** Free-text search across title + tag list (case-insensitive substring). */
+  q?: string;
+  /** Filter by project goal. */
+  projectGoal?: ProjectGoal;
+  /** Filter by art style (case-insensitive). */
+  artStyle?: string;
+  /** If true, only return favorites. If false, exclude favorites. */
+  favorite?: boolean;
+  /** If non-empty, only return entries that contain ALL of these tags (AND). */
+  tags?: string[];
+  /** Max number of results to return (after filtering). */
+  limit?: number;
+}
+
+/** Apply an in-memory filter to the history list. The full list is small
+ *  (≤ 50 entries by MAX_HISTORY), so a linear scan is fine and avoids the
+ *  need for a separate index. */
+export function filterHistory(entries: HistoryEntry[], filter: HistoryFilter = {}): HistoryEntry[] {
+  let out = entries;
+  if (filter.q) {
+    const needle = filter.q.toLowerCase().trim();
+    if (needle) {
+      out = out.filter((e) => {
+        const titleHit = (e.title || '').toLowerCase().includes(needle);
+        const tagHit = (e.tags || []).some((t) => t.toLowerCase().includes(needle));
+        return titleHit || tagHit;
+      });
+    }
+  }
+  if (filter.projectGoal) {
+    out = out.filter((e) => (e.projectGoal || 'comic') === filter.projectGoal);
+  }
+  if (filter.artStyle) {
+    const needle = filter.artStyle.toLowerCase();
+    out = out.filter((e) => (e.artStyle || '').toLowerCase().includes(needle));
+  }
+  if (filter.favorite === true) {
+    out = out.filter((e) => e.favorite === true);
+  } else if (filter.favorite === false) {
+    out = out.filter((e) => e.favorite !== true);
+  }
+  if (filter.tags && filter.tags.length > 0) {
+    const wanted = new Set(filter.tags.map((t) => t.toLowerCase()));
+    out = out.filter((e) => {
+      const have = new Set((e.tags || []).map((t) => t.toLowerCase()));
+      for (const t of wanted) if (!have.has(t)) return false;
+      return true;
+    });
+  }
+  if (typeof filter.limit === 'number' && filter.limit > 0) {
+    out = out.slice(0, filter.limit);
+  }
+  return out;
+}
+
+/** Patch one history entry's user-applied metadata (tags, favorite, projectGoal).
+ *  Returns the updated entry, or undefined if not found. */
+export async function patchHistoryEntryMeta(
+  jobId: string,
+  patch: { favorite?: boolean; tags?: string[]; projectGoal?: ProjectGoal }
+): Promise<HistoryEntry | undefined> {
+  return withHistoryLock(async () => {
+    const list = await loadHistory();
+    const idx = list.findIndex((e) => e.jobId === jobId);
+    if (idx < 0) return undefined;
+    const next: HistoryEntry = {
+      ...list[idx],
+      ...(patch.favorite !== undefined ? { favorite: patch.favorite } : {}),
+      ...(patch.tags !== undefined ? { tags: patch.tags } : {}),
+      ...(patch.projectGoal !== undefined ? { projectGoal: patch.projectGoal } : {}),
+      updatedAt: new Date().toISOString(),
+    };
+    list[idx] = next;
+    await writeJsonAtomic(historyFile(), list);
+    return next;
+  });
 }
 
 // ---------------------------------------------------------------------------

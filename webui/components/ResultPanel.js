@@ -314,6 +314,20 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     }
   }
 
+  // Public share card URL — anyone with this link can read the comic's
+  // metadata, project bundles, and artifact links (no auth, but no
+  // secrets either). Useful for dropping in chat, docs, or static sites.
+  function copyShareLink() {
+    const url = `${window.location.origin}/api/share/${jobId}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+        .then(() => showToast('Share link copied!', 'success'))
+        .catch(() => showToast('Could not copy. Long-press the link.', 'error'));
+    } else {
+      showToast('Clipboard API not available in this browser.', 'error');
+    }
+  }
+
   // Filename slug mirroring the server's slugifyFilename() so the
   // downloaded ZIP / JSON matches the PDF name.
   function localSlug(raw) {
@@ -712,6 +726,10 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
 
         <button class="btn btn-ghost" type="button" onClick=${copyLink}>
           🔗 Copy link
+        </button>
+
+        <button class="btn btn-ghost" type="button" onClick=${copyShareLink} title="Copy a public share-card link (no auth, metadata only)">
+          🌐 Copy share link
         </button>
 
         ${onOpenMovie ? html`

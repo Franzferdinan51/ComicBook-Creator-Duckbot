@@ -42,6 +42,8 @@ import {
   loadSettings,
   saveSettings,
   findHistoryEntry,
+  filterHistory,
+  patchHistoryEntryMeta,
   type Settings,
 } from './storage.js';
 import {
@@ -74,7 +76,7 @@ import {
   getXAILoginProgress,
   type XAILoginProgress,
 } from './openclaw-auth.js';
-import type { ComicOptions, ComicResult } from '../types.js';
+import type { ComicOptions, ComicResult, ProjectGoal } from '../types.js';
 import { audioExtensionForPath, audioMimeTypeForPath, buildStudioBundle, runPreflight } from '../project/index.js';
 
 /** Names of the providers that the user can configure through the UI. */
@@ -852,6 +854,7 @@ export function buildRouter(): Router {
       status: JobStatus;
       createdAt: string;
       updatedAt: string;
+      startedAt: string | null;
       result?: ComicResult;
       error?: string;
       fromHistory?: boolean;
@@ -859,6 +862,11 @@ export function buildRouter(): Router {
       status: record.status,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
+      // `startedAt` is set by the worker when it actually picks the job
+      // up. It's null while the job is still queued, and undefined for
+      // history-only entries (which never re-ran). The WebUI uses it to
+      // compute an ETA from the live run duration.
+      startedAt: record.startedAt ?? null,
     };
     if (record.status === 'done' && record.result) body.result = record.result;
     if (record.status === 'error' && record.error) body.error = record.error;
@@ -1552,10 +1560,77 @@ export function buildRouter(): Router {
    * pageCount, outputPath, scriptJson }. The frontend should not assume
    * any particular order beyond "newest first".
    */
-  router.get('/history', async (_req: Request, res: Response) => {
+  router.get('/history', async (req: Request, res: Response) => {
     const list = await loadHistory();
     // Cap at 20 for the initial page load; history.json itself keeps 50.
-    res.json(list.slice(0, 20));
+    // The frontend can pass ?limit=N up to 50 to widen the page, or use
+    // ?q=foo&projectGoal=screen&favorite=true&tags=noir,draft to filter.
+    const rawLimit = Number.parseInt(String(req.query.limit ?? ''), 10);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 20;
+    const filter = {
+      q: typeof req.query.q === 'string' ? req.query.q : undefined,
+      projectGoal: (['comic', 'screen', 'music', 'studio'] as const).find(
+        (g) => g === req.query.projectGoal
+      ),
+      artStyle: typeof req.query.artStyle === 'string' ? req.query.artStyle : undefined,
+      favorite: req.query.favorite === 'true' ? true : req.query.favorite === 'false' ? false : undefined,
+      tags: typeof req.query.tags === 'string' && req.query.tags.length > 0
+        ? req.query.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        : undefined,
+      limit,
+    };
+    const filtered = filterHistory(list, filter);
+    res.json(filtered);
+  });
+
+  /**
+   * PATCH /api/history/:jobId
+   * body: { favorite?: boolean, tags?: string[], projectGoal?: ProjectGoal }
+   * → updated entry, or 404 if not found.
+   *
+   * Lets the user star a comic, add/remove free-form tags, or override the
+   * project goal. Tags are lowercased and de-duplicated on save.
+   */
+  router.patch('/history/:jobId', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    const body = (req.body ?? {}) as {
+      favorite?: boolean;
+      tags?: string[];
+      projectGoal?: string;
+    };
+    const patch: { favorite?: boolean; tags?: string[]; projectGoal?: ProjectGoal } = {};
+    if (typeof body.favorite === 'boolean') patch.favorite = body.favorite;
+    if (Array.isArray(body.tags)) {
+      // Normalize: lowercase, trim, drop empty, dedupe, cap at 16.
+      const seen = new Set<string>();
+      const cleaned: string[] = [];
+      for (const raw of body.tags) {
+        if (typeof raw !== 'string') continue;
+        const t = raw.trim().toLowerCase();
+        if (!t) continue;
+        if (seen.has(t)) continue;
+        seen.add(t);
+        cleaned.push(t);
+        if (cleaned.length >= 16) break;
+      }
+      patch.tags = cleaned;
+    }
+    if (
+      body.projectGoal === 'comic' ||
+      body.projectGoal === 'screen' ||
+      body.projectGoal === 'music' ||
+      body.projectGoal === 'studio'
+    ) {
+      patch.projectGoal = body.projectGoal;
+    }
+    if (Object.keys(patch).length === 0) {
+      return res.status(400).json({ error: 'no updatable fields supplied' });
+    }
+    const next = await patchHistoryEntryMeta(jobId, patch);
+    if (!next) {
+      return res.status(404).json({ error: `history entry ${jobId} not found` });
+    }
+    res.json(next);
   });
 
   /**
@@ -1572,6 +1647,86 @@ export function buildRouter(): Router {
       return res.status(404).json({ error: `history entry ${jobId} not found` });
     }
     res.status(204).end();
+  });
+
+  /**
+   * GET /api/share/:jobId
+   * Public, read-only share link for a comic. Returns a slim "share card"
+   * with the title, art style, project goal, page count, panel count,
+   * output profile, and a few key artifact URLs. Intended for embedding
+   * in chat / docs / a static-site generator; the public shape has no
+   * secrets, no panel images, no generated text body, and no API keys.
+   *
+   * The endpoint does not require auth — the jobId is the implicit
+   * capability. If you want stronger guarantees, front the server with
+   * a reverse proxy that requires an auth header for /api/share/*.
+   */
+  router.get('/share/:jobId', async (req: Request<{ jobId: string }>, res: Response) => {
+    const jobId = req.params.jobId;
+    // Try the live job first so an in-flight regeneration is reflected.
+    const resolved = await jobs.resolve(jobId);
+    if (!resolved) {
+      return res.status(404).json({ error: `job ${jobId} not found` });
+    }
+    if (resolved.status !== 'done' || !resolved.result) {
+      return res
+        .status(409)
+        .json({ error: `job ${jobId} not done (status: ${resolved.status})` });
+    }
+    const r = resolved.result;
+    const panelCount = (r.script?.pages || []).reduce(
+      (acc, p) => acc + (p.panels?.length || 0), 0
+    );
+    const share = {
+      format: 'share-card' as const,
+      jobId: r.project?.id || jobId,
+      title: r.script?.title || 'Untitled',
+      artStyle: r.script?.artStyle || '—',
+      projectGoal: r.project?.projectGoal || 'comic',
+      outputProfile: r.project?.renderProfile?.outputProfile || 'comic-print',
+      pageCount: r.script?.pages?.length || 0,
+      panelCount,
+      preview: {
+        cover: r.coverImagePath ? `/api/comic/${jobId}/cover` : null,
+        pdf: r.pdfPath ? `/api/comic/${jobId}/pdf` : null,
+        cbz: r.cbzPath ? `/api/comic/${jobId}/cbz` : null,
+      },
+      artifacts: {
+        studioBundle: r.studioBundlePath ? `/api/comic/${jobId}/studio-bundle` : null,
+        project: r.projectPath ? `/api/comic/${jobId}/project` : null,
+        screenplay: r.screenplayPath ? `/api/comic/${jobId}/screenplay` : null,
+        directorBrief: r.directorBriefPath ? `/api/comic/${jobId}/director-brief` : null,
+        storyboardPackage: r.storyboardPackagePath ? `/api/comic/${jobId}/storyboard-package` : null,
+        videoPackage: r.videoPackagePath ? `/api/comic/${jobId}/video-package` : null,
+        trailerPackage: r.trailerPackagePath ? `/api/comic/${jobId}/trailer-package` : null,
+        seriesPackage: r.seriesPackagePath ? `/api/comic/${jobId}/series-package` : null,
+        musicCuePackage: r.musicCuePackagePath ? `/api/comic/${jobId}/music-cue-package` : null,
+        songSheet: r.songSheetPath ? `/api/comic/${jobId}/song-sheet` : null,
+        themeAudio: r.songAudioPath ? `/api/comic/${jobId}/theme-audio` : null,
+        agentGuidance: r.agentGuidancePath ? `/api/comic/${jobId}/agent-guidance` : null,
+        agentWorkflowPackage: r.agentWorkflowPackagePath
+          ? `/api/comic/${jobId}/agent-workflow-package`
+          : null,
+        productionRunManifest: r.productionRunManifestPath
+          ? `/api/comic/${jobId}/production-run-manifest`
+          : null,
+      },
+      storyBible: {
+        premise: r.storyBible?.premise || '',
+        synopsis: r.storyBible?.synopsis || '',
+        chapterCount: r.storyBible?.chapterOutline?.length || 0,
+      },
+      media: {
+        musicProvider: r.musicProvider || 'mock',
+      },
+      shareLinks: {
+        view: `/`,
+        api: `/api/comic/${jobId}`,
+        raw: `/api/share/${jobId}`,
+      },
+    };
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.json(share);
   });
 
   return router;

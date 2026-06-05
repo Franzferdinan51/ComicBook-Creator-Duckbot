@@ -23,17 +23,65 @@ export function History({ onOpen }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openingId, setOpeningId] = useState(null);
+  // Search/filter state — debounced when typing in the search box.
+  const [query, setQuery] = useState('');
+  const [projectGoal, setProjectGoal] = useState('');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [editingTags, setEditingTags] = useState(null); // jobId whose tags row is open
+  const [tagInput, setTagInput] = useState('');
 
   function load() {
     setLoading(true);
     setError(null);
-    api('/api/history')
+    const params = new URLSearchParams();
+    if (query.trim()) params.set('q', query.trim());
+    if (projectGoal) params.set('projectGoal', projectGoal);
+    if (favoritesOnly) params.set('favorite', 'true');
+    params.set('limit', '50');
+    const url = `/api/history${params.toString() ? `?${params.toString()}` : ''}`;
+    api(url)
       .then((entries) => setHistory(entries || []))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => { load(); }, []);
+  // Reload on filter changes. `query` is debounced by the input handler below.
+  useEffect(() => { load(); }, [projectGoal, favoritesOnly]);
+  // Re-run on query change (already debounced via the input's onChange).
+  useEffect(() => { load(); }, [query]);
+
+  async function toggleFavorite(entry) {
+    try {
+      const updated = await api(`/api/history/${entry.jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ favorite: !entry.favorite }),
+      });
+      setHistory((rows) => rows.map((r) => (r.jobId === entry.jobId ? { ...r, ...updated } : r)));
+    } catch (err) {
+      showToast(`Couldn't update favorite: ${err.message}`, 'error');
+    }
+  }
+
+  async function saveTags(entry, rawList) {
+    const tags = rawList
+      .split(',')
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    try {
+      const updated = await api(`/api/history/${entry.jobId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags }),
+      });
+      setHistory((rows) => rows.map((r) => (r.jobId === entry.jobId ? { ...r, ...updated } : r)));
+      setEditingTags(null);
+      setTagInput('');
+      showToast('Tags saved.', 'success');
+    } catch (err) {
+      showToast(`Couldn't save tags: ${err.message}`, 'error');
+    }
+  }
 
   async function handleOpen(entry) {
     setOpeningId(entry.jobId);
@@ -312,7 +360,52 @@ export function History({ onOpen }) {
         <span class="muted small">${history.length} comic${history.length === 1 ? '' : 's'}</span>
       </header>
 
-      ${history.length === 0 ? html`
+      <div class="history-filters" role="search">
+        <input
+          id="history-search"
+          type="search"
+          class="history-search"
+          placeholder="Search title or tag…"
+          value=${query}
+          onInput=${(e) => setQuery(e.target.value)}
+          aria-label="Search history by title or tag"
+        />
+        <select
+          id="history-goal-filter"
+          class="history-goal-filter"
+          value=${projectGoal}
+          onChange=${(e) => setProjectGoal(e.target.value)}
+          aria-label="Filter by project goal"
+        >
+          <option value="">All goals</option>
+          <option value="comic">Comic</option>
+          <option value="screen">Screen / Show</option>
+          <option value="music">Music-first</option>
+          <option value="studio">Studio balance</option>
+        </select>
+        <label class="history-fav-toggle" title="Show only starred comics">
+          <input
+            type="checkbox"
+            checked=${favoritesOnly}
+            onChange=${(e) => setFavoritesOnly(e.target.checked)}
+          />
+          <span>★ Favorites only</span>
+        </label>
+        ${(query || projectGoal || favoritesOnly) ? html`
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            onClick=${() => { setQuery(''); setProjectGoal(''); setFavoritesOnly(false); }}
+          >Clear filters</button>
+        ` : null}
+      </div>
+
+      ${history.length === 0 && (query || projectGoal || favoritesOnly) ? html`
+        <div class="empty-state">
+          <h3>No matches</h3>
+          <p>No comics match your current filters. Try clearing them.</p>
+        </div>
+      ` : history.length === 0 ? html`
         <div class="empty-state">
           <h3>No comics yet 🎨</h3>
           <p>Make your first comic — it will appear here automatically.</p>
@@ -352,7 +445,63 @@ export function History({ onOpen }) {
                   <span>${entry.pageCount || '?'}p</span>
                   <span>${formatDate(entry.createdAt)}</span>
                 </div>
+                ${(entry.tags && entry.tags.length > 0) || editingTags === entry.jobId ? html`
+                  <div class="history-tags">
+                    ${(entry.tags || []).map((tag) => html`
+                      <span key=${tag} class="history-tag">#${tag}</span>
+                    `)}
+                    ${editingTags === entry.jobId ? html`
+                      <input
+                        type="text"
+                        class="history-tag-input"
+                        placeholder="comma,separated,tags"
+                        value=${tagInput}
+                        onInput=${(e) => setTagInput(e.target.value)}
+                        onKeyDown=${(e) => {
+                          if (e.key === 'Enter') { e.preventDefault(); saveTags(entry, tagInput); }
+                          if (e.key === 'Escape') { setEditingTags(null); setTagInput(''); }
+                        }}
+                        autofocus
+                      />
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm"
+                        onClick=${(e) => { e.stopPropagation(); saveTags(entry, tagInput); }}
+                      >Save</button>
+                    ` : html`
+                      <button
+                        type="button"
+                        class="history-tag-edit"
+                        onClick=${(e) => {
+                          e.stopPropagation();
+                          setEditingTags(entry.jobId);
+                          setTagInput((entry.tags || []).join(', '));
+                        }}
+                        title="Edit tags"
+                      >+ tag</button>
+                    `}
+                  </div>
+                ` : html`
+                  <button
+                    type="button"
+                    class="history-tag-add"
+                    onClick=${(e) => {
+                      e.stopPropagation();
+                      setEditingTags(entry.jobId);
+                      setTagInput('');
+                    }}
+                    title="Add tags"
+                  >+ tag</button>
+                `}
               </div>
+              <button
+                type="button"
+                class=${'history-fav' + (entry.favorite ? ' is-fav' : '')}
+                onClick=${(e) => { e.stopPropagation(); toggleFavorite(entry); }}
+                title=${entry.favorite ? 'Unstar' : 'Star this comic'}
+                aria-label=${entry.favorite ? 'Unstar comic' : 'Star comic'}
+                aria-pressed=${entry.favorite ? 'true' : 'false'}
+              >${entry.favorite ? '★' : '☆'}</button>
               <div class="history-actions">
                 <button
                   type="button"

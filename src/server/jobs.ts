@@ -29,6 +29,9 @@ export interface JobRecord {
   status: JobStatus;
   createdAt: string;
   updatedAt: string;
+  /** Wall-clock time the worker actually started running. Null while
+   *  pending (between createAndStart and the worker picking the job up). */
+  startedAt: string | null;
   /** Set when status === 'done'. */
   result?: ComicResult;
   /** Set when status === 'error'. */
@@ -64,6 +67,10 @@ export interface ResolvedJob {
   status: JobStatus;
   createdAt: string;
   updatedAt: string;
+  /** Wall-clock time the worker actually started running. Null while
+   *  pending (between createAndStart and the worker picking the job up).
+   *  Always null for history-only entries. */
+  startedAt: string | null;
   result: ComicResult;
   error?: string;
   /** True if this was synthesized from on-disk history. The
@@ -89,6 +96,11 @@ class JobManager {
       status: 'pending',
       createdAt: now,
       updatedAt: now,
+      // Wall-clock start time of the actual work — used by the WebUI to
+      // compute an ETA. We don't set this until the worker actually
+      // picks the job up, so a slow upstream queue doesn't burn the
+      // estimate while we wait.
+      startedAt: null,
       abortController: new AbortController(),
     };
     this.jobs.set(jobId, record);
@@ -138,6 +150,7 @@ class JobManager {
         status: live.status,
         createdAt: live.createdAt,
         updatedAt: live.updatedAt,
+        startedAt: live.startedAt,
         result: live.result as ComicResult,
         error: live.error,
         fromHistory: false,
@@ -420,6 +433,9 @@ class JobManager {
       status: 'done',
       createdAt: entry.createdAt,
       updatedAt: entry.createdAt,
+      // No real "start" time for history entries — null so the WebUI
+      // falls back to "started 1m ago" rather than a fake timestamp.
+      startedAt: null,
       result,
       fromHistory: true,
     };
@@ -450,6 +466,10 @@ class JobManager {
   /** Internal: actually run createComic and update the record. */
   private async run(record: JobRecord): Promise<void> {
     try {
+      // Stamp the wall-clock start time so the WebUI can compute an ETA
+      // from the actual run duration, not the time spent waiting in queue.
+      record.startedAt = new Date().toISOString();
+      record.updatedAt = record.startedAt;
       const { createComic } = await import('../index.js');
       const result = await createComic(record.story, record.options ?? {});
       record.result = result;
