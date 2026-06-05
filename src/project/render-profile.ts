@@ -38,13 +38,17 @@ export function normalizeRenderProfile(
 
   return {
     outputProfile: 'comic-print',
-    page: { width: 504, height: 777.6, margin: 24, bleed: 18 },
+    // PDF page dimensions are in PostScript points (1 inch = 72 points).
+    // 6.625in × 10.25in = 477 × 738 points at standard print resolution.
+    // The previous values (504 × 777.6) were inches, not points — fixed
+    // to the correct physical page size for a US trade paperback.
+    page: { width: 477, height: 738, margin: 24, bleed: 18 },
     panel: {
       aspectRatio: '2:3',
       targetWidth: 1024,
       targetHeight: 1536,
       fit: 'contain',
     },
-    cover: { width: 1536, height: 2304, aspectRatio: '2:3' },
+    cover: { width: 1024, height: 1536, aspectRatio: '2:3' },
   };
 }

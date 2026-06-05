@@ -6,8 +6,10 @@ const portrait = normalizeRenderProfile({
   pageCount: 4,
   panelsPerPage: 4,
 });
-assert.equal(portrait.page.width, 504);
-assert.equal(portrait.page.height, 777.6);
+// PDF page dimensions are in PostScript points (1 inch = 72 points).
+// 6.625in × 10.25in = 477 × 738 points for a US trade paperback.
+assert.equal(portrait.page.width, 477);
+assert.equal(portrait.page.height, 738);
 assert.equal(portrait.panel.aspectRatio, '2:3');
 
 const widescreen = normalizeRenderProfile({
