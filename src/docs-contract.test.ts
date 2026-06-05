@@ -5,6 +5,7 @@ const pkg = JSON.parse(await readFile('package.json', 'utf8')) as {
   scripts?: Record<string, string>;
 };
 const readme = await readFile('README.md', 'utf8');
+const startCommand = await readFile('start.command', 'utf8');
 const debugHtml = await readFile('webui/__test__.html', 'utf8');
 const appJs = await readFile('webui/app.js', 'utf8');
 const generateButton = await readFile('webui/components/GenerateButton.js', 'utf8');
@@ -20,6 +21,8 @@ const playbook = await readFile('docs/agents/hermes-openclaw-playbook.md', 'utf8
 const mcpServer = await readFile('src/mcp/server.ts', 'utf8');
 
 assert.equal(pkg.scripts?.start, 'tsx src/server/index.ts');
+assert.equal(startCommand.includes('npm start'), true);
+assert.equal(startCommand.includes('dist/server/index.js'), false);
 assert.equal(readme.includes('| `projectPath` |'), true);
 assert.equal(readme.includes('| `agentPlaybookPath` |'), true);
 assert.equal(readme.includes('| `agentWorkflowPackagePath` |'), true);
@@ -121,6 +124,8 @@ assert.equal(moviePanel.includes('Agent deliverables'), true);
 assert.equal(moviePanel.includes('result-tabs movie-tabs'), true);
 assert.equal(moviePanel.includes('Download playbook'), true);
 assert.equal(appJs.includes('Movie / Show'), true);
+assert.equal(appJs.includes('Comic Studio'), true);
+assert.equal(appJs.includes('Comic Reader'), true);
 assert.equal(optionsPanel.includes('Project goal'), true);
 assert.equal(optionsPanel.includes('project-goal'), true);
 assert.equal(optionsPanel.includes('Screen projects default to the storyboard widescreen profile'), true);
@@ -140,6 +145,12 @@ assert.equal(resultPanel.includes('Download video package'), true);
 assert.equal(resultPanel.includes('Open movie board'), true);
 assert.equal(resultPanel.includes('Goal: '), true);
 assert.equal(resultPanel.includes('Project Assets'), true);
+assert.equal(resultPanel.includes('Comic Reader'), true);
+assert.equal(resultPanel.includes('Panel pages'), true);
+assert.equal(resultPanel.includes('PDF preview'), true);
+assert.equal(resultPanel.includes('scrollIntoView'), true);
+assert.equal(readme.includes('Comic Reader with a panel-page view'), true);
+assert.equal(readme.includes('Refreshed studio theme'), true);
 assert.equal(cliSource.includes('--project-goal=<name>'), true);
 assert.equal(cliSource.includes('renderProfile: project.renderProfile'), true);
 assert.equal(mcpServer.includes("projectGoal: z"), true);

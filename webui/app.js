@@ -120,14 +120,20 @@ function App() {
   return html`
     <div class="app-root">
       <header class="app-header" role="banner">
-        <h1 class="brand">🎨 Comic Creator</h1>
+        <h1 class="brand">
+          <span class="brand-mark">CS</span>
+          <span>
+            Comic Studio
+            <small>comics · movie · music</small>
+          </span>
+        </h1>
         <nav class="header-nav" aria-label="Primary">
           <button
             type="button"
             class=${page === 'home' ? 'active' : ''}
             onClick=${() => handleNav('home')}
             aria-current=${page === 'home' ? 'page' : undefined}
-          >Create</button>
+          >${result ? 'Comic Reader' : 'Create'}</button>
           <button
             type="button"
             class=${page === 'history' ? 'active' : ''}

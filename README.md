@@ -6,7 +6,7 @@ Take a story → get a comic PDF, a screen-adaptation outline, a music-brief pac
 
 ## Getting started
 
-**Double-click `start.command`** in this folder — opens the WebUI at `http://localhost:3008` with no terminal needed.
+**Double-click `start.command`** in this folder — opens the live source WebUI at `http://localhost:3008` with no terminal needed.
 
 Or from the terminal:
 
@@ -128,9 +128,11 @@ open start.command
 The WebUI gives you:
 - Story input + style/format/provider options
 - Project goal preset for comic / screen / music / studio workflows
+- Comic Reader with a panel-page view that still works if the PDF preview cannot load
 - Movie / Show tab with pitch, trailer, story, series, script, shots, previs, timeline, music, agents, and deliverables tabs
 - Live job status and progress
 - PDF preview with page navigation and thumbnails
+- Refreshed studio theme with clearer workspace navigation
 - Download as PDF or CBZ, or grab all panel images as a ZIP
 - Cover image preview + download
 - Story Bible, Adaptation Package, and Music Cue Package download cards

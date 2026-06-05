@@ -35,24 +35,15 @@ if [ ! -d "node_modules" ]; then
   fi
 fi
 
-# Compile TypeScript if dist/ is missing or stale
-if [ ! -f "dist/server/index.js" ]; then
-  echo "Compiling TypeScript…"
-  node_modules/.bin/tsc --project tsconfig.json
-  if [ $? -ne 0 ]; then
-    echo "Error: TypeScript compilation failed."
-    read -p "Press Enter to exit…"
-    exit 1
-  fi
-fi
-
-# Start the server (use compiled output for compatibility)
+# Start the source server so the no-build WebUI always reflects this checkout.
+PORT="${COMIC_WEBUI_PORT:-3008}"
 echo ""
 echo "🚀 Starting Comic Studio…"
-echo "   Opening http://localhost:3008"
+echo "   Opening http://localhost:${PORT}"
 echo "   Press Ctrl+C to stop"
 echo ""
-node dist/server/index.js
+(sleep 1; open "http://localhost:${PORT}") &
+npm start
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then

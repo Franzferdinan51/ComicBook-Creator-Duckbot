@@ -160,6 +160,8 @@ function crc32(buf) {
 
 export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie }) {
   const [page, setPage] = useState(1);
+  const [readerPage, setReaderPage] = useState(1);
+  const [readerMode, setReaderMode] = useState('pages');
   const [totalPages, setTotalPages] = useState(0);
   const [pdfError, setPdfError] = useState(null);
   const [thumbs, setThumbs] = useState([]); // array of { dataUrl, page }
@@ -175,11 +177,23 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
   // in-memory job, then the history-fallback fix kicked in and the
   // same jobId is now retrievable again.
   const [reloadKey, setReloadKey] = useState(0);
+  const panelRef = useRef(null);
   const canvasRef = useRef(null);
+
+  useEffect(() => {
+    setPage(1);
+    setReaderPage(1);
+    setReaderMode('pages');
+  }, [jobId]);
+
+  useEffect(() => {
+    if (!result || !panelRef.current) return;
+    panelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [result, jobId]);
 
   // Render the currently-selected page into the main canvas.
   useEffect(() => {
-    if (!result || !jobId) return;
+    if (!result || !jobId || readerMode !== 'pdf') return;
     let cancelled = false;
     let doc;
 
@@ -214,7 +228,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, jobId, reloadKey]);
+  }, [result, jobId, reloadKey, readerMode]);
 
   // Add keyboard nav for pages once totalPages is known.
   useEffect(() => {
@@ -227,7 +241,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     return () => window.removeEventListener('keydown', onKey);
   }, [totalPages]);
   useEffect(() => {
-    if (!result || !jobId || totalPages === 0) return;
+    if (!result || !jobId || totalPages === 0 || readerMode !== 'pdf') return;
     let cancelled = false;
     (async () => {
       try {
@@ -243,7 +257,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, readerMode]);
 
   async function renderPage(doc, num) {
     const canvas = canvasRef.current;
@@ -591,6 +605,18 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
   const panelCount = (result.script?.pages || []).reduce(
     (acc, p) => acc + (p.panels?.length || 0), 0
   );
+  const readerPages = (result.script?.pages || []).map((p) => ({
+    pageNumber: p.pageNumber,
+    layout: p.layout,
+    panels: (p.panels || []).map((panel, index) => ({
+      ...panel,
+      panelIndex: index,
+      imageUrl: jobId ? `/api/comic/${jobId}/images/${encodeURIComponent(panel.id)}` : null,
+    })),
+  }));
+  const currentReaderPage = readerPages[
+    Math.min(Math.max(readerPage - 1, 0), Math.max(readerPages.length - 1, 0))
+  ];
 
   // Format availability — the server pre-renders BOTH formats at job
   // completion time, so both should normally be available. The fields
@@ -604,7 +630,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
   const titleSlug = localSlug(title);
 
   return html`
-    <section class="panel result-panel" aria-labelledby="result-title">
+    <section class="panel result-panel" aria-labelledby="result-title" ref=${panelRef}>
       <header class="panel-title">
         <h2 id="result-title">✅ ${title}</h2>
         ${onClose ? html`
@@ -696,32 +722,6 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
         ` : null}
       </div>
 
-      ${pdfError ? html`
-        <div class="error-state" role="alert">
-          <p>Could not render PDF preview: <code>${pdfError}</code></p>
-          <p>
-            You can still download the file below. If the server was
-            just restarted, the preview may need a moment — try again.
-          </p>
-          <div class="error-state-actions">
-            <button
-              type="button"
-              class="btn btn-ghost"
-              onClick=${() => setReloadKey((k) => k + 1)}
-              title="Re-fetch the PDF and re-parse the preview"
-            >
-              ↻ Try preview again
-            </button>
-            <a
-              class="btn btn-ghost"
-              href=${`/api/comic/${jobId}/pdf`}
-              target="_blank"
-              rel="noopener"
-            >Open PDF in a new tab</a>
-          </div>
-        </div>
-      ` : null}
-
       ${result.coverImagePath ? html`
         <div class="cover-preview-wrap">
           <p class="cover-preview-label">Cover / Title Page</p>
@@ -742,6 +742,150 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
           </div>
         </div>
       ` : null}
+
+      <div class="reader-shell">
+        <div class="reader-toolbar">
+          <div>
+            <p class="reader-eyebrow">Comic Reader</p>
+            <h3>Read the generated comic pages</h3>
+          </div>
+          <div class="reader-mode-tabs" role="tablist" aria-label="Comic preview mode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected=${readerMode === 'pages'}
+              class=${'reader-mode-tab' + (readerMode === 'pages' ? ' active' : '')}
+              onClick=${() => setReaderMode('pages')}
+            >Panel pages</button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected=${readerMode === 'pdf'}
+              class=${'reader-mode-tab' + (readerMode === 'pdf' ? ' active' : '')}
+              onClick=${() => setReaderMode('pdf')}
+            >PDF preview</button>
+          </div>
+        </div>
+
+        ${readerMode === 'pages' ? html`
+          ${currentReaderPage ? html`
+            <div class=${'comic-page-reader layout-' + currentReaderPage.layout}>
+              <div class="comic-page-reader-head">
+                <span>Page ${currentReaderPage.pageNumber} of ${readerPages.length}</span>
+                <span>${currentReaderPage.layout || 'comic layout'}</span>
+              </div>
+              <div class="comic-panel-grid">
+                ${currentReaderPage.panels.map((panel) => html`
+                  <article class="comic-panel-frame" key=${panel.id}>
+                    ${panel.imageUrl ? html`
+                      <a href=${panel.imageUrl} target="_blank" rel="noopener" title=${panel.description || panel.id}>
+                        <img src=${panel.imageUrl} alt=${panel.description || `Panel ${panel.panelIndex + 1}`} loading="lazy" />
+                      </a>
+                    ` : null}
+                    <div class="comic-panel-caption">
+                      <strong>${panel.id}</strong>
+                      ${panel.caption ? html`<span>${panel.caption}</span>` : null}
+                      ${panel.dialogue?.length ? html`<span>${panel.dialogue.join(' / ')}</span>` : null}
+                    </div>
+                  </article>
+                `)}
+              </div>
+              ${readerPages.length > 1 ? html`
+                <div class="page-nav reader-page-nav">
+                  <button
+                    type="button"
+                    class="btn-ghost"
+                    disabled=${readerPage <= 1}
+                    onClick=${() => setReaderPage((p) => Math.max(1, p - 1))}
+                    aria-label="Previous comic page"
+                  >‹ Prev</button>
+                  <span>Page ${readerPage} of ${readerPages.length}</span>
+                  <button
+                    type="button"
+                    class="btn-ghost"
+                    disabled=${readerPage >= readerPages.length}
+                    onClick=${() => setReaderPage((p) => Math.min(readerPages.length, p + 1))}
+                    aria-label="Next comic page"
+                  >Next ›</button>
+                </div>
+              ` : null}
+            </div>
+          ` : html`
+            <div class="empty-state reader-empty">
+              <h3>No comic page data found</h3>
+              <p>The PDF and downloads may still be available, but the script did not include readable page data.</p>
+            </div>
+          `}
+        ` : null}
+
+        ${readerMode === 'pdf' ? html`
+          ${pdfError ? html`
+            <div class="error-state" role="alert">
+              <p>Could not render PDF preview: <code>${pdfError}</code></p>
+              <p>The panel-page reader does not need pdf.js and remains available for viewing the comic.</p>
+              <div class="error-state-actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost"
+                  onClick=${() => setReloadKey((k) => k + 1)}
+                  title="Re-fetch the PDF and re-parse the preview"
+                >
+                  ↻ Try preview again
+                </button>
+                <a
+                  class="btn btn-ghost"
+                  href=${`/api/comic/${jobId}/pdf`}
+                  target="_blank"
+                  rel="noopener"
+                >Open PDF in a new tab</a>
+              </div>
+            </div>
+          ` : null}
+
+          <div class="pdf-viewer">
+            <div class="pdf-canvas-wrap">
+              <canvas ref=${canvasRef} aria-label="Comic page preview"></canvas>
+            </div>
+            ${totalPages > 1 ? html`
+              <div class="page-nav">
+                <button
+                  type="button"
+                  class="btn-ghost"
+                  disabled=${page <= 1}
+                  onClick=${() => setPage((p) => Math.max(1, p - 1))}
+                  aria-label="Previous page"
+                >‹ Prev</button>
+                <span>Page ${page} of ${totalPages}</span>
+                <button
+                  type="button"
+                  class="btn-ghost"
+                  disabled=${page >= totalPages}
+                  onClick=${() => setPage((p) => Math.min(totalPages, p + 1))}
+                  aria-label="Next page"
+                >Next ›</button>
+              </div>
+            ` : null}
+          </div>
+
+          ${thumbs.length > 1 ? html`
+            <div class="thumb-strip" role="tablist" aria-label="Page thumbnails">
+              ${thumbs.map((t) => html`
+                <button
+                  key=${t.page}
+                  type="button"
+                  class=${'thumb-btn' + (t.page === page ? ' active' : '')}
+                  onClick=${() => setPage(t.page)}
+                  role="tab"
+                  aria-selected=${t.page === page}
+                  aria-label=${`Go to page ${t.page}`}
+                >
+                  <img src=${t.dataUrl} alt=${`Page ${t.page} thumbnail`} class="thumb" />
+                </button>
+              `)}
+            </div>
+          ` : null}
+        ` : null}
+      </div>
 
       <div class="artifact-grid">
         <section class="panel artifact-panel">
@@ -836,49 +980,6 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
           </button>
         </section>
       </div>
-
-      <div class="pdf-viewer">
-        <div class="pdf-canvas-wrap">
-          <canvas ref=${canvasRef} aria-label="Comic page preview"></canvas>
-        </div>
-        ${totalPages > 1 ? html`
-          <div class="page-nav">
-            <button
-              type="button"
-              class="btn-ghost"
-              disabled=${page <= 1}
-              onClick=${() => setPage((p) => Math.max(1, p - 1))}
-              aria-label="Previous page"
-            >‹ Prev</button>
-            <span>Page ${page} of ${totalPages}</span>
-            <button
-              type="button"
-              class="btn-ghost"
-              disabled=${page >= totalPages}
-              onClick=${() => setPage((p) => Math.min(totalPages, p + 1))}
-              aria-label="Next page"
-            >Next ›</button>
-          </div>
-        ` : null}
-      </div>
-
-      ${thumbs.length > 1 ? html`
-        <div class="thumb-strip" role="tablist" aria-label="Page thumbnails">
-          ${thumbs.map((t) => html`
-            <button
-              key=${t.page}
-              type="button"
-              class=${'thumb-btn' + (t.page === page ? ' active' : '')}
-              onClick=${() => setPage(t.page)}
-              role="tab"
-              aria-selected=${t.page === page}
-              aria-label=${`Go to page ${t.page}`}
-            >
-              <img src=${t.dataUrl} alt=${`Page ${t.page} thumbnail`} class="thumb" />
-            </button>
-          `)}
-        </div>
-      ` : null}
 
       <div class="result-actions" role="group" aria-label="More actions">
         <button
