@@ -58,6 +58,8 @@ assert.equal(readme.includes('save a default project goal'), true);
 assert.equal(readme.includes('When `screen` is selected'), true);
 assert.equal(readme.includes('unified studio bundle'), true);
 assert.equal(readme.includes('External agents should start from the studio bundle first'), true);
+assert.equal(readme.includes('MCP provider fields are registry-based, not hard-coded'), true);
+assert.equal(readme.includes('WebUI-created custom OpenAI-compatible providers'), true);
 assert.equal(readme.includes('get_music_cue_package'), true);
 assert.equal(readme.includes('get_screenplay'), true);
 assert.equal(readme.includes('get_director_brief'), true);

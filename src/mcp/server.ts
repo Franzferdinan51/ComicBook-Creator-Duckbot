@@ -36,9 +36,9 @@ import {
   saveSettings,
 } from '../server/storage.js';
 import {
-  listTextProviders,
-  listImageProviders,
-  listMusicProviders,
+  allTextProviderNames,
+  allImageProviderNames,
+  allMusicProviderNames,
   getProviderConfig,
   isProviderConfigured,
 } from '../providers/index.js';
@@ -82,6 +82,29 @@ function describeProvider(name: string) {
   };
 }
 
+const providerNameSchema = z
+  .string()
+  .min(1)
+  .max(80)
+  .regex(/^[a-zA-Z0-9._:-]+$/, 'provider names may only include letters, numbers, dot, underscore, colon, or dash');
+
+function validateMcpOptions(options: Partial<ComicOptions> = {}): { ok: true; options: Partial<ComicOptions> } | { ok: false; error: string } {
+  const textNames = new Set(allTextProviderNames());
+  const imageNames = new Set(allImageProviderNames());
+  const musicNames = new Set(allMusicProviderNames());
+
+  if (options.textProvider != null && !textNames.has(options.textProvider)) {
+    return { ok: false, error: `textProvider "${options.textProvider}" is not a registered text provider. Available: ${[...textNames].join(', ')}` };
+  }
+  if (options.imageProvider != null && !imageNames.has(options.imageProvider)) {
+    return { ok: false, error: `imageProvider "${options.imageProvider}" is not a registered image provider. Available: ${[...imageNames].join(', ')}` };
+  }
+  if (options.musicProvider != null && !musicNames.has(options.musicProvider)) {
+    return { ok: false, error: `musicProvider "${options.musicProvider}" is not a registered music provider. Available: ${[...musicNames].join(', ')}` };
+  }
+  return { ok: true, options };
+}
+
 // ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
@@ -117,17 +140,20 @@ export function buildMcpServer(): McpServer {
         .object({
           artStyle: z.string().optional().describe('e.g. "manga", "noir", "watercolor". Default: "manga".'),
           imageProvider: z
-            .enum(['mock', 'openrouter', 'lmstudio', 'minimax'])
+            .string()
+            .pipe(providerNameSchema)
             .optional()
-            .describe('Image provider. Default: "mock".'),
+            .describe('Image provider. Use list_providers for registered built-in and custom names. Default: "mock".'),
           textProvider: z
-            .enum(['mock', 'openrouter', 'lmstudio', 'minimax'])
+            .string()
+            .pipe(providerNameSchema)
             .optional()
-            .describe('Text provider. Default: same as imageProvider.'),
+            .describe('Text provider. Use list_providers for registered built-in and custom names. Default: same as imageProvider.'),
           musicProvider: z
-            .enum(['mock', 'minimax'])
+            .string()
+            .pipe(providerNameSchema)
             .optional()
-            .describe('Music provider for the generated theme audio. Default: "mock".'),
+            .describe('Music provider for the generated theme audio. Use list_providers for registered names. Default: "mock".'),
           projectGoal: z
             .enum(['comic', 'screen', 'music', 'studio'])
             .optional()
@@ -151,10 +177,12 @@ export function buildMcpServer(): McpServer {
     },
     async ({ story, options }) => {
       try {
+        const validation = validateMcpOptions((options ?? {}) as Partial<ComicOptions>);
+        if (!validation.ok) return errResult(validation.error);
         const jobs = getJobManager();
         const record = jobs.createAndStart({
           story: story.trim(),
-          options: (options ?? {}) as ComicOptions,
+          options: validation.options as ComicOptions,
         });
         return jsonResult({ jobId: record.jobId });
       } catch (e) {
@@ -175,17 +203,20 @@ export function buildMcpServer(): McpServer {
         .object({
           artStyle: z.string().optional().describe('e.g. "manga", "noir", "watercolor".'),
           imageProvider: z
-            .enum(['mock', 'openrouter', 'lmstudio', 'minimax'])
+            .string()
+            .pipe(providerNameSchema)
             .optional()
-            .describe('Image provider override.'),
+            .describe('Image provider override. Use list_providers for registered built-in and custom names.'),
           textProvider: z
-            .enum(['mock', 'openrouter', 'lmstudio', 'minimax'])
+            .string()
+            .pipe(providerNameSchema)
             .optional()
-            .describe('Text provider override.'),
+            .describe('Text provider override. Use list_providers for registered built-in and custom names.'),
           musicProvider: z
-            .enum(['mock', 'minimax'])
+            .string()
+            .pipe(providerNameSchema)
             .optional()
-            .describe('Music provider override.'),
+            .describe('Music provider override. Use list_providers for registered names.'),
           projectGoal: z
             .enum(['comic', 'screen', 'music', 'studio'])
             .optional()
@@ -212,12 +243,11 @@ export function buildMcpServer(): McpServer {
         const jobs = getJobManager();
         const record = jobs.get(jobId);
         if (!record) return errResult(`job ${jobId} not found or not live`);
-        if (record.status !== 'pending') {
-          return errResult(`job ${jobId} is not pending (status: ${record.status})`);
-        }
+        const validation = validateMcpOptions((options ?? {}) as Partial<ComicOptions>);
+        if (!validation.ok) return errResult(validation.error);
         const next = jobs.createAndStart({
           story: record.story,
-          options: { ...record.options, ...(options ?? {}) },
+          options: { ...record.options, ...validation.options },
         });
         return jsonResult({ jobId: next.jobId });
       } catch (e) {
@@ -941,9 +971,9 @@ export function buildMcpServer(): McpServer {
     async () => {
       try {
         return jsonResult({
-          text: listTextProviders().map(describeProvider),
-          image: listImageProviders().map(describeProvider),
-          music: listMusicProviders().map(describeProvider),
+          text: allTextProviderNames().map(describeProvider),
+          image: allImageProviderNames().map(describeProvider),
+          music: allMusicProviderNames().map(describeProvider),
         });
       } catch (e) {
         return errResult(`list_providers failed: ${(e as Error).message}`);

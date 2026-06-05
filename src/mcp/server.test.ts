@@ -36,6 +36,35 @@ setStorageDir(storageDir);
 _resetJobManager();
 try {
   const mcpServer: any = buildMcpServer();
+  const createSchemaProbe = mcpServer._registeredTools.create_comic.inputSchema.safeParse({
+    story: 'Provider schema probe',
+    options: {
+      textProvider: 'xai',
+      imageProvider: 'gemini',
+      musicProvider: 'minimax',
+    },
+  });
+  assert.equal(createSchemaProbe.success, true);
+  const customSchemaProbe = mcpServer._registeredTools.create_comic.inputSchema.safeParse({
+    story: 'Custom provider schema probe',
+    options: {
+      textProvider: 'studio-custom-1',
+      imageProvider: 'studio.custom:vision',
+    },
+  });
+  assert.equal(customSchemaProbe.success, true);
+  const providersJson = await mcpServer._registeredTools.list_providers.handler({});
+  const providers = JSON.parse(providersJson.content[0].text);
+  assert.equal(providers.text.some((p: { name: string }) => p.name === 'xai'), true);
+  assert.equal(providers.text.some((p: { name: string }) => p.name === 'gemini'), true);
+  assert.equal(providers.image.some((p: { name: string }) => p.name === 'comfyui'), true);
+  assert.equal(providers.music.some((p: { name: string }) => p.name === 'minimax'), true);
+  const invalidProviderJson = await mcpServer._registeredTools.create_comic.handler({
+    story: 'Invalid provider should fail before creating a job.',
+    options: { textProvider: 'not-a-real-provider' },
+  });
+  assert.equal(invalidProviderJson.isError, true);
+  assert.equal(invalidProviderJson.content[0].text.includes('not a registered text provider'), true);
   const settingsJson = await mcpServer._registeredTools.get_settings.handler({});
   const settings = JSON.parse(settingsJson.content[0].text);
   assert.equal(settings.defaultProjectGoal, 'comic');
@@ -86,6 +115,25 @@ try {
   const videoPackage = JSON.parse(videoPackageJson.content[0].resource.text);
   assert.equal(videoPackage.format, 'video-generation-package');
   assert.equal(videoPackage.provider, 'minimax');
+  const regeneratedJson = await mcpServer._registeredTools.regenerate_comic.handler({
+    jobId: job.jobId,
+    options: {
+      imageProvider: 'mock',
+      textProvider: 'mock',
+      musicProvider: 'mock',
+      outputPath: join(storageDir, 'music-test-regenerated.pdf'),
+    },
+  });
+  const regenerated = JSON.parse(regeneratedJson.content[0].text);
+  assert.equal(typeof regenerated.jobId, 'string');
+  assert.notEqual(regenerated.jobId, job.jobId);
+  let regeneratedResolved: any;
+  for (let i = 0; i < 50; i++) {
+    regeneratedResolved = await getJobManager().resolve(regenerated.jobId);
+    if (regeneratedResolved?.status === 'done') break;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  assert.equal(regeneratedResolved?.status, 'done');
 } finally {
   await rm(storageDir, { recursive: true, force: true });
 }

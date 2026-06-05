@@ -181,6 +181,8 @@ comic-creator-mcp
 
 Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_history`, `get_settings`, `update_settings`.
 
+MCP provider fields are registry-based, not hard-coded. Agents should call `list_providers` first, then pass any registered text/image/music provider name into `create_comic` or `regenerate_comic`, including built-ins such as `xai`, `gemini`, `comfyui`, `minimax`, and WebUI-created custom OpenAI-compatible providers.
+
 The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from the studio bundle first, then open the specialized files as needed. The workflow package is the next best handoff when Hermes/OpenClaw needs a track-by-track execution plan across story, video, and music. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package to drive `mmx video` clip generation.
 
 ## Agent playbook
