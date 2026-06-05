@@ -1432,7 +1432,6 @@ button.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.1); }
 .history-thumb {
   width: 100%;
   height: 160px;
-  object-fit: cover;
   background: linear-gradient(135deg, var(--bg-2), var(--surface-2));
   display: flex;
   flex-direction: column;
@@ -1447,11 +1446,33 @@ button.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.1); }
   position: relative;
   overflow: hidden;
 }
+.history-cover-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.08) contrast(1.02);
+  transition: transform .35s ease;
+}
+.history-card:hover .history-cover-img {
+  transform: scale(1.04);
+}
+.history-thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.52)),
+    radial-gradient(circle at 50% 10%, rgba(255,255,255,.24), transparent 48%);
+}
 .history-thumb-label {
   font-size: 1rem;
   font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 4px rgba(0,0,0,.4);
+  position: relative;
+  z-index: 1;
 }
 .history-thumb-pages {
   font-size: .7rem;
@@ -1460,6 +1481,8 @@ button.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.1); }
   padding: .15rem .5rem;
   border-radius: 10px;
   color: rgba(255,255,255,.85);
+  position: relative;
+  z-index: 1;
 }
 .history-info { padding: .75rem; flex: 1; }
 .history-title {

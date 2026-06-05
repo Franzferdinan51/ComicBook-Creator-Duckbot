@@ -1476,7 +1476,7 @@ export function buildRouter(): Router {
     if (!resolved) {
       return res.status(404).json({ ok: false, error: `job ${jobId} not found` });
     }
-const record = jobs.get(jobId);
+    const record = jobs.get(jobId);
     if (record) {
       if (record.status === 'pending') {
         jobs.cancel(jobId);

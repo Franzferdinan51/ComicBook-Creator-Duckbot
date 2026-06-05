@@ -317,6 +317,14 @@ export function History({ onOpen }) {
                 class="history-thumb"
                 style=${{ background: thumbGradient(entry.artStyle) }}
               >
+                ${entry.coverImagePath ? html`
+                  <img
+                    class="history-cover-img"
+                    src=${`/api/comic/${entry.jobId}/cover`}
+                    alt=${`${entry.title || 'Comic'} cover`}
+                    loading="lazy"
+                  />
+                ` : null}
                 <span class="history-thumb-label">${entry.artStyle || '—'}</span>
                 <span class="history-thumb-pages">${entry.pageCount || '?'}p</span>
               </div>

@@ -34,18 +34,29 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | GET    | `/api/providers`                        | Text + image providers + status  |
 | GET    | `/api/settings`                         | Read user settings               |
 | PUT    | `/api/settings`                         | Update user settings (partial)   |
+| GET    | `/api/agent-playbook`                   | Stream the Hermes/OpenClaw playbook |
 | POST   | `/api/comic`                            | Kick off a new comic generation  |
 | GET    | `/api/comic/:jobId`                     | Poll job status                  |
 | GET    | `/api/comic/:jobId/pdf`                 | Stream the generated PDF         |
+| GET    | `/api/comic/:jobId/cbz`                 | Stream the generated CBZ         |
+| GET    | `/api/comic/:jobId/cover`               | Stream the generated cover image |
+| GET    | `/api/comic/:jobId/project`             | Stream the full project JSON     |
+| GET    | `/api/comic/:jobId/agent-guidance`      | Stream the agent guidance markdown |
 | GET    | `/api/comic/:jobId/agent-workflow-package` | Stream the Hermes/OpenClaw workflow JSON |
 | GET    | `/api/comic/:jobId/screenplay`          | Stream the screenplay markdown   |
 | GET    | `/api/comic/:jobId/director-brief`      | Stream the director brief markdown |
+| GET    | `/api/comic/:jobId/storyboard-package`  | Stream the storyboard JSON       |
 | GET    | `/api/comic/:jobId/music-cue-package`   | Stream the music cue JSON        |
+| GET    | `/api/comic/:jobId/song-sheet`          | Stream the theme song markdown   |
+| GET    | `/api/comic/:jobId/theme-audio`         | Stream the generated theme audio |
 | GET    | `/api/comic/:jobId/series-package`      | Stream the episodic series JSON  |
 | GET    | `/api/comic/:jobId/trailer-package`     | Stream the trailer / teaser JSON |
 | GET    | `/api/comic/:jobId/video-package`       | Stream the MiniMax-ready video JSON |
+| GET    | `/api/comic/:jobId/animatic-timeline`   | Stream the animatic timeline JSON |
+| GET    | `/api/comic/:jobId/studio-bundle`       | Stream the unified studio bundle |
 | GET    | `/api/comic/:jobId/images/:panelId`     | Stream a single panel PNG        |
 | POST   | `/api/comic/:jobId/regenerate`          | Re-run with new options          |
+| DELETE | `/api/comic/:jobId`                     | Cancel/remove an in-memory job   |
 | GET    | `/api/history`                          | List recent jobs                 |
 | DELETE | `/api/history/:jobId`                   | Remove a job from history        |
 
@@ -116,6 +127,19 @@ The `mock` provider is always available.
 **400** on invalid `defaultOutputFormat` (must be `"pdf"` or `"cbz"`) or
 `defaultPageCount` (must be integer 1-50), or `defaultProjectGoal` (must be
 `"comic"`, `"screen"`, `"music"`, or `"studio"`).
+
+---
+
+### `GET /api/agent-playbook`
+
+Streams the repository-level Hermes/OpenClaw playbook markdown used by external
+agents and operators.
+
+**Success response headers**
+- `Content-Type: text/markdown; charset=utf-8`
+- `Content-Disposition: attachment; filename="hermes-openclaw-playbook.md"`
+
+**404** if the playbook file is unavailable in the checkout.
 
 ---
 
@@ -214,6 +238,57 @@ The `mock` provider is always available.
 
 ---
 
+### `GET /api/comic/:jobId/cbz`
+
+Streams the generated CBZ archive for comic-reader apps.
+
+**Success response headers**
+- `Content-Type: application/vnd.comicbook+zip`
+- `Content-Disposition: attachment; filename="<title>.cbz"`
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+**410** if the archive is unavailable.
+
+---
+
+### `GET /api/comic/:jobId/cover`
+
+Streams the generated cover or title image. The History UI uses this endpoint
+for cover thumbnails.
+
+**Success response headers**
+- `Content-Type: image/png` or `image/jpeg`
+- `Cache-Control: public, max-age=86400`
+
+**404** if the job is unknown or no cover was generated.
+
+---
+
+### `GET /api/comic/:jobId/project`
+
+Streams the full project JSON. If the persisted project file is unavailable,
+the server falls back to the in-memory project object for completed jobs.
+
+**Success response headers**
+- `Content-Type: application/json; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-project.json"`
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+
+---
+
+### `GET /api/comic/:jobId/agent-guidance`
+
+Streams the generated Hermes/OpenClaw/external-agent markdown handoff.
+
+**Success response headers**
+- `Content-Type: text/markdown; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-agent-guidance.md"`
+
+**404** if the job is unknown or no agent guidance exists for that comic.
+
+---
+
 ### `GET /api/comic/:jobId/agent-workflow-package`
 
 **Response 200** — streams the Hermes/OpenClaw workflow package JSON.
@@ -250,6 +325,18 @@ Streams the generated director brief markdown handoff.
 - `Content-Disposition: attachment; filename="<jobId>-director-brief.md"`
 
 **404** if the job is unknown or no director brief exists for that comic.
+
+---
+
+### `GET /api/comic/:jobId/storyboard-package`
+
+Streams the generated storyboard JSON used for shot planning and previs.
+
+**Success response headers**
+- `Content-Type: application/json; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-storyboard-package.json"`
+
+**404** if the job is unknown or no storyboard package exists for that comic.
 
 ---
 
@@ -295,6 +382,33 @@ project can move beyond a slideshow into generated clips.
 
 ---
 
+### `GET /api/comic/:jobId/animatic-timeline`
+
+Streams the generated animatic timeline JSON for lining up video clips and
+theme/cue audio.
+
+**Success response headers**
+- `Content-Type: application/json; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-animatic-timeline.json"`
+
+**404** if the job is unknown or no animatic timeline exists for that comic.
+
+---
+
+### `GET /api/comic/:jobId/studio-bundle`
+
+Streams the unified studio bundle JSON. This is the preferred starting point
+for external agents because it includes the project, script, adaptation package,
+music package, agent workflow package, and artifact availability map.
+
+**Success response headers**
+- `Content-Type: application/json; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-studio-bundle.json"`
+
+**404** if the job is unknown. **409** if the job isn't `done` yet.
+
+---
+
 ### `GET /api/comic/:jobId/music-cue-package`
 
 **Response 200** — streams the music cue / score brief JSON.
@@ -306,6 +420,31 @@ draft, and generation prompt used by the Movie / Show workspace.
 
 **404** if the job is unknown. **409** if the job isn't `done` yet.
 **410** if the on-disk file is gone.
+
+---
+
+### `GET /api/comic/:jobId/song-sheet`
+
+Streams the generated theme song markdown sheet.
+
+**Success response headers**
+- `Content-Type: text/markdown; charset=utf-8`
+- `Content-Disposition: attachment; filename="<jobId>-song-sheet.md"`
+
+**404** if the job is unknown or no song sheet exists for that comic.
+
+---
+
+### `GET /api/comic/:jobId/theme-audio`
+
+Streams the generated theme audio. With the mock provider this is a small WAV;
+provider-backed runs may use the matching audio MIME type for the file.
+
+**Success response headers**
+- `Content-Type: audio/wav` or another audio MIME type
+- `Content-Disposition: attachment; filename="<jobId>-theme.<ext>"`
+
+**404** if the job is unknown or no theme audio exists for that comic.
 
 ---
 
@@ -342,6 +481,20 @@ until the process restarts (or is garbage-collected by an LRU policy in
 a future version).
 
 **404** if the source job is unknown.
+
+---
+
+### `DELETE /api/comic/:jobId`
+
+Cancels an in-flight job and removes its in-memory record. Persisted history
+entries remain available through `GET /api/history`.
+
+**Response 200**
+```json
+{ "ok": true }
+```
+
+**404** if the job is unknown.
 
 ---
 

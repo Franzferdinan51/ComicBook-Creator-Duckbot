@@ -69,13 +69,13 @@ export function startWebUI(options: StartWebUIOptions = {}): Promise<WebUIHandle
         res.sendFile(join(webuiDir, 'index.html'));
       });
     } else {
-      // No frontend yet — return a clear placeholder.
+      // Missing frontend assets — return a clear install/runtime hint.
       app.get('/', (_req, res) => {
         res
           .type('text/plain')
           .send(
             'comic-creator WebUI is running.\n' +
-              'The webui/ directory does not exist yet — the frontend task will populate it.\n' +
+              'The webui/ directory could not be found. Reinstall from the repository root or run the server with the source checkout.\n' +
               'API is available at /api/health, /api/comic, /api/providers, etc.'
           );
       });

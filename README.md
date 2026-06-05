@@ -136,7 +136,7 @@ The WebUI gives you:
 - Download as PDF or CBZ, or grab all panel images as a ZIP
 - Cover image preview + download
 - Story Bible, Adaptation Package, and Music Cue Package download cards
-- History of past comics
+- History of past comics with generated cover thumbnails
 - Provider credential settings
 
 ## CLI

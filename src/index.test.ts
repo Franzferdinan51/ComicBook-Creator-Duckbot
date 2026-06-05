@@ -82,8 +82,8 @@ async function main(): Promise<void> {
   assert.equal(panel.height, 864);
 
   const cover = PNG.sync.read(await readFile(result.coverImagePath!));
-  assert.equal(cover.width, 1600);
-  assert.equal(cover.height, 900);
+  assert.equal(cover.width, 1536);
+  assert.equal(cover.height, 864);
   const guidance = await readFile(result.agentGuidancePath!, 'utf8');
   assert.equal(guidance.includes('Hermes Agent'), true);
   assert.equal(guidance.includes('OpenClaw'), true);

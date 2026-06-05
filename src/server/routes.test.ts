@@ -119,7 +119,7 @@ const entry: HistoryEntry = {
       outputProfile: 'storyboard-widescreen',
       page: { width: 1600, height: 900, margin: 48, bleed: 0 },
       panel: { aspectRatio: '16:9', targetWidth: 1536, targetHeight: 864, fit: 'contain' },
-      cover: { width: 1600, height: 900, aspectRatio: '16:9' },
+      cover: { width: 1536, height: 864, aspectRatio: '16:9' },
     },
     storyBible: {
       premise: 'History project premise',

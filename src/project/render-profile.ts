@@ -18,7 +18,7 @@ export function normalizeRenderProfile(
         targetHeight: 864,
         fit: 'contain',
       },
-      cover: { width: 1600, height: 900, aspectRatio: '16:9' },
+      cover: { width: 1536, height: 864, aspectRatio: '16:9' },
     };
   }
 
