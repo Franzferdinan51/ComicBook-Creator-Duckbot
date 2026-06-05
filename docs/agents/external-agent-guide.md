@@ -46,9 +46,11 @@ For the most actionable workflow, start with the repo playbook at
   `get_theme_audio`, and `get_preflight` for complete agent workflows. Use
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
-- WebUI: the result panel exposes project, adaptation, music, and agent
-  guidance downloads, plus a unified studio bundle for one-shot handoff. Start
-  with the studio bundle first when resuming work, then open the workflow
+- WebUI: the Settings page exposes the Production readiness panel for the same
+  preflight diagnostics available through CLI, HTTP, and MCP. The result panel
+  exposes project, adaptation, music, and agent guidance downloads, plus a
+  unified studio bundle for one-shot handoff. Start with preflight, then the
+  studio bundle when resuming work, then open the workflow
   package when Hermes/OpenClaw needs a concrete execution checklist, then open the series
   package when the next pass is show-focused, or open the trailer
   package when the screen pitch is the next priority. Use the music cue

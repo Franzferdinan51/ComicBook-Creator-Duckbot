@@ -138,6 +138,7 @@ The WebUI gives you:
 - Story Bible, Adaptation Package, and Music Cue Package download cards
 - History of past comics with generated cover thumbnails
 - Provider credential settings
+- Production readiness panel in Settings for Node.js, output paths, provider readiness, MiniMax CLI, and Hermes/OpenClaw guidance
 
 ## CLI
 
@@ -184,7 +185,7 @@ Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agen
 
 MCP provider fields are registry-based, not hard-coded. Agents should call `list_providers` first, then pass any registered text/image/music provider name into `create_comic` or `regenerate_comic`, including built-ins such as `xai`, `gemini`, `comfyui`, `minimax`, and WebUI-created custom OpenAI-compatible providers.
 
-Run `comic-creator --preflight`, `GET /api/preflight`, or MCP `get_preflight` before production runs. The report checks Node.js, output directory writability, package entrypoints, provider readiness, MiniMax CLI availability, and the Hermes/OpenClaw guidance files.
+Run `comic-creator --preflight`, `GET /api/preflight`, MCP `get_preflight`, or the WebUI Production readiness panel in Settings before production runs. The report checks Node.js, output directory writability, package entrypoints, provider readiness, MiniMax CLI availability, and the Hermes/OpenClaw guidance files.
 
 The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from preflight, then the studio bundle, then open the specialized files as needed. The workflow package is the next best handoff when Hermes/OpenClaw needs a track-by-track execution plan across story, video, and music. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package to drive `mmx video` clip generation.
 

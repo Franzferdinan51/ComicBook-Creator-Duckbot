@@ -1055,6 +1055,155 @@ button.ghost.small { padding: 0.2rem 0.5rem; font-size: 0.75rem; }
 }
 
 /* ----------------------------------------------------------------------- */
+/* Production readiness / preflight diagnostics                            */
+/* ----------------------------------------------------------------------- */
+.readiness-panel {
+  margin: 1rem 0 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  padding: 1rem;
+  background:
+    radial-gradient(circle at top right, rgba(94, 234, 212, .11), transparent 18rem),
+    linear-gradient(180deg, rgba(48, 43, 36, .9), rgba(23, 21, 17, .95));
+}
+.readiness-panel.readiness-pass { border-color: rgba(34, 197, 94, .55); }
+.readiness-panel.readiness-warn { border-color: rgba(245, 158, 11, .58); }
+.readiness-panel.readiness-fail { border-color: rgba(239, 68, 68, .62); }
+.readiness-hero {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.readiness-hero h3 {
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin-bottom: .35rem;
+}
+.readiness-score {
+  min-width: 168px;
+  display: grid;
+  align-content: center;
+  gap: .15rem;
+  padding: .9rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .1);
+  background: rgba(8, 8, 6, .38);
+  text-align: right;
+}
+.readiness-score strong {
+  color: var(--text);
+  font-size: 1.05rem;
+  letter-spacing: .08em;
+}
+.readiness-score span {
+  color: var(--text-muted);
+  font-size: .74rem;
+}
+.readiness-actions {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  flex-wrap: wrap;
+  margin-top: .9rem;
+}
+.readiness-error {
+  margin-top: .8rem;
+  padding: .7rem .8rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(239, 68, 68, .45);
+  background: rgba(127, 29, 29, .35);
+  color: #fecaca;
+  font-size: .86rem;
+}
+.readiness-error code {
+  background: rgba(0, 0, 0, .28);
+  padding: .08rem .3rem;
+  border-radius: 3px;
+}
+.readiness-skeleton { margin-top: .9rem; }
+.readiness-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+  margin-top: 1rem;
+}
+.readiness-signal {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  min-height: 92px;
+  padding: .8rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(8, 8, 6, .3);
+}
+.readiness-signal strong {
+  display: block;
+  margin-bottom: .16rem;
+}
+.readiness-signal p {
+  color: var(--text-muted);
+  font-size: .8rem;
+}
+.readiness-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: .65rem;
+  margin-top: .75rem;
+}
+.readiness-check {
+  padding: .75rem .8rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(16, 17, 15, .58);
+}
+.readiness-check.check-pass { border-color: rgba(34, 197, 94, .32); }
+.readiness-check.check-warn { border-color: rgba(245, 158, 11, .36); }
+.readiness-check.check-fail { border-color: rgba(239, 68, 68, .42); }
+.readiness-check-head {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  margin-bottom: .35rem;
+}
+.readiness-check-head strong {
+  flex: 1;
+  min-width: 0;
+}
+.readiness-check p {
+  color: var(--text-muted);
+  font-size: .8rem;
+}
+.readiness-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  background: var(--warning);
+  box-shadow: 0 0 10px rgba(245, 158, 11, .35);
+}
+.readiness-dot.pass {
+  background: var(--success);
+  box-shadow: 0 0 10px rgba(34, 197, 94, .42);
+}
+.readiness-dot.fail {
+  background: var(--error);
+  box-shadow: 0 0 10px rgba(239, 68, 68, .42);
+}
+@media (max-width: 720px) {
+  .readiness-hero {
+    flex-direction: column;
+  }
+  .readiness-score {
+    text-align: left;
+  }
+  .readiness-quick-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----------------------------------------------------------------------- */
 /* Provider credentials disclosure rows                                     */
 /* ----------------------------------------------------------------------- */
 .provider-creds {
@@ -1123,6 +1272,7 @@ button.danger {
 button.danger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.1); }
 .badge.ok { background: #14532d; color: #bbf7d0; }
 .badge.warn { background: #78350f; color: #fed7aa; }
+.badge.bad { background: #7f1d1d; color: #fecaca; }
 .test-result { padding: 0.5rem 0.7rem; border-radius: 6px; margin: 0.4rem 0 0; font-size: 0.85rem; }
 .test-result.ok { background: rgba(20, 83, 45, 0.4); color: #bbf7d0; }
 .test-result.bad { background: rgba(127, 29, 29, 0.4); color: #fecaca; }

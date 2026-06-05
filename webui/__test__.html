@@ -94,6 +94,9 @@
   <pre id="providers-json">(pending)</pre>
   <div id="providers-cards" class="provider-grid" style="display:none"></div>
 
+  <h2><span class="info">GET</span> /api/preflight</h2>
+  <pre id="preflight">(pending)</pre>
+
   <h2><span class="info">GET</span> /api/settings</h2>
   <pre id="settings">(pending)</pre>
 
@@ -166,6 +169,11 @@
           '<div><h3 style="color:#94a3b8;font-size:.8rem;margin:0 0 .5rem">Music Providers</h3>' +
           ((prov.body.music || []).map(renderProviderCard).join('') || '<em style="color:#94a3b8">none detected</em>') + '</div>';
       }
+
+      results.preflight = await check('preflight', '/api/preflight',
+        (b) => b && ['pass', 'warn', 'fail'].includes(b.status) &&
+          b.summary && Array.isArray(b.checks) &&
+          b.checks.some((check) => check.id === 'provider-registry'));
 
       results.settings = await check('settings', '/api/settings',
         (b) => b && typeof b === 'object');

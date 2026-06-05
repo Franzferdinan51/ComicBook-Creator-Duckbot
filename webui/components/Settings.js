@@ -69,6 +69,9 @@ export function Settings() {
   const [overrides, setOverrides] = useState({});
   const [customProviders, setCustomProviders] = useState({});
   const [xaiAuth, setXaiAuth] = useState(null);
+  const [preflight, setPreflight] = useState(null);
+  const [preflightLoading, setPreflightLoading] = useState(true);
+  const [preflightError, setPreflightError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const saveTimerRef = useRef(null);
@@ -95,6 +98,10 @@ export function Settings() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    loadPreflight();
+  }, []);
+
   // Debounced auto-save on any settings change.
   useEffect(() => {
     if (!settings) return;
@@ -119,6 +126,19 @@ export function Settings() {
 
   function update(patch) {
     setSettings((prev) => ({ ...prev, ...patch }));
+  }
+
+  async function loadPreflight() {
+    setPreflightLoading(true);
+    setPreflightError(null);
+    try {
+      const report = await api('/api/preflight');
+      setPreflight(report);
+    } catch (err) {
+      setPreflightError(err.message);
+    } finally {
+      setPreflightLoading(false);
+    }
   }
 
   if (loading) {
@@ -154,6 +174,13 @@ export function Settings() {
         <h2 id="settings-title">Settings</h2>
         <span class="muted small">Auto-saves on change.</span>
       </header>
+
+      <${PreflightReadiness}
+        report=${preflight}
+        loading=${preflightLoading}
+        error=${preflightError}
+        onRefresh=${loadPreflight}
+      />
 
       <h3 class="section-heading">Defaults</h3>
 
@@ -296,6 +323,111 @@ export function Settings() {
       />
     </section>
   `;
+}
+
+function PreflightReadiness({ report, loading, error, onRefresh }) {
+  const status = report?.status || (error ? 'fail' : 'warn');
+  const checks = report?.checks || [];
+  const providerCheck = checks.find((check) => check.id === 'provider-registry');
+  const minimaxCheck = checks.find((check) => check.id === 'minimax-cli');
+  const generatedAt = report?.generatedAt
+    ? new Date(report.generatedAt).toLocaleString()
+    : null;
+
+  return html`
+    <section class=${`readiness-panel readiness-${status}`} aria-labelledby="preflight-title">
+      <div class="readiness-hero">
+        <div>
+          <p class="movie-kicker">Production readiness</p>
+          <h3 id="preflight-title">${headlineForPreflight(status, loading, error)}</h3>
+          <p class="muted">
+            Checks this machine for Node.js, writable output, package entrypoints,
+            Hermes/OpenClaw guidance files, provider registry readiness, and MiniMax CLI availability.
+          </p>
+        </div>
+        <div class="readiness-score" aria-label=${`Preflight status ${status}`}>
+          <strong>${status.toUpperCase()}</strong>
+          <span>${report ? `${report.summary.pass} pass / ${report.summary.warn} warn / ${report.summary.fail} fail` : 'waiting for report'}</span>
+        </div>
+      </div>
+
+      <div class="readiness-actions">
+        <button type="button" class="ghost" onClick=${onRefresh} disabled=${loading}>
+          ${loading ? 'Refreshing...' : 'Refresh checks'}
+        </button>
+        ${generatedAt ? html`<span class="muted small">Last checked ${generatedAt}</span>` : null}
+      </div>
+
+      ${error ? html`
+        <div class="readiness-error" role="alert">
+          Could not load <code>/api/preflight</code>: ${error}
+        </div>
+      ` : null}
+
+      ${loading && !report ? html`
+        <div class="readiness-skeleton">
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-block"></div>
+        </div>
+      ` : null}
+
+      ${report ? html`
+        <div class="readiness-quick-grid">
+          <${ReadinessSignal}
+            label="Provider registry"
+            check=${providerCheck}
+            fallbackId="provider-registry"
+          />
+          <${ReadinessSignal}
+            label="MiniMax CLI"
+            check=${minimaxCheck}
+            fallbackId="minimax-cli"
+          />
+        </div>
+
+        <div class="readiness-checks" aria-label="Preflight checks">
+          ${checks.map((check) => html`
+            <article key=${check.id} class=${`readiness-check check-${check.status}`} data-check-id=${check.id}>
+              <div class="readiness-check-head">
+                <span class=${`readiness-dot ${check.status}`}></span>
+                <strong>${check.label}</strong>
+                <span class=${`badge ${badgeClassForStatus(check.status)}`}>${check.status}</span>
+              </div>
+              <p>${check.message}</p>
+            </article>
+          `)}
+        </div>
+      ` : null}
+    </section>
+  `;
+}
+
+function ReadinessSignal({ label, check, fallbackId }) {
+  const status = check?.status || 'warn';
+  return html`
+    <div class=${`readiness-signal signal-${status}`} data-check-id=${check?.id || fallbackId}>
+      <span class=${`readiness-dot ${status}`}></span>
+      <div>
+        <strong>${label}</strong>
+        <p>${check?.message || 'Waiting for preflight data.'}</p>
+      </div>
+    </div>
+  `;
+}
+
+function headlineForPreflight(status, loading, error) {
+  if (loading && !error) return 'Checking production setup...';
+  if (error) return 'Readiness checks need attention';
+  if (status === 'pass') return 'Ready for production runs';
+  if (status === 'warn') return 'Mock mode works, production needs polish';
+  return 'Fix blocking setup before production';
+}
+
+function badgeClassForStatus(status) {
+  if (status === 'pass') return 'ok';
+  if (status === 'warn') return 'warn';
+  return 'bad';
 }
 
 function labelForProvider(p) {

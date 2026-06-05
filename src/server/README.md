@@ -104,6 +104,10 @@ Checks cover Node.js version, output-directory writability, package
 entrypoints, text/image/music provider readiness, MiniMax CLI availability, and
 Hermes/OpenClaw guidance files.
 
+The same report is rendered in the WebUI Settings page as the Production
+readiness panel, and the debug smoke page at `/__test__.html` also fetches this
+endpoint.
+
 ---
 
 ### `GET /api/providers`
