@@ -466,6 +466,17 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     showToast('Video package downloaded.', 'success');
   }
 
+  function handleDownloadTrailerPackage() {
+    if (!result?.trailerPackagePath) return;
+    const a = document.createElement('a');
+    a.href = `/api/comic/${jobId}/trailer-package`;
+    a.download = `${localSlug(result.script?.title)}-trailer-package.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Trailer package downloaded.', 'success');
+  }
+
   function handleDownloadMusic() {
     if (!result?.musicCuePackage) return;
     if (result?.musicCuePackagePath) {
@@ -935,6 +946,11 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
           ${result.videoPackagePath ? html`
             <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>
               Download video package
+            </button>
+          ` : null}
+          ${result.trailerPackagePath ? html`
+            <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadTrailerPackage}>
+              Download trailer package
             </button>
           ` : null}
           ${result.animaticTimelinePath ? html`

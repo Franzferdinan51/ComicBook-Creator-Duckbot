@@ -289,6 +289,15 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
     );
   }
 
+  function handleDownloadTrailerPackage() {
+    if (!jobId || !result?.trailerPackagePath) return;
+    download(
+      `/api/comic/${jobId}/trailer-package`,
+      `${localSlug(title)}-trailer-package.json`,
+      'Trailer package downloaded.'
+    );
+  }
+
   function handleDownloadSongSheet() {
     if (!jobId || !result?.songSheetPath) return;
     download(`/api/comic/${jobId}/song-sheet`, `${localSlug(title)}-song-sheet.md`, 'Song sheet downloaded.');
@@ -509,6 +518,11 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
             <h3>Trailer package</h3>
             <p class="movie-pitch-line">${trailerPackage?.logline || `${title} is ready for a screen teaser.`}</p>
             <p class="muted small">${trailerPackage?.hook || 'The trailer package turns the adaptation into a pitchable teaser sequence.'}</p>
+            ${result?.trailerPackagePath ? html`
+              <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadTrailerPackage}>
+                Download trailer package
+              </button>
+            ` : null}
           </section>
           <section class="movie-card">
             <h3>Duration</h3>
