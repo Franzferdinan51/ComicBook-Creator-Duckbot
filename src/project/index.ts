@@ -7,3 +7,5 @@ export { renderDirectorBriefMarkdown } from './director-brief.js';
 export { renderSongSheetMarkdown, generateMockThemeWav, audioExtensionForPath, audioMimeTypeForPath } from './music-assets.js';
 export { buildStoryboardPackage, buildAnimaticTimeline, buildTrailerPackage, buildSeriesPackage, buildVideoPackage } from './video-assets.js';
 export { buildStudioBundle } from './studio-bundle.js';
+export { runPreflight } from './preflight.js';
+export type { PreflightCheck, PreflightReport, PreflightStatus } from './preflight.js';

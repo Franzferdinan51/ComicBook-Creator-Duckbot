@@ -18,6 +18,7 @@ const parsed = parseArgs([
 assert.equal(parsed.projectGoal, 'screen');
 assert.equal(parsed.musicProvider, 'mock');
 assert.equal(parseArgs(['--json', 'A JSON story']).json, true);
+assert.equal(parseArgs(['--preflight']).preflight, true);
 
 const playbookProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--agent-playbook'], {
   cwd: process.cwd(),
@@ -25,6 +26,14 @@ const playbookProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--a
 });
 assert.equal(playbookProbe.stdout.includes('# Hermes + OpenClaw Playbook'), true);
 assert.equal(playbookProbe.stdout.includes('Use Hermes Agent to decompose'), true);
+
+const preflightProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--preflight'], {
+  cwd: process.cwd(),
+  maxBuffer: 1024 * 1024,
+});
+const preflight = JSON.parse(preflightProbe.stdout);
+assert.equal(['pass', 'warn', 'fail'].includes(preflight.status), true);
+assert.equal(preflight.checks.some((check: { id: string }) => check.id === 'provider-registry'), true);
 
 const trailerOutputPath = `/tmp/comic-creator-cli-trailer-${Date.now()}.pdf`;
 const trailerProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--trailer-package', `--output=${trailerOutputPath}`, '--pages=1', '--panels=3', 'A Trailer package story'], {

@@ -37,11 +37,13 @@ For the most actionable workflow, start with the repo playbook at
   priority. Use `--video-package` when the next pass is specifically about
   generating real motion clips through MiniMax video. Use
   `--music-cue-package` when the next pass is specifically about score or
-  song planning.
+  song planning. Use `--preflight` before production runs to verify Node.js,
+  output paths, package entrypoints, provider readiness, MiniMax CLI
+  availability, and the Hermes/OpenClaw guidance files.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `regenerate_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
   `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`,
-  and `get_theme_audio` for complete agent workflows. Use
+  `get_theme_audio`, and `get_preflight` for complete agent workflows. Use
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
 - WebUI: the result panel exposes project, adaptation, music, and agent
@@ -87,12 +89,14 @@ For the most actionable workflow, start with the repo playbook at
 
 ## External Agent Sequence
 
-1. Read the repo playbook and the studio bundle first.
-2. Pull the project JSON and confirm the current output paths.
-3. Use Hermes Agent to split work into story, show/movie, and music tracks.
-4. Use OpenClaw to run the concrete CLI or MCP actions.
-5. Write decisions back into the project artifact before starting the next pass.
-6. Re-run the verification commands and refresh the README when a user-facing
+1. Run preflight through CLI `--preflight`, HTTP `/api/preflight`, or MCP
+   `get_preflight`.
+2. Read the repo playbook and the studio bundle first.
+3. Pull the project JSON and confirm the current output paths.
+4. Use Hermes Agent to split work into story, show/movie, and music tracks.
+5. Use OpenClaw to run the concrete CLI or MCP actions.
+6. Write decisions back into the project artifact before starting the next pass.
+7. Re-run the verification commands and refresh the README when a user-facing
    surface changes.
 
 ## Agent Contract

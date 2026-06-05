@@ -304,6 +304,12 @@ try {
 
   const handle = await startWebUI({ port: 0, webuiDir: join(process.cwd(), 'webui') });
   try {
+    const preflightRes = await fetch(`http://127.0.0.1:${handle.port}/api/preflight`);
+    assert.equal(preflightRes.ok || preflightRes.status === 503, true);
+    const preflight = await preflightRes.json() as { status?: string; checks?: Array<{ id: string }> };
+    assert.equal(['pass', 'warn', 'fail'].includes(preflight.status ?? ''), true);
+    assert.equal(preflight.checks?.some((check) => check.id === 'provider-registry'), true);
+
     const settingsRes = await fetch(`http://127.0.0.1:${handle.port}/api/settings`);
     assert.equal(settingsRes.ok, true);
     const settings = await settingsRes.json() as { defaultProjectGoal?: string };

@@ -165,6 +165,7 @@ After `npm install -g .` (or `npm link` from the skill dir) the
 | `--output-profile=<name>` | `comic-print` | `comic-print` \| `digital-portrait` \| `storyboard-widescreen` |
 | `--output=<path>` | auto | Override the output path (default: `~/.openclaw/workspace/output/comics/<title>-<ts>.pdf`) |
 | `--seed=<n>` | `0` | Deterministic seed (mock provider) |
+| `--preflight` | — | Print production readiness diagnostics JSON and exit |
 | `--help` | — | Print usage and exit |
 | `--version` | — | Print version and exit |
 
@@ -189,6 +190,9 @@ For show/movie handoff, it writes `*-storyboard-package.json` and
 
 The stable external-agent contract is documented in
 [`docs/agents/external-agent-guide.md`](./docs/agents/external-agent-guide.md).
+Run `comic-creator --preflight` before production work to check Node.js,
+output-directory writability, package entrypoints, provider readiness,
+MiniMax CLI availability, and the Hermes/OpenClaw guidance files.
 
 The bin shim (`bin/comic-creator.mjs`) re-invokes node with `tsx/esm`
 preloaded, so the TypeScript source in `src/cli.ts` runs directly
@@ -271,6 +275,7 @@ frontend from the same origin. Key endpoints:
 - `GET  /api/comic/:jobId/images/:panelId` — stream a single panel PNG
 - `GET  /api/history` — list recent comics (persisted to disk)
 - `GET  /api/providers` — list available text + image + music providers
+- `GET  /api/preflight` — production readiness diagnostics
 - `GET  /api/settings` / `PUT /api/settings` — user preferences (persisted)
 
 ### State
@@ -284,11 +289,11 @@ Two files in `<skill>/state/` (gitignored):
 
 ```bash
 cd ~/.openclaw/workspace/skills/comic-creator
-TMPDIR=/tmp npx tsx src/server/__test__.ts
+npm run test:server
 ```
 
-Should print `68 passed, 0 failed`. The test boots the server on a random
-port, exercises every route, and verifies atomic file writes.
+Should print `PASS routes`. The test boots the server on a random port,
+exercises API routes, and verifies persisted history recovery.
 
 ## MCP server
 
@@ -304,10 +309,10 @@ comic-creator-mcp
 ```
 
 The `comic-creator-mcp` binary speaks JSON-RPC over stdio and registers
-fourteen tools: `create_comic`, `get_comic`, `get_comic_pdf`,
-`get_comic_image`, `get_project`, `get_agent_guidance`, `get_song_sheet`,
-`get_theme_audio`, `get_storyboard_package`, `get_animatic_timeline`, `list_providers`,
-`get_history`, `get_settings`, `update_settings`.
+the same production handoff surface documented in the README, including
+`create_comic`, `regenerate_comic`, `get_studio_bundle`,
+`get_agent_workflow_package`, `get_video_package`, `get_theme_audio`,
+`list_providers`, and `get_preflight`.
 
 Point your MCP host at the `comic-creator-mcp` binary. Example config
 for an MCP host that reads `~/.config/<host>/mcp_servers.json`:

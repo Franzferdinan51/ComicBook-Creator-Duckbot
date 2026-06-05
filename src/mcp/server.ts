@@ -15,6 +15,7 @@
  *   - get_trailer_package  — fetch the screen pitch / teaser package
  *   - get_comic_cover     — fetch the cover/title image as base64
  *   - list_providers      — discover available text + image + music providers
+ *   - get_preflight       — production readiness diagnostics
  *   - get_history         — recent comics (persisted on disk)
  *   - get_settings        / update_settings — user preferences
  *
@@ -46,6 +47,7 @@ import {
   audioExtensionForPath,
   audioMimeTypeForPath,
   buildStudioBundle,
+  runPreflight,
 } from '../project/index.js';
 import type { ComicOptions } from '../types.js';
 
@@ -977,6 +979,22 @@ export function buildMcpServer(): McpServer {
         });
       } catch (e) {
         return errResult(`list_providers failed: ${(e as Error).message}`);
+      }
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // get_preflight
+  // -------------------------------------------------------------------------
+  server.tool(
+    'get_preflight',
+    'Run production readiness diagnostics for providers, output paths, MiniMax CLI, and agent docs.',
+    {},
+    async () => {
+      try {
+        return jsonResult(await runPreflight());
+      } catch (e) {
+        return errResult(`get_preflight failed: ${(e as Error).message}`);
       }
     }
   );

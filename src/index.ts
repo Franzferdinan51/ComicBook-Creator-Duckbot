@@ -38,6 +38,7 @@ export type {
   ProjectGoal,
   OutputProfile,
 } from './types.js';
+export type { PreflightCheck, PreflightReport, PreflightStatus } from './project/index.js';
 
 // Re-exports so users can import everything from one place
 export { getTextProvider, getImageProvider, getMusicProvider, listTextProviders, listImageProviders, listMusicProviders } from './providers/index.js';
@@ -59,6 +60,7 @@ export {
   buildVideoPackage,
   buildSeriesPackage,
   buildStudioBundle,
+  runPreflight,
 } from './project/index.js';
 
 import { getTextProvider, getImageProvider, getMusicProvider } from './providers/index.js';

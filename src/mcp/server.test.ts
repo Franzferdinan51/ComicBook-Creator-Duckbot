@@ -30,6 +30,7 @@ assert.equal(registeredTools.includes('get_director_brief'), true);
 assert.equal(registeredTools.includes('get_agent_workflow_package'), true);
 assert.equal(registeredTools.includes('get_trailer_package'), true);
 assert.equal(registeredTools.includes('get_video_package'), true);
+assert.equal(registeredTools.includes('get_preflight'), true);
 
 const storageDir = await mkdtemp(join(tmpdir(), 'comic-mcp-test-'));
 setStorageDir(storageDir);
@@ -65,6 +66,10 @@ try {
   });
   assert.equal(invalidProviderJson.isError, true);
   assert.equal(invalidProviderJson.content[0].text.includes('not a registered text provider'), true);
+  const preflightJson = await mcpServer._registeredTools.get_preflight.handler({});
+  const preflight = JSON.parse(preflightJson.content[0].text);
+  assert.equal(['pass', 'warn', 'fail'].includes(preflight.status), true);
+  assert.equal(preflight.checks.some((check: { id: string }) => check.id === 'minimax-cli'), true);
   const settingsJson = await mcpServer._registeredTools.get_settings.handler({});
   const settings = JSON.parse(settingsJson.content[0].text);
   assert.equal(settings.defaultProjectGoal, 'comic');

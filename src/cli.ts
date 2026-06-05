@@ -28,6 +28,7 @@ import {
   buildAnimaticTimeline,
   buildVideoPackage,
   buildStudioBundle,
+  runPreflight,
   type ComicOptions,
   type ComicResult,
   type ProjectGoal,
@@ -84,6 +85,7 @@ interface ParsedArgs {
   help: boolean;
   version: boolean;
   agentPlaybook: boolean;
+  preflight: boolean;
 }
 
 const USAGE = `comic-creator — generate a multi-page AI comic from a story
@@ -120,6 +122,7 @@ Options:
   --trailer-package         Print the trailer package JSON and exit
   --music-cue-package       Print the music cue package JSON and exit
   --agent-playbook          Print the repo-level Hermes/OpenClaw playbook and exit
+  --preflight               Print production readiness diagnostics JSON and exit
   --help                    Print this help and exit
   --version                 Print version and exit
 
@@ -163,6 +166,7 @@ function defaultArgs(): ParsedArgs {
     help: false,
     version: false,
     agentPlaybook: false,
+    preflight: false,
   };
 }
 
@@ -262,7 +266,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
 
 /**
  * Minimal arg parser: --key=value flags, then positional <story>.
- * Recognises --help / --version / --json / --studio-bundle / --agent-workflow-package / --screenplay / --director-brief / --video-package / --series-package / --trailer-package / --music-cue-package / --agent-playbook (and -h / -V).
+ * Recognises --help / --version / --json / --studio-bundle / --agent-workflow-package / --screenplay / --director-brief / --video-package / --series-package / --trailer-package / --music-cue-package / --agent-playbook / --preflight (and -h / -V).
  */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const args = defaultArgs();
@@ -293,6 +297,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.musicCuePackage = true;
     } else if (arg === '--agent-playbook') {
       args.agentPlaybook = true;
+    } else if (arg === '--preflight') {
+      args.preflight = true;
     } else if (arg.startsWith('--') && arg.includes('=')) {
       const eq = arg.indexOf('=');
       const key = arg.slice(2, eq);
@@ -597,6 +603,10 @@ async function main(): Promise<void> {
   }
   if (args.agentPlaybook) {
     process.stdout.write(await getAgentPlaybookMarkdown());
+    return;
+  }
+  if (args.preflight) {
+    process.stdout.write(JSON.stringify(await runPreflight(), null, 2) + '\n');
     return;
   }
   if (!args.story) {

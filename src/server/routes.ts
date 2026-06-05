@@ -7,6 +7,7 @@
  *
  * Endpoints (all JSON unless noted):
  *   GET    /api/health                 — liveness probe
+ *   GET    /api/preflight              — production readiness diagnostics
  *   GET    /api/providers              — list of providers + availability
  *   GET    /api/settings               — read user settings
  *   PUT    /api/settings               — write user settings (partial)
@@ -73,7 +74,7 @@ import {
   type XAILoginProgress,
 } from './openclaw-auth.js';
 import type { ComicOptions, ComicResult } from '../types.js';
-import { audioExtensionForPath, audioMimeTypeForPath, buildStudioBundle } from '../project/index.js';
+import { audioExtensionForPath, audioMimeTypeForPath, buildStudioBundle, runPreflight } from '../project/index.js';
 
 /** Names of the providers that the user can configure through the UI. */
 const CONFIGURABLE_PROVIDERS = new Set(['openrouter', 'lmstudio', 'minimax', 'xai', 'gemini', 'comfyui']);
@@ -192,6 +193,15 @@ export function buildRouter(): Router {
       version: process.env.npm_package_version ?? '0.1.0',
       uptime: process.uptime(),
     });
+  });
+
+  /**
+   * GET /api/preflight
+   * → production readiness diagnostics for humans and external agents.
+   */
+  router.get('/preflight', async (_req: Request, res: Response) => {
+    const report = await runPreflight();
+    res.status(report.status === 'fail' ? 503 : 200).json(report);
   });
 
   // -------------------------------------------------------------------------

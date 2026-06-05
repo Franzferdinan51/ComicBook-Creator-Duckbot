@@ -31,6 +31,7 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
 | Method | Path                                    | Purpose                          |
 |--------|-----------------------------------------|----------------------------------|
 | GET    | `/api/health`                           | Liveness probe                   |
+| GET    | `/api/preflight`                        | Production readiness diagnostics |
 | GET    | `/api/providers`                        | Text + image providers + status  |
 | GET    | `/api/settings`                         | Read user settings               |
 | PUT    | `/api/settings`                         | Update user settings (partial)   |
@@ -72,6 +73,36 @@ npx tsx -e "import { startWebUI } from './src/index.ts'; startWebUI({ port: 3008
   "uptime": 12.345
 }
 ```
+
+---
+
+### `GET /api/preflight`
+
+Runs production readiness diagnostics for humans and external agents.
+
+**Response 200** when the report is `pass` or `warn`; **503** when one or more
+checks fail.
+
+```json
+{
+  "status": "warn",
+  "generatedAt": "2026-06-05T01:23:45.000Z",
+  "cwd": "/Users/duckets/Desktop/ComicBook-Creator-Duckbot-main",
+  "summary": { "pass": 5, "warn": 1, "fail": 0 },
+  "checks": [
+    {
+      "id": "provider-registry",
+      "label": "Provider registry",
+      "status": "warn",
+      "message": "Mock mode is ready, but production media is limited: no configured real music provider."
+    }
+  ]
+}
+```
+
+Checks cover Node.js version, output-directory writability, package
+entrypoints, text/image/music provider readiness, MiniMax CLI availability, and
+Hermes/OpenClaw guidance files.
 
 ---
 
