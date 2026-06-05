@@ -792,28 +792,36 @@ function XaiAuthFlow({ auth, onChange }) {
   // tab or a CLI invocation — gets picked up). The interval backs off
   // to a slower cadence once a login completes.
   useEffect(() => {
-    let slowTimer = null;
-    const fast = setInterval(async () => {
+    let timer = null;
+    let active = true;
+    const FAST_MS = 1500;
+    const SLOW_MS = 15000;
+    let cadence = FAST_MS;
+
+    const tick = async () => {
+      if (!active) return;
       try {
         const next = await api('/api/auth/xai/status');
-        if (next && (next.login?.running || next.login?.status === 'success' || next.login?.status === 'error' || next.login?.status === 'cancelled')) {
+        if (next) {
+          const wasRunning = next.login?.running;
           onChange(next);
+          // Slow down after a login completes (success/error/cancelled)
+          // so we don't keep hitting the server at fast cadence.
+          if (!wasRunning && (next.login?.status === 'success' || next.login?.status === 'error' || next.login?.status === 'cancelled')) {
+            cadence = SLOW_MS;
+          } else if (wasRunning) {
+            cadence = FAST_MS;
+          }
         }
       } catch (err) {
         setPollError(err && err.message ? err.message : String(err));
       }
-      // While running, poll fast. Once it completes, slow down.
-      clearInterval(fast);
-      slowTimer = setInterval(async () => {
-        try {
-          const next = await api('/api/auth/xai/status');
-          if (next) onChange(next);
-        } catch { /* ignore */ }
-      }, 15000);
-    }, 1500);
+      if (active) timer = setTimeout(tick, cadence);
+    };
+    timer = setTimeout(tick, FAST_MS);
     return () => {
-      clearInterval(fast);
-      if (slowTimer) clearInterval(slowTimer);
+      active = false;
+      if (timer) clearTimeout(timer);
     };
   }, [onChange]);
 
