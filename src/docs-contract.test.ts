@@ -166,6 +166,9 @@ assert.equal(moviePanel.includes('Deliverables'), true);
 assert.equal(moviePanel.includes('Agents'), true);
 assert.equal(moviePanel.includes('movie-trailer-beats'), true);
 assert.equal(moviePanel.includes('movie-previs-list'), true);
+assert.equal(moviePanel.includes('Built-in video production agent'), true);
+assert.equal(moviePanel.includes('Run built-in agent'), true);
+assert.equal(moviePanel.includes('video-clip-player'), true);
 assert.equal(moviePanel.includes('Trailer'), true);
 assert.equal(moviePanel.includes('Series'), true);
 assert.equal(moviePanel.includes('Series hook'), true);
@@ -271,6 +274,7 @@ assert.equal(serverReadme.includes('/api/comic/:jobId/agent-workflow-package'), 
 assert.equal(serverReadme.includes('/api/comic/:jobId/production-run-manifest'), true);
 assert.equal(serverReadme.includes('/api/comic/:jobId/run-production'), true);
 assert.equal(serverReadme.includes('/api/production-run/:runId'), true);
+assert.equal(serverReadme.includes('/api/comic/:jobId/video-clip/:clipNumber'), true);
 assert.equal(serverReadme.includes('/api/comic/:jobId/production-run-report'), true);
 assert.equal(serverReadme.includes('/api/comic/:jobId/director-brief'), true);
 assert.equal(serverReadme.includes('/api/comic/:jobId/storyboard-package'), true);

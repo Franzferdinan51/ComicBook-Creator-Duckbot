@@ -1315,6 +1315,79 @@ export function buildRouter(): Router {
   );
 
   /**
+   * GET /api/comic/:jobId/video-clip/:clipNumber
+   * Streams a single produced video clip (.mp4) from a real
+   * production run. The Movie/Show board's "Video" tab embeds
+   * these as <video src=…> elements so the user can watch the
+   * output without leaving the page.
+   *
+   * The clip lookup walks the production-run manager's records for
+   * the most recent run for this jobId, then falls back to the
+   * default output directory (dirname(outputPath)). 404 if the
+   * clip doesn't exist anywhere.
+   */
+  router.get(
+    '/comic/:jobId/video-clip/:clipNumber',
+    async (
+      req: Request<{ jobId: string; clipNumber: string }>,
+      res: Response
+    ): Promise<void> => {
+      const jobId = req.params.jobId;
+      const clipNumber = req.params.clipNumber;
+      if (!/^\d+$/.test(clipNumber)) {
+        res.status(400).json({ error: 'clipNumber must be a positive integer' });
+        return;
+      }
+      const record = await jobs.resolve(jobId);
+      if (!record) {
+        res.status(404).json({ error: `job ${jobId} not found` });
+        return;
+      }
+      if (record.status !== 'done' || !record.result) {
+        res
+          .status(409)
+          .json({ error: `job ${jobId} not done (status: ${record.status})` });
+        return;
+      }
+      const stem = slugifyFilename(record.result.script?.title ?? jobId);
+      const clipFilename = `${stem}-clip-${clipNumber}.mp4`;
+      // Walk the manager's records to find the most recent run for
+      // this jobId whose outputDir contains the clip.
+      const manager = getProductionRunManager();
+      const candidateDirs: string[] = [];
+      for (const r of manager.listForJob(jobId)) candidateDirs.push(r.outputDir);
+      if (record.result.outputPath) candidateDirs.push(dirname(record.result.outputPath));
+      candidateDirs.push(process.cwd());
+      const seen = new Set<string>();
+      for (const dir of candidateDirs) {
+        if (seen.has(dir)) continue;
+        seen.add(dir);
+        const fullPath = join(dir, clipFilename);
+        if (existsSync(fullPath)) {
+          const size = statSync(fullPath).size;
+          res.setHeader('Content-Type', 'video/mp4');
+          res.setHeader('Content-Length', String(size));
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          res.setHeader(
+            'Content-Disposition',
+            `inline; filename="${clipFilename}"`
+          );
+          // Stream via a range-aware send. The standard `readFile` is
+          // fine here for clips (a few MB each) but using it keeps
+          // the route simple and consistent with the other binary
+          // endpoints in this file.
+          const buf = await readFile(fullPath);
+          res.end(buf);
+          return;
+        }
+      }
+      res.status(404).json({
+        error: `no video clip ${clipNumber} for job ${jobId} (run production first)`,
+      });
+    }
+  );
+
+  /**
    * GET /api/comic/:jobId/screenplay
    * Returns the generated screenplay markdown handoff.
    * Headers: Content-Type: text/markdown

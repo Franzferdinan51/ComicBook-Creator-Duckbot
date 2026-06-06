@@ -688,6 +688,35 @@ try {
         `phase ${p.phaseId} should not be marked reused in dry-run`
       );
     }
+
+    // Video clip streaming endpoint. In dry-run mode no real .mp4
+    // files are written, so we expect 404. Then we drop a fake
+    // .mp4 in the same outputDir the dry-run used and re-query.
+    const clipMissing = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/video-clip/1`);
+    assert.equal(clipMissing.status, 404);
+    // 400 on a non-numeric clip number
+    const clipBad = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/video-clip/abc`);
+    assert.equal(clipBad.status, 400);
+    // Drop a fake clip on disk in the same outputDir we used for
+    // the dry-run. The endpoint should find it via the manager's
+    // listForJob walk.
+    const { mkdir: _mkdir, writeFile: _writeFile } = await import('node:fs/promises');
+    const { join: _join } = await import('node:path');
+    await _mkdir('/tmp/history-job-prod-run-dry', { recursive: true });
+    // Slugified title from the production-run-report fixture is
+    // "history-project" (matches the resolved slugify in routes).
+    const fakeClipPath = _join('/tmp/history-job-prod-run-dry', 'history-project-clip-1.mp4');
+    const fakeBytes = new Uint8Array([0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]); // ftyp + isom
+    await _writeFile(fakeClipPath, fakeBytes);
+    const clipOk = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/video-clip/1`);
+    assert.equal(clipOk.status, 200);
+    assert.equal(clipOk.headers.get('content-type'), 'video/mp4');
+    const clipBytes = new Uint8Array(await clipOk.arrayBuffer());
+    assert.equal(clipBytes.length, fakeBytes.length);
+    assert.equal(clipBytes[4], 0x66); // 'f' of ftyp
+    // 404 for a clip number that has no file
+    const clip2 = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/video-clip/99`);
+    assert.equal(clip2.status, 404);
   } finally {
     await handle.close();
   }

@@ -1945,3 +1945,70 @@ code {
   font-size: .8rem;
   margin-top: .5rem;
 }
+
+/* Movie-board variant of the prod-run controls. The "Generate
+   Video" button is the primary CTA on the Movie / Show board's
+   Video tab — bigger than the ResultPanel variant, sits next to
+   the package summary so it's the first thing the user sees. */
+.prod-run-controls--movie {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
+.prod-run-controls--movie .btn-primary {
+  font-size: .95rem;
+  padding: .55rem 1rem;
+}
+/* Inline <video> player for produced clips. The player takes the
+   full width of its parent card and gets a subtle border-radius
+   to feel like an embedded mini-theater. */
+.video-clip-player {
+  margin-top: 1rem;
+  padding: .5rem;
+  background: rgba(0, 0, 0, .4);
+  border-radius: .5rem;
+}
+.video-clip-player video {
+  display: block;
+  max-height: 360px;
+  background: #000;
+}
+/* Grid of <video> players for the "Built-in video production
+   agent" card on the Deliverables tab. */
+.video-clips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.video-clips-grid .video-clip-player {
+  margin-top: 0;
+}
+
+/* "Built-in video production agent" card. Sits at the top of the
+   Deliverables tab so the built-in execution CTA is the first
+   thing the user sees — no more "the manifest is a recipe, where
+   do I run it?" friction. */
+.built-in-agent-card {
+  border: 1px solid rgba(99, 102, 241, .35);
+  background: linear-gradient(180deg, rgba(99, 102, 241, .08), rgba(99, 102, 241, .02));
+  margin-bottom: 1.5rem;
+}
+.built-in-agent-card h3 {
+  margin: 0 0 .25rem 0;
+}
+.built-in-agent-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.built-in-agent-icon {
+  font-size: 2.25rem;
+  line-height: 1;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 0 .5rem rgba(99, 102, 241, .45));
+}
+.built-in-agent-head p {
+  margin: 0;
+}

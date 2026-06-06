@@ -64,6 +64,21 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         : 'overview';
   const [activeTab, setActiveTab] = useState(defaultTab);
 
+  // Production-run state for the "Video" tab. The user can press
+  // "Generate Video" to actually invoke `mmx` against the production
+  // run manifest. We poll until done, then surface the produced
+  // clips as inline <video> elements so the user can watch the
+  // output without leaving the page.
+  const [prodRunStatus, setProdRunStatus] = useState('idle');
+  const [prodRunId, setProdRunId] = useState(null);
+  const [prodRunReport, setProdRunReport] = useState(null);
+  const [prodRunError, setProdRunError] = useState(null);
+  const [prodRunDryRun, setProdRunDryRun] = useState(false);
+  // Per-phase live updates while the run is in flight, so the UI
+  // can show which phase is currently active (preflight / music /
+  // video / review).
+  const [prodRunPhases, setProdRunPhases] = useState([]);
+
   useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab, jobId]);
@@ -347,6 +362,75 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
     download('/api/agent-playbook', 'hermes-openclaw-playbook.md', 'Agent playbook downloaded.');
   }
 
+  // Actually invoke `mmx` against the production run manifest.
+  // Polls until the run is done or errored, then either renders
+  // the produced <video> clips inline (real run) or the report
+  // (dry run).
+  async function handleRunVideo() {
+    if (!jobId) return;
+    if (!result?.musicCuePackage || !result?.videoPackage) {
+      showToast('This project has no music/video package — re-run with project-goal=screen or studio.', 'error');
+      return;
+    }
+    setProdRunError(null);
+    setProdRunReport(null);
+    setProdRunPhases([]);
+    setProdRunStatus(prodRunDryRun ? 'planning' : 'running');
+    try {
+      const res = await fetch(`/api/comic/${jobId}/run-production`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: prodRunDryRun }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const { runId } = await res.json();
+      setProdRunId(runId);
+      showToast(
+        prodRunDryRun
+          ? 'Production run planned. Polling for report…'
+          : 'Video generation started. Polling for status…',
+        'info'
+      );
+      const start = Date.now();
+      const timeoutMs = 30 * 60 * 1000; // 30 min hard cap
+      while (Date.now() - start < timeoutMs) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const r = await fetch(`/api/production-run/${runId}`);
+        if (!r.ok) {
+          if (r.status === 404) throw new Error(`run ${runId} not found`);
+          continue;
+        }
+        const rec = await r.json();
+        if (Array.isArray(rec.phases)) setProdRunPhases(rec.phases);
+        if (rec.status === 'done') {
+          setProdRunReport(rec.report);
+          setProdRunStatus('done');
+          showToast(
+            prodRunDryRun
+              ? 'Production plan ready — see report below.'
+              : 'Video generation complete. Watch the clips below.',
+            'success'
+          );
+          return;
+        }
+        if (rec.status === 'error') {
+          setProdRunError(rec.error || 'unknown error');
+          setProdRunStatus('error');
+          showToast(`Production run errored: ${rec.error}`, 'error');
+          return;
+        }
+      }
+      throw new Error('Timed out waiting for production run to finish.');
+    } catch (err) {
+      setProdRunError(err.message);
+      setProdRunStatus('error');
+      showToast(`Production run failed: ${err.message}`, 'error');
+    }
+  }
+
   function sceneMeta(sceneId) {
     return sceneOutline.find((scene) => scene.sceneId === sceneId);
   }
@@ -492,9 +576,44 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
             <div class="action-row">
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadVideoPackage}>Download video package</button>
             </div>
+            <div class="prod-run-controls prod-run-controls--movie">
+              <label class="prod-run-toggle">
+                <input
+                  type="checkbox"
+                  checked=${prodRunDryRun}
+                  onChange=${(e) => setProdRunDryRun(e.currentTarget.checked)}
+                />
+                <span>Plan only (dry-run, no real mmx calls)</span>
+              </label>
+              <button
+                class="btn btn-primary"
+                type="button"
+                onClick=${handleRunVideo}
+                disabled=${prodRunStatus === 'planning' || prodRunStatus === 'running'}
+              >
+                ${prodRunStatus === 'planning' || prodRunStatus === 'running'
+                  ? html`<span class="spinner" /> ${prodRunDryRun ? 'Planning…' : 'Generating video…'}`
+                  : html`🎬 Generate Video ${prodRunDryRun ? '(plan only)' : 'from this project'}`}
+              </button>
+            </div>
+            ${prodRunPhases.length > 0 ? html`
+              <ul class="prod-run-phases">
+                ${prodRunPhases.map((p) => html`
+                  <li key=${p.phaseId}>
+                    <span class="phase-id">${p.phaseId}</span>
+                    <span class="phase-status phase-status-${p.status}">${p.status}</span>
+                    ${p.error ? html`<span class="phase-error">${p.error}</span>` : null}
+                  </li>
+                `)}
+              </ul>
+            ` : null}
+            ${prodRunError ? html`
+              <p class="prod-run-error">Error: ${prodRunError}</p>
+            ` : null}
           </section>
           <section class="movie-card">
             <h3>MiniMax commands</h3>
+            <p class="muted small">For reference — the "Generate Video" button above runs these for you via the server.</p>
             <ul class="movie-list">
               <li><code>${result.videoPackage?.commands?.generate || 'mmx video generate --prompt "<clip prompt>" --async'}</code></li>
               <li><code>${result.videoPackage?.commands?.poll || 'mmx video task get --task-id <task-id>'}</code></li>
@@ -504,25 +623,54 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
         </div>
         <div class="movie-grid">
           ${(result.videoPackage?.clips || []).length > 0
-            ? result.videoPackage.clips.map((clip) => html`
-              <article class="movie-card movie-script-card" key=${clip.clipId}>
-                <div class="scene-head">
-                  <span class="movie-chip">${clip.clipId}</span>
-                  <span class="movie-chip subtle">${clip.title}</span>
-                </div>
-                <p>${clip.prompt}</p>
-                <div class="movie-script-meta">
-                  <div>
-                    <strong>Camera / motion</strong>
-                    <p>${clip.cameraLanguage || 'Cinematic movement and readable blocking.'}</p>
+            ? result.videoPackage.clips.map((clip, i) => {
+              // The runner writes clip files to <outputDir>/<slug>-clip-N.mp4
+              // where N is 1-indexed. The /api/comic/:jobId/video-clip/:n
+              // route streams them.
+              const clipNumber = i + 1;
+              const clipSrc = `/api/comic/${jobId}/video-clip/${clipNumber}`;
+              const isDone = prodRunStatus === 'done';
+              return html`
+                <article class="movie-card movie-script-card" key=${clip.clipId}>
+                  <div class="scene-head">
+                    <span class="movie-chip">${clip.clipId}</span>
+                    <span class="movie-chip subtle">${clip.title}</span>
                   </div>
-                  <div>
-                    <strong>Music tie-in</strong>
-                    <p>${clip.musicCueTitle || 'No cue linked yet.'}</p>
+                  <p>${clip.prompt}</p>
+                  <div class="movie-script-meta">
+                    <div>
+                      <strong>Camera / motion</strong>
+                      <p>${clip.cameraLanguage || 'Cinematic movement and readable blocking.'}</p>
+                    </div>
+                    <div>
+                      <strong>Music tie-in</strong>
+                      <p>${clip.musicCueTitle || 'No cue linked yet.'}</p>
+                    </div>
                   </div>
-                </div>
-              </article>
-            `)
+                  ${isDone ? html`
+                    <div class="video-clip-player">
+                      <video
+                        src=${clipSrc}
+                        controls
+                        preload="metadata"
+                        width="100%"
+                        style="border-radius: .5rem; background: #000;"
+                      ></video>
+                      <a
+                        class="btn btn-ghost btn-sm"
+                        href=${clipSrc}
+                        download=${`${localSlug(title)}-clip-${clipNumber}.mp4`}
+                        style="margin-top: .5rem;"
+                      >Download clip ${clipNumber}</a>
+                    </div>
+                  ` : html`
+                    <p class="muted small" style="margin-top: .5rem;">
+                      Press <strong>Generate Video</strong> above to produce this clip with mmx video.
+                    </p>
+                  `}
+                </article>
+              `;
+            })
             : html`<p class="muted small">No video clip package yet.</p>`}
         </div>
       ` : null}
@@ -886,6 +1034,76 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
       ` : null}
 
       ${activeTab === 'deliverables' ? html`
+        ${(result.musicCuePackage && result.videoPackage) ? html`
+          <section class="movie-card built-in-agent-card">
+            <div class="built-in-agent-head">
+              <span class="built-in-agent-icon">🎬</span>
+              <div>
+                <h3>Built-in video production agent</h3>
+                <p class="muted small">
+                  Comic-creator ships with a built-in agent that runs the production-run manifest for you —
+                  <code>mmx music generate</code>, <code>mmx video generate</code> (async + polled), and
+                  <code>mmx video download</code>. No need to copy the recipe into a terminal yourself.
+                </p>
+              </div>
+            </div>
+            <div class="prod-run-controls prod-run-controls--movie">
+              <label class="prod-run-toggle">
+                <input
+                  type="checkbox"
+                  checked=${prodRunDryRun}
+                  onChange=${(e) => setProdRunDryRun(e.currentTarget.checked)}
+                />
+                <span>Plan only (dry-run, no real mmx calls)</span>
+              </label>
+              <button
+                class="btn btn-primary"
+                type="button"
+                onClick=${handleRunVideo}
+                disabled=${prodRunStatus === 'planning' || prodRunStatus === 'running'}
+              >
+                ${prodRunStatus === 'planning' || prodRunStatus === 'running'
+                  ? html`<span class="spinner" /> ${prodRunDryRun ? 'Planning…' : 'Running built-in agent…'}`
+                  : html`Run built-in agent ${prodRunDryRun ? '(plan only)' : 'on this project'}`}
+              </button>
+            </div>
+            ${prodRunPhases.length > 0 ? html`
+              <ul class="prod-run-phases">
+                ${prodRunPhases.map((p) => html`
+                  <li key=${p.phaseId}>
+                    <span class="phase-id">${p.phaseId}</span>
+                    <span class="phase-status phase-status-${p.status}">${p.status}</span>
+                    ${p.error ? html`<span class="phase-error">${p.error}</span>` : null}
+                  </li>
+                `)}
+              </ul>
+            ` : null}
+            ${prodRunReport && !prodRunDryRun ? html`
+              <div class="video-clips-grid">
+                ${(result.videoPackage?.clips || []).map((clip, i) => {
+                  const clipNumber = i + 1;
+                  const clipSrc = `/api/comic/${jobId}/video-clip/${clipNumber}`;
+                  return html`
+                    <div class="video-clip-player" key=${clip.clipId}>
+                      <video src=${clipSrc} controls preload="metadata" width="100%"></video>
+                      <a class="btn btn-ghost btn-sm" href=${clipSrc} download=${`${localSlug(title)}-clip-${clipNumber}.mp4`}>
+                        Download clip ${clipNumber}
+                      </a>
+                    </div>
+                  `;
+                })}
+              </div>
+            ` : null}
+            ${prodRunReport && prodRunDryRun ? html`
+              <p class="muted small" style="margin-top: .5rem;">
+                Dry-run finished — see <a href=${`/api/comic/${jobId}/production-run-report`} target="_blank" rel="noopener">production-run-report.json</a> for the plan.
+              </p>
+            ` : null}
+            ${prodRunError ? html`
+              <p class="prod-run-error">Error: ${prodRunError}</p>
+            ` : null}
+          </section>
+        ` : null}
         <div class="movie-grid movie-grid-two">
           <section class="movie-card">
             <h3>Downloads</h3>
@@ -918,7 +1136,7 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
               <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAgentPlaybook}>Download playbook</button>
             </div>
             <p class="muted small" style="margin-top: .75rem;">
-              The studio bundle is the best handoff for agents or collaborators who need the full movie/show package in one file.
+              The studio bundle is the best handoff for external agents or collaborators who need the full movie/show package in one file.
             </p>
           </section>
         </div>

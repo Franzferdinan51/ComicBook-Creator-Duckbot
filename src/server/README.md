@@ -429,6 +429,17 @@ jobId. Looks in:
 **Response 200** — `ProductionRunReport` JSON. **404** if no run
 report exists for this jobId (run `--run-production` first).
 
+### `GET /api/comic/:jobId/video-clip/:clipNumber`
+
+Streams a single produced video clip (`.mp4`) from a real production
+run. The Movie/Show board's "Video" and "Deliverables" tabs embed
+these as `<video src=…>` elements so the user can watch the output
+without leaving the page.
+
+**Response 200** — `video/mp4`. **400** if `clipNumber` is not a
+positive integer. **404** if the clip doesn't exist in any of the
+candidate output directories.
+
 ---
 
 ### `GET /api/comic/:jobId/screenplay`
