@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { runProductionManifest } from './production-runner.js';
 import type {
   ComicResult,
@@ -99,7 +100,16 @@ function fakeManifest(result: ProductionSource): ProductionRunManifest {
       themeAudioPath: null,
     },
     gates: [],
-    phases: [],
+    // Phases are required by the resume path — `carryForwardPhases`
+    // filters prior phases by their `phaseId` membership in the
+    // manifest's `phases` list. Without this, the resume machinery
+    // is a no-op.
+    phases: [
+      { phaseId: 'preflight', title: 'p', objective: '', commands: [], dependsOn: [], outputs: [], verification: [] },
+      { phaseId: 'music-theme', title: 'm', objective: '', commands: [], dependsOn: [], outputs: [], verification: [] },
+      { phaseId: 'video-clips', title: 'v', objective: '', commands: [], dependsOn: [], outputs: [], verification: [] },
+      { phaseId: 'review-package', title: 'r', objective: '', commands: [], dependsOn: [], outputs: [], verification: [] },
+    ],
     agentInstructions: { hermes: '', openClaw: '', externalAgent: '' },
     reviewChecklist: [],
   };
@@ -422,5 +432,353 @@ await testFullRun();
 await testAbortStopsRemainingPhases();
 await testEmptyClipsListMarksVideoPhaseSkipped();
 await testChildFailureMarksPhaseError();
+await testResumeSkipsCompletedPhases();
+await testResumeReRunsErroredPhase();
+await testResumeWithoutPriorReportJustRunsNormally();
+await testResumeIsIgnoredInDryRun();
 
 console.log('PASS production-runner');
+
+async function testResumeSkipsCompletedPhases(): Promise<void> {
+  const tmp = await makeTempDir();
+  try {
+    const result = fakeComicResult();
+    const manifest = fakeManifest(result);
+    const { mmx, comic } = await installFakeBinaries(tmp);
+    const outDir = join(tmp, 'out');
+    // First run: full real run, writes report.
+    const first = await runProductionManifest(manifest, result, {
+      outputDir: outDir,
+      mmxBin: mmx,
+      comicCreatorBin: comic,
+      videoPollIntervalSec: 0,
+    });
+    for (const p of first.phases) assert.equal(p.status, 'done');
+    // Second run with resume=true and a sentinel mmx that fails on
+    // music generate so we can prove the runner didn't actually
+    // re-invoke it.
+    const binSentinel = join(tmp, 'bin-sentinel');
+    await mkdir(binSentinel, { recursive: true });
+    await writeFile(
+      join(binSentinel, 'comic-creator'),
+      `#!/usr/bin/env bash
+printf '%s\\n' "{\\"status\\":\\"pass\\"}"
+exit 0
+`,
+      { mode: 0o755 }
+    );
+    await writeFile(
+      join(binSentinel, 'mmx'),
+      `#!/usr/bin/env bash
+printf 'this should never run during resume\\n' >&2
+exit 99
+`,
+      { mode: 0o755 }
+    );
+    const second = await runProductionManifest(manifest, result, {
+      outputDir: outDir,
+      mmxBin: join(binSentinel, 'mmx'),
+      comicCreatorBin: join(binSentinel, 'comic-creator'),
+      videoPollIntervalSec: 0,
+      resume: true,
+    });
+    // All four phases should still be done.
+    for (const p of second.phases) {
+      assert.equal(p.status, 'done', `phase ${p.phaseId} should be done after resume, got ${p.status}`);
+    }
+    // Music + video phases should be the carried-forward ones
+    // (i.e. they have a trailing "reused from prior report" step).
+    const music = second.phases.find((p) => p.phaseId === 'music-theme')!;
+    assert.ok(
+      music.steps.some((s) => s.label === 'reused from prior report'),
+      'music-theme should be marked reused'
+    );
+    const video = second.phases.find((p) => p.phaseId === 'video-clips')!;
+    assert.ok(
+      video.steps.some((s) => s.label === 'reused from prior report'),
+      'video-clips should be marked reused'
+    );
+    // Preflight was re-run (it always is) — and since we used the
+    // sentinel comic-creator (exit 0), it's also done.
+    const preflight = second.phases.find((p) => p.phaseId === 'preflight')!;
+    assert.ok(
+      !preflight.steps.some((s) => s.label === 'reused from prior report'),
+      'preflight should NOT be marked reused — it always re-runs'
+    );
+    // The original outputs (theme.mp3, clip-1.mp4, etc.) are still
+    // on disk and the report should still reference them.
+    assert.equal(second.files.length, first.files.length);
+    for (const path of first.files) {
+      // Strip the report file — second run overwrites that one.
+      if (path.endsWith('-production-run-report.json')) continue;
+      assert.ok(
+        second.files.includes(path),
+        `resumed report should still reference ${path}`
+      );
+    }
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+}
+
+async function testResumeReRunsErroredPhase(): Promise<void> {
+  const tmp = await makeTempDir();
+  try {
+    const result = fakeComicResult();
+    const manifest = fakeManifest(result);
+    // Use a fake mmx that fails on `mmx video generate` (but
+    // succeeds on preflight + music). So the first run completes
+    // preflight + music, then errors on video-clips.
+    const bin = join(tmp, 'bin-mixed');
+    await mkdir(bin, { recursive: true });
+    const stateFile = join(tmp, 'state', 'count.txt');
+    await mkdir(dirname(stateFile), { recursive: true });
+    await writeFile(stateFile, '0', 'utf8');
+    const mmxScript = `#!/usr/bin/env bash
+STATE="${stateFile}"
+N=$(cat "$STATE")
+N=$((N + 1))
+echo "$N" > "$STATE"
+case "$1" in
+  music)
+    OUT=""
+    for ((i=1; i<=$#; i++)); do
+      case "\${!i}" in
+        --out) NEXT=$((i+1)); OUT="\${!NEXT}"; i=$((i+1));;
+      esac
+    done
+    if [ -n "$OUT" ]; then
+      mkdir -p "$(dirname "$OUT")"
+      echo "fake-mp3" > "$OUT"
+    fi
+    printf '%s\\n' "{\\"status\\":\\"success\\"}"
+    exit 0
+    ;;
+  video)
+    # Always fail — first run should error here
+    printf 'simulated video failure\\n' >&2
+    exit 1
+    ;;
+esac
+exit 0
+`;
+    await writeFile(join(bin, 'mmx'), mmxScript, { mode: 0o755 });
+    await writeFile(
+      join(bin, 'comic-creator'),
+      `#!/usr/bin/env bash
+printf '%s\\n' "{\\"status\\":\\"pass\\"}"
+exit 0
+`,
+      { mode: 0o755 }
+    );
+    const outDir = join(tmp, 'out');
+    // First run: preflight OK, music OK, video FAILS.
+    const first = await runProductionManifest(manifest, result, {
+      outputDir: outDir,
+      mmxBin: join(bin, 'mmx'),
+      comicCreatorBin: join(bin, 'comic-creator'),
+      videoPollIntervalSec: 0,
+    });
+    assert.equal(first.phases[0].status, 'done');
+    assert.equal(first.phases[1].status, 'done');
+    assert.equal(first.phases[2].status, 'error');
+    assert.equal(first.phases.length, 3);
+    // Theme audio should be on disk; clip-1.mp4 should NOT.
+    const themePath = join(outDir, 'the-robot-garden-theme.mp3');
+    assert.ok(existsSync(themePath));
+    // Second run: swap mmx to a working one, but call with
+    // resume=true. Expect: preflight re-runs, music carries forward
+    // (theme.mp3 still on disk), video re-runs and succeeds.
+    const binWorking = join(tmp, 'bin-working');
+    await mkdir(binWorking, { recursive: true });
+    const workingState = join(tmp, 'state', 'working.txt');
+    await writeFile(workingState, '0', 'utf8');
+    const workingMmx = `#!/usr/bin/env bash
+WS="${workingState}"
+N=$(cat "$WS")
+N=$((N + 1))
+echo "$N" > "$WS"
+case "$1" in
+  music)
+    shift
+    OUT=""
+    for ((i=1; i<=$#; i++)); do
+      case "\${!i}" in
+        --out) NEXT=$((i+1)); OUT="\${!NEXT}"; i=$((i+1));;
+      esac
+    done
+    if [ -n "$OUT" ]; then
+      mkdir -p "$(dirname "$OUT")"
+      echo "fake-mp3" > "$OUT"
+    fi
+    printf '%s\\n' "{\\"status\\":\\"success\\"}"
+    exit 0
+    ;;
+  video)
+    shift
+    if [[ " $* " == *" task get "* ]]; then
+      TASK_ID=""
+      for ((i=1; i<=$#; i++)); do
+        case "\${!i}" in
+          --task-id) NEXT=$((i+1)); TASK_ID="\${!NEXT}"; i=$((i+1));;
+        esac
+      done
+      COUNT_FILE="$WS.$TASK_ID"
+      if [ -f "$COUNT_FILE" ]; then NV=$(cat "$COUNT_FILE"); else NV=0; fi
+      NV=$((NV + 1))
+      echo "$NV" > "$COUNT_FILE"
+      if [ "$NV" -ge 2 ]; then
+        printf '%s\\n' "{\\"task_id\\":\\"$TASK_ID\\",\\"status\\":\\"Success\\",\\"file_id\\":\\"file-$TASK_ID\\"}"
+      else
+        printf '%s\\n' "{\\"task_id\\":\\"$TASK_ID\\",\\"status\\":\\"Running\\"}"
+      fi
+      exit 0
+    fi
+    if [[ " $* " == *" generate "* ]]; then
+      TASK_ID="task-\\$(date +%s%N)"
+      printf '%s\\n' "{\\"task_id\\":\\"$TASK_ID\\"}"
+      exit 0
+    fi
+    if [[ " $* " == *" download "* ]]; then
+      OUT=""
+      for ((i=1; i<=$#; i++)); do
+        case "\${!i}" in
+          --out) NEXT=$((i+1)); OUT="\${!NEXT}"; i=$((i+1));;
+        esac
+      done
+      if [ -n "$OUT" ]; then
+        mkdir -p "$(dirname "$OUT")"
+        echo "fake-mp4" > "$OUT"
+      fi
+      printf '%s\\n' "{\\"status\\":\\"success\\"}"
+      exit 0
+    fi
+    exit 0
+    ;;
+esac
+exit 0
+`;
+    await writeFile(join(binWorking, 'mmx'), workingMmx, { mode: 0o755 });
+    await writeFile(
+      join(binWorking, 'comic-creator'),
+      `#!/usr/bin/env bash
+printf '%s\\n' "{\\"status\\":\\"pass\\"}"
+exit 0
+`,
+      { mode: 0o755 }
+    );
+    const second = await runProductionManifest(manifest, result, {
+      outputDir: outDir,
+      mmxBin: join(binWorking, 'mmx'),
+      comicCreatorBin: join(binWorking, 'comic-creator'),
+      videoPollIntervalSec: 0,
+      resume: true,
+    });
+    // After resume: preflight done, music reused (carried forward),
+    // video re-run and done.
+    const musicPhase = second.phases.find((p) => p.phaseId === 'music-theme')!;
+    assert.equal(musicPhase.status, 'done');
+    assert.ok(
+      musicPhase.steps.some((s) => s.label === 'reused from prior report'),
+      'music should be carried forward'
+    );
+    const videoPhase = second.phases.find((p) => p.phaseId === 'video-clips')!;
+    assert.equal(videoPhase.status, 'done');
+    assert.ok(
+      !videoPhase.steps.some((s) => s.label === 'reused from prior report'),
+      'video should NOT be carried forward (it errored last time)'
+    );
+    // 2 clip mp4 files should now be on disk.
+    for (let i = 1; i <= 2; i++) {
+      const clipPath = join(outDir, `the-robot-garden-clip-${i}.mp4`);
+      assert.ok(existsSync(clipPath), `expected ${clipPath} to exist after resume`);
+    }
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+}
+
+async function testResumeWithoutPriorReportJustRunsNormally(): Promise<void> {
+  const tmp = await makeTempDir();
+  try {
+    const result = fakeComicResult();
+    const manifest = fakeManifest(result);
+    const { mmx, comic } = await installFakeBinaries(tmp);
+    const outDir = join(tmp, 'out');
+    // No prior report on disk; resume=true should be a no-op for the
+    // resume machinery and the runner should run everything fresh.
+    const report = await runProductionManifest(manifest, result, {
+      outputDir: outDir,
+      mmxBin: mmx,
+      comicCreatorBin: comic,
+      videoPollIntervalSec: 0,
+      resume: true,
+    });
+    for (const p of report.phases) assert.equal(p.status, 'done');
+    // No "reused from prior report" step should appear.
+    for (const p of report.phases) {
+      assert.equal(
+        p.steps.some((s) => s.label === 'reused from prior report'),
+        false,
+        `phase ${p.phaseId} should not be marked reused on a fresh run`
+      );
+    }
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+}
+
+async function testResumeIsIgnoredInDryRun(): Promise<void> {
+  // resume:true + dryRun:true → resume machinery should be skipped
+  // (we don't try to load the on-disk report in dry-run mode) and
+  // the report should look like a normal dry-run, not a resumed one.
+  const tmp = await makeTempDir();
+  try {
+    const result = fakeComicResult();
+    const manifest = fakeManifest(result);
+    const { mmx, comic } = await installFakeBinaries(tmp);
+    const outDir = join(tmp, 'out');
+    // Pre-populate the report dir with a fake prior report so we can
+    // assert the runner doesn't pick it up under dry-run.
+    const reportPath = join(outDir, 'the-robot-garden-production-run-report.json');
+    await mkdir(outDir, { recursive: true });
+    await writeFile(reportPath, JSON.stringify({
+      format: 'production-run-report',
+      startedAt: '2026-01-01T00:00:00Z',
+      completedAt: '2026-01-01T00:01:00Z',
+      manifest: { jobId: 'old', title: 'old', projectGoal: 'comic' },
+      outputDir: outDir,
+      phases: [{
+        phaseId: 'music-theme',
+        title: 'old',
+        status: 'done',
+        steps: [],
+        outputs: ['/nope/old.mp3'],
+      }],
+      files: ['/nope/old.mp3'],
+      taskIds: [],
+      errors: [],
+      dryRun: true,
+    }), 'utf8');
+    const report = await runProductionManifest(manifest, result, {
+      outputDir: outDir,
+      mmxBin: mmx,
+      comicCreatorBin: comic,
+      videoPollIntervalSec: 0,
+      resume: true,
+      dryRun: true,
+    });
+    assert.equal(report.dryRun, true);
+    // Should have re-planned all four phases, NOT carried forward the
+    // bogus prior one.
+    for (const p of report.phases) {
+      assert.equal(
+        p.steps.some((s) => s.label === 'reused from prior report'),
+        false,
+        `phase ${p.phaseId} should not be carried forward in dry-run`
+      );
+    }
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
+}

@@ -653,6 +653,41 @@ try {
     // Unknown runId → 404
     const missingRun = await fetch(`http://127.0.0.1:${handle.port}/api/production-run/no-such-run`);
     assert.equal(missingRun.status, 404);
+
+    // Production-run with `resume: true`: should still 202 and the
+    // resumed run should still report all 4 phases done (preflight
+    // re-runs but the others are carried forward from the prior
+    // dry-run report we just wrote).
+    const resumeRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/run-production`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dryRun: true, outputDir: '/tmp/history-job-prod-run-dry', resume: true }),
+    });
+    assert.equal(resumeRes.status, 202);
+    const resumeStarted = await resumeRes.json() as { runId: string; resume: boolean };
+    assert.equal(resumeStarted.resume, true);
+    // Poll until done.
+    let resumeReport: { status: string; report: { phases: Array<{ phaseId: string; status: string; steps: Array<{ label: string }> }> } | null } | null = null;
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      const r = await fetch(`http://127.0.0.1:${handle.port}/api/production-run/${resumeStarted.runId}`);
+      if (r.ok) {
+        const j = await r.json() as typeof resumeReport;
+        if (j && (j.status === 'done' || j.status === 'error')) { resumeReport = j; break; }
+      }
+    }
+    assert.ok(resumeReport, 'expected the resumed run to finish within 2s');
+    assert.equal(resumeReport.status, 'done');
+    // In dry-run mode the resume machinery is a no-op (the runner
+    // doesn't try to load the prior report), so no phase should
+    // carry the "reused from prior report" marker.
+    for (const p of resumeReport.report?.phases ?? []) {
+      assert.equal(
+        p.steps.some((s) => s.label === 'reused from prior report'),
+        false,
+        `phase ${p.phaseId} should not be marked reused in dry-run`
+      );
+    }
   } finally {
     await handle.close();
   }

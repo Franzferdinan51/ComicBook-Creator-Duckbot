@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type {
   MusicCuePackage,
@@ -42,6 +43,13 @@ export interface ProductionRunnerOptions {
   comicCreatorBin?: string;
   /** Override the `mmx` binary. Defaults to `mmx`. */
   mmxBin?: string;
+  /** When true, the runner looks for an existing
+   *  `<outputDir>/<slug>-production-run-report.json` and re-uses any
+   *  phase whose `status === 'done'` AND whose expected output files
+   *  still exist on disk. Other phases run normally. The preflight
+   *  phase always re-runs (it's cheap and the gate is
+   *  timing-sensitive). Defaults to false (no resume). */
+  resume?: boolean;
 }
 
 const STDOUT_CAP_BYTES = 64 * 1024;
@@ -66,6 +74,77 @@ function slugify(title: string): string {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'comic-project'
   );
+}
+
+/** File path of the on-disk report for a given output dir + slug. */
+export function reportPathFor(outputDir: string, slug: string): string {
+  return join(outputDir, `${slug}-production-run-report.json`);
+}
+
+/** Read an existing report from disk, or null if the file is missing
+ *  or unparseable. Used by the resume path. */
+async function tryLoadExistingReport(path: string): Promise<ProductionRunReport | null> {
+  if (!existsSync(path)) return null;
+  try {
+    const raw = await readFile(path, 'utf8');
+    const parsed = JSON.parse(raw) as ProductionRunReport;
+    // Sanity check: the report should look like one of ours.
+    if (parsed.format !== undefined && parsed.format !== 'production-run-report') {
+      // tolerate future format versions but bail on unrelated JSON
+      return null;
+    }
+    if (!Array.isArray(parsed.phases)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/** Decide which phases from a prior report can be carried forward.
+ *  A phase carries forward iff:
+ *    - status === 'done'
+ *    - every output file in `phase.outputs` still exists on disk
+ *  Preflight is excluded (cheap and time-sensitive).
+ *
+ *  Returns the subset of `phases` that should be reused, with a
+ *  `resumedAt` set on each carried-forward phase so the new report
+ *  shows what was reused.
+ */
+function carryForwardPhases(
+  prior: ProductionRunReport,
+  manifest: ProductionRunManifest
+): ProductionRunPhase[] {
+  const reused: ProductionRunPhase[] = [];
+  const manifestPhaseIds = new Set(manifest.phases.map((p) => p.phaseId));
+  for (const phase of prior.phases) {
+    if (phase.phaseId === 'preflight') continue; // always re-run
+    if (!manifestPhaseIds.has(phase.phaseId)) continue; // stale
+    if (phase.status !== 'done') continue;
+    const allOutputsExist =
+      Array.isArray(phase.outputs) &&
+      phase.outputs.length > 0 &&
+      phase.outputs.every((p) => existsSync(p));
+    if (!allOutputsExist) continue;
+    // Mark the phase as reused by appending a "resumed" step to its
+    // step list. We don't mutate the prior — the caller merges it
+    // into the new report under a new `startedAt`.
+    reused.push({
+      ...phase,
+      steps: [
+        ...phase.steps,
+        {
+          label: 'reused from prior report',
+          cmd: 'runner',
+          args: ['resume'],
+          exitCode: 0,
+          stdout: `reused at ${nowIso()}`,
+          stderr: null,
+          durationMs: 0,
+        },
+      ],
+    });
+  }
+  return reused;
 }
 
 interface SpawnResult {
@@ -284,11 +363,13 @@ export async function runProductionManifest(
   const comicBin = opts.comicCreatorBin ?? 'comic-creator';
   const videoTimeoutSec = opts.videoTimeoutSec ?? 600;
   const videoPollIntervalSec = opts.videoPollIntervalSec ?? 5;
+  const resume = opts.resume === true;
   const slug = slugify(manifest.title);
 
   await mkdir(outputDir, { recursive: true });
 
   const report: ProductionRunReport = {
+    format: 'production-run-report',
     startedAt,
     completedAt: '',
     manifest: {
@@ -310,6 +391,33 @@ export async function runProductionManifest(
     else report.phases[idx] = phase;
     opts.onPhaseUpdate?.(phase);
   };
+
+  // Resume support: when `resume: true`, load the prior report and
+  // carry forward any phase that is `done` with all output files
+  // still on disk. The phases are added to `report.phases` immediately
+  // (and emitted via onPhaseUpdate) so the WebUI sees them right away,
+  // but the phase-running code below still gets to skip them.
+  const carriedForward: ProductionRunPhase[] = [];
+  if (resume && !dryRun) {
+    const prior = await tryLoadExistingReport(reportPathFor(outputDir, slug));
+    if (prior) {
+      for (const phase of carryForwardPhases(prior, manifest)) {
+        carriedForward.push(phase);
+        report.phases.push(phase);
+        report.files.push(...phase.outputs.filter((p) => !report.files.includes(p)));
+        // Carry forward taskIds so a re-poll sees the same ids
+        // already in flight.
+        for (const step of phase.steps) {
+          if (step.taskId && !report.taskIds.includes(step.taskId)) {
+            report.taskIds.push(step.taskId);
+          }
+        }
+        opts.onPhaseUpdate?.(phase);
+      }
+    }
+  }
+  const isPhaseCarriedForward = (id: string) =>
+    carriedForward.some((p) => p.phaseId === id);
 
   const aborted = () => Boolean(signal?.aborted);
 
@@ -365,16 +473,23 @@ export async function runProductionManifest(
   }
 
   // ───────────── PHASE: music-theme ─────────────
+  const carriedMusic = isPhaseCarriedForward('music-theme')
+    ? carriedForward.find((p) => p.phaseId === 'music-theme')
+    : undefined;
   const musicPhase: ProductionRunPhase = {
     phaseId: 'music-theme',
     title: 'Generate or refine the theme song',
-    status: 'running',
-    startedAt: nowIso(),
-    steps: [],
-    outputs: [],
+    status: carriedMusic ? 'done' : 'running',
+    startedAt: carriedMusic ? carriedMusic.startedAt : nowIso(),
+    // Preserve the carried-forward step list (which includes the
+    // "reused from prior report" marker) — otherwise the
+    // `pushPhase` below would overwrite the entry and the marker
+    // would be lost.
+    steps: carriedMusic ? carriedMusic.steps : [],
+    outputs: carriedMusic ? carriedMusic.outputs : [],
   };
   pushPhase(musicPhase);
-  {
+  if (!carriedMusic) {
     const musicPrompt =
       source.musicCuePackage.musicGenerationPrompt ||
       source.musicCuePackage.themeSongPrompt;
@@ -428,18 +543,32 @@ export async function runProductionManifest(
   }
 
   // ───────────── PHASE: video-clips ─────────────
+  const carriedVideo = isPhaseCarriedForward('video-clips')
+    ? carriedForward.find((p) => p.phaseId === 'video-clips')
+    : undefined;
   const videoPhase: ProductionRunPhase = {
     phaseId: 'video-clips',
     title: 'Generate actual motion clips',
-    status: 'running',
-    startedAt: nowIso(),
-    steps: [],
-    outputs: [],
+    status: carriedVideo ? 'done' : 'running',
+    startedAt: carriedVideo ? carriedVideo.startedAt : nowIso(),
+    // Preserve the carried-forward step list (which includes the
+    // "reused from prior report" marker) — otherwise the
+    // `pushPhase` below would overwrite the entry and the marker
+    // would be lost.
+    steps: carriedVideo ? carriedVideo.steps : [],
+    outputs: carriedVideo ? carriedVideo.outputs : [],
   };
   pushPhase(videoPhase);
 
   const clips = source.videoPackage.clips ?? [];
-  if (clips.length === 0) {
+  if (carriedVideo) {
+    // Skip the whole video-clips phase. The phase is already marked
+    // done and its outputs are already in `report.files` from the
+    // resume path above. We still need a `pushPhase` to update
+    // completedAt so the WebUI's "phase done" event fires.
+    videoPhase.completedAt = videoPhase.completedAt ?? nowIso();
+    pushPhase(videoPhase);
+  } else if (clips.length === 0) {
     videoPhase.status = 'skipped';
     videoPhase.error = 'no clips in video package';
     videoPhase.completedAt = nowIso();

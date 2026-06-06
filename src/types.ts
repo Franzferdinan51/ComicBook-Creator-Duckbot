@@ -312,6 +312,9 @@ export interface ProductionRunPhase {
 }
 
 export interface ProductionRunReport {
+  /** Discriminator. Always `'production-run-report'`. Used by the
+   *  resume path to recognize on-disk reports from prior runs. */
+  format: 'production-run-report';
   /** Wall-clock start of the run. */
   startedAt: string;
   /** Wall-clock end of the run. */

@@ -100,8 +100,11 @@ For the most actionable workflow, start with the repo playbook at
 2. Read the repo playbook and the studio bundle first.
 3. Pull the project JSON and confirm the current output paths.
 4. Use Hermes Agent to split work into story, show/movie, and music tracks.
-5. Use the production run manifest before executing MiniMax music/video work.
-6. Use OpenClaw to run the concrete CLI or MCP actions.
+ 5. Use the production run manifest before executing MiniMax music/video work.
+    Pass `resume: true` (or `--run-production-resume` on the CLI) when
+    re-running after a timeout — the runner will re-use any phase
+    whose outputs are still on disk instead of re-paying for them.
+ 6. Use OpenClaw to run the concrete CLI or MCP actions.
 7. Write decisions back into the project artifact before starting the next pass.
 8. Re-run the verification commands and refresh the README when a user-facing
    surface changes.

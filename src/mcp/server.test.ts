@@ -236,6 +236,16 @@ try {
   const badJobJson = await mcpServer._registeredTools.run_production_manifest.handler({ jobId: 'no-such-job' });
   assert.equal(badJobJson.isError, true);
 
+  // resume: true is plumbed through the response body too.
+  const resumeJson = await mcpServer._registeredTools.run_production_manifest.handler({
+    jobId: job.jobId,
+    dryRun: true,
+    resume: true,
+    outputDir: '/tmp/mcp-prod-run-test',
+  });
+  const resumeStarted = JSON.parse(resumeJson.content[0].text) as { runId: string; resume: boolean };
+  assert.equal(resumeStarted.resume, true);
+
   // Reset state for any subsequent runs in the same dir.
   await mcpServer._registeredTools.patch_history_meta.handler({
     jobId: job.jobId,

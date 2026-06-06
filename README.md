@@ -187,6 +187,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--run-production=<jobId>` | — | Actually run the production run manifest against MiniMax (`mmx music generate`, `mmx video generate --async` + polling, `mmx video download`); writes a `*-production-run-report.json` next to the PDF |
 | `--run-production-dry-run` | off | Plan the production run but skip real `mmx` calls (with `--run-production`) |
 | `--run-production-out=<dir>` | — | Override the output directory for produced theme audio, video clips, and the run report |
+| `--run-production-resume` | off | Resume from a prior in-flight or errored run; skip phases already done with outputs on disk (with `--run-production`). Preflight always re-runs. Ignored in `--run-production-dry-run`. |
 
 ## MCP server
 
@@ -203,6 +204,26 @@ MCP provider fields are registry-based, not hard-coded. Agents should call `list
 Run `comic-creator --preflight`, `GET /api/preflight`, MCP `get_preflight`, or the WebUI Production readiness panel in Settings before production runs. The report checks Node.js, output directory writability, package entrypoints, provider readiness, MiniMax CLI availability, and the Hermes/OpenClaw guidance files.
 
 The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from preflight, then the studio bundle, then open the specialized files as needed. The workflow package is the next best handoff when Hermes/OpenClaw needs a track-by-track execution plan across story, video, and music. The production run manifest is the concrete next handoff when an agent is ready to run MiniMax music/video generation with `mmx auth status`, `mmx music generate`, `mmx video generate`, `mmx video task get`, and `mmx video download`. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package and production run manifest to drive `mmx video` clip generation.
+
+### Resuming an interrupted production run
+
+A real `mmx video generate` task can take 5–10 minutes per clip. If a
+run times out on clip 3, you don't want to re-pay for clips 1 and 2.
+Pass `--run-production-resume` (or `resume: true` in the
+`/api/comic/:jobId/run-production` body, or `resume: true` to the
+`run_production_manifest` MCP tool) and the runner will:
+
+1. Load the prior `*-production-run-report.json` from the output dir.
+2. Carry forward any phase whose `status === 'done'` AND whose
+   expected output files still exist on disk.
+3. Re-run only the phases that need work (the ones that errored or
+   have missing outputs). Preflight always re-runs (it's cheap and
+   gates are time-sensitive).
+4. Mark carried-forward phases with a "reused from prior report"
+   step so the WebUI can show what was reused.
+
+Resume is **ignored** in `--run-production-dry-run` mode (dry-runs
+never read the on-disk report, so there's nothing to reuse).
 
 ### Share cards and history curation
 

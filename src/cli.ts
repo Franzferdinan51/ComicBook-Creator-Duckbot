@@ -122,6 +122,10 @@ interface ParsedArgs {
   /** When set with --run-production, override the output directory
    *  for the produced music / video / report files. */
   runProductionOutputDir: string | null;
+  /** When set with --run-production, resume from a prior in-flight
+   *  or errored run by re-using any phase that's already done with
+   *  output files still on disk. Preflight always re-runs. */
+  runProductionResume: boolean;
 }
 
 const USAGE = `comic-creator — generate a multi-page AI comic from a story
@@ -173,6 +177,7 @@ Options:
   --run-production=<jobId>  Actually run the production run manifest for a finished comic against MiniMax
   --run-production-dry-run  Plan the production run but don't actually invoke mmx (with --run-production)
   --run-production-out=<dir> Override the output directory for production-run artifacts (default: next to PDF)
+  --run-production-resume  Resume from a prior run; skip phases already done with outputs on disk (with --run-production)
   --help                    Print this help and exit
   --version                 Print version and exit
 
@@ -234,6 +239,7 @@ function defaultArgs(): ParsedArgs {
     runProduction: null,
     runProductionDryRun: false,
     runProductionOutputDir: null,
+    runProductionResume: false,
   };
 }
 
@@ -419,6 +425,8 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.searchFavorites = true;
     } else if (arg === '--run-production-dry-run') {
       args.runProductionDryRun = true;
+    } else if (arg === '--run-production-resume') {
+      args.runProductionResume = true;
     } else if (arg.startsWith('--') && arg.includes('=')) {
       const eq = arg.indexOf('=');
       const key = arg.slice(2, eq);
@@ -863,6 +871,7 @@ async function main(): Promise<void> {
     const report = await runProductionManifest(manifest, r, {
       outputDir: outDir,
       dryRun: args.runProductionDryRun,
+      resume: args.runProductionResume,
       signal: controller.signal,
     });
     process.stdout.write(JSON.stringify(report, null, 2) + '\n');

@@ -1194,9 +1194,11 @@ export function buildRouter(): Router {
         dryRun?: unknown;
         outputDir?: unknown;
         videoTimeoutSec?: unknown;
+        resume?: unknown;
       };
       const body = (req.body ?? {}) as RunBody;
       const dryRun = body.dryRun === true;
+      const resume = body.resume === true;
       const videoTimeoutSec =
         typeof body.videoTimeoutSec === 'number' && Number.isFinite(body.videoTimeoutSec) && body.videoTimeoutSec > 0
           ? body.videoTimeoutSec
@@ -1225,6 +1227,7 @@ export function buildRouter(): Router {
         runProductionManifest(manifest, r, {
           outputDir,
           dryRun,
+          resume,
           onPhaseUpdate,
           videoTimeoutSec,
         })
@@ -1237,7 +1240,7 @@ export function buildRouter(): Router {
           );
       });
 
-      res.status(202).json({ runId, status: 'pending', dryRun, outputDir });
+      res.status(202).json({ runId, status: 'pending', dryRun, resume, outputDir });
       return;
     }
   );

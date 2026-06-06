@@ -373,7 +373,8 @@ finished comic. Returns 202 with a runId; poll
 {
   "dryRun": false,
   "outputDir": "/tmp/my-run",
-  "videoTimeoutSec": 600
+  "videoTimeoutSec": 600,
+  "resume": false
 }
 ```
 
@@ -382,8 +383,12 @@ finished comic. Returns 202 with a runId; poll
   `*-production-run-report.json`. Defaults to `dirname(outputPath)`.
 - `videoTimeoutSec` — max seconds to wait for a single video task
   (default 600).
+- `resume` — when `true`, the runner loads any prior
+  `*-production-run-report.json` from `outputDir` and re-uses any
+  phase that's already `done` with output files still on disk.
+  Preflight always re-runs. Ignored in `dryRun` mode.
 
-**Response 202** — `{ runId, status: 'pending', dryRun, outputDir }`.
+**Response 202** — `{ runId, status: 'pending', dryRun, resume, outputDir }`.
 **404** if the job is unknown. **409** if the job isn't done yet or has
 no music/video package.
 

@@ -59,6 +59,12 @@ assert.equal(parseArgs(['--production-run-manifest', 'A manifest story']).produc
   assert.equal(a.runProductionDryRun, true);
   assert.equal(a.runProductionOutputDir, '/tmp/foo');
 }
+{
+  const a = parseArgs(['--run-production=job-abc-123', '--run-production-resume']);
+  assert.equal(a.runProduction, 'job-abc-123');
+  assert.equal(a.runProductionResume, true);
+  assert.equal(a.runProductionDryRun, false); // not set
+}
 
 const playbookProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--agent-playbook'], {
   cwd: process.cwd(),

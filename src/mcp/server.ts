@@ -1233,8 +1233,12 @@ export function buildMcpServer(): McpServer {
         .optional()
         .describe('Override the output directory. Defaults to the comic output directory.'),
       videoTimeoutSec: z.number().int().min(30).max(3600).optional(),
+      resume: z
+        .boolean()
+        .optional()
+        .describe('Resume from a prior in-flight or errored run. Re-uses any phase that is already done with outputs on disk. Preflight always re-runs.'),
     },
-    async ({ jobId, dryRun, outputDir, videoTimeoutSec }) => {
+    async ({ jobId, dryRun, outputDir, videoTimeoutSec, resume }) => {
       const record = await getJobManager().resolve(jobId);
       if (!record) return errResult(`job ${jobId} not found`);
       if (record.status !== 'done' || !record.result) {
@@ -1263,6 +1267,7 @@ export function buildMcpServer(): McpServer {
         runProductionManifest(manifest, r, {
           outputDir: outDir,
           dryRun: dryRun === true,
+          resume: resume === true,
           onPhaseUpdate,
           ...(videoTimeoutSec ? { videoTimeoutSec } : {}),
         })
@@ -1271,7 +1276,7 @@ export function buildMcpServer(): McpServer {
             manager.markError(runId, err instanceof Error ? err.message : String(err))
           );
       });
-      return jsonResult({ runId, status: 'pending', dryRun: dryRun === true, outputDir: outDir });
+      return jsonResult({ runId, status: 'pending', dryRun: dryRun === true, resume: resume === true, outputDir: outDir });
     }
   );
 
