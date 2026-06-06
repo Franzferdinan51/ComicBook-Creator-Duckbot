@@ -216,7 +216,9 @@ agents and operators.
 {
   "status": "pending",
   "createdAt": "2026-06-01T19:08:23.123Z",
-  "updatedAt": "2026-06-01T19:08:23.123Z"
+  "updatedAt": "2026-06-01T19:08:23.123Z",
+  "startedAt": null,
+  "progress": { "stage": "idle", "label": "Queued", "fraction": 0, "emittedAt": "..." }
 }
 ```
 
@@ -226,6 +228,8 @@ agents and operators.
   "status": "done",
   "createdAt": "2026-06-01T19:08:23.123Z",
   "updatedAt": "2026-06-01T19:08:24.456Z",
+  "startedAt": "2026-06-01T19:08:23.200Z",
+  "progress": { "stage": "packaging", "label": "Done", "fraction": 1, "emittedAt": "..." },
   "result": {
     "script": {
       "title": "...",
@@ -354,6 +358,71 @@ guard against slideshow-only output.
 
 **404** if the job is unknown. **409** if the job isn't `done` yet.
 **410** if the on-disk file is gone.
+
+---
+
+### `POST /api/comic/:jobId/run-production`
+
+Actually invokes `mmx` against the production run manifest for a
+finished comic. Returns 202 with a runId; poll
+`GET /api/production-run/:runId` for status.
+
+**Body** (all optional):
+
+```json
+{
+  "dryRun": false,
+  "outputDir": "/tmp/my-run",
+  "videoTimeoutSec": 600
+}
+```
+
+- `dryRun` — when `true`, plan the run but skip real `mmx` calls.
+- `outputDir` — where to drop theme audio, video clips, and the
+  `*-production-run-report.json`. Defaults to `dirname(outputPath)`.
+- `videoTimeoutSec` — max seconds to wait for a single video task
+  (default 600).
+
+**Response 202** — `{ runId, status: 'pending', dryRun, outputDir }`.
+**404** if the job is unknown. **409** if the job isn't done yet or has
+no music/video package.
+
+### `GET /api/production-run/:runId`
+
+Poll status of an in-flight or completed production run. Returns the
+live record (status, phases, final report when done).
+
+**Response 200** — `ProductionRunRecord`:
+
+```json
+{
+  "runId": "...",
+  "jobId": "...",
+  "status": "done",
+  "createdAt": "...",
+  "startedAt": "...",
+  "completedAt": "...",
+  "dryRun": false,
+  "outputDir": "/tmp/my-run",
+  "phases": [ ... ],
+  "report": { ... } | null,
+  "error": null
+}
+```
+
+**404** if the runId is unknown.
+
+### `GET /api/comic/:jobId/production-run-report`
+
+Returns the most recent completed production run report for a given
+jobId. Looks in:
+
+1. The most recent `ProductionRunRecord.outputDir` (covers custom
+   `--run-production-out=` runs)
+2. `dirname(outputPath)` (default location, next to the PDF)
+
+**Response 200** — `ProductionRunReport` JSON. **404** if no run
+report exists for this jobId (run `--run-production` first).
 
 ---
 
@@ -553,7 +622,7 @@ entries remain available through `GET /api/history`.
 
 ### `GET /api/history`
 
-**Response 200** — array of `HistoryEntry` (newest first, capped at 20):
+**Response 200** — array of `HistoryEntry` (newest first, capped at 20 by default; max 100):
 
 ```json
 [
@@ -580,7 +649,78 @@ entries remain available through `GET /api/history`.
 ```
 
 `state/history.json` persists up to **50** entries; this endpoint returns
-the most recent **20**.
+the most recent **20** by default, or the most recent `limit` (capped at 100)
+when `?limit=N` is passed.
+
+**Query parameters** (all optional, all AND-combined):
+
+| Param | Effect |
+|-------|--------|
+| `q=<text>` | Substring match (case-insensitive) over `title`, `story`, and tag list |
+| `projectGoal=<name>` | Exact match on `comic` \| `screen` \| `music` \| `studio` |
+| `artStyle=<name>` | Case-insensitive equality on the entry's art style |
+| `favorite=true` | Only entries flagged as favorites |
+| `tags=<a,b,c>` | Comma-separated; entry must include ALL listed tags |
+| `limit=<n>` | Cap returned count (default 20, max 100) |
+
+Tags are lowercased, deduped, and capped at 16 per entry. Empty/blank tags
+are dropped.
+
+### `PATCH /api/history/:jobId`
+
+Update a history entry's curation metadata. The body is JSON with any of:
+
+```json
+{
+  "favorite": true,
+  "tags": ["cult-classic", "redo"],
+  "projectGoal": "screen"
+}
+```
+
+- `favorite` — `true` marks, `false` unmarks. Idempotent.
+- `tags` — replaces the entire tag list (lowercased, deduped, max 16).
+- `projectGoal` — overrides the `projectGoal` recorded at creation time
+  (e.g. re-categorize a `comic` entry as `screen` for the dashboard).
+
+**Response 200** — the updated `HistoryEntry`. **404** if the jobId isn't in
+history.
+
+### `GET /api/share/:jobId`
+
+Public, secret-free share-card view of a history entry. Designed for
+"send this comic to a friend" links — no API key required and no provider
+secrets / settings are included.
+
+**Response 200** — share-card JSON:
+
+```json
+{
+  "jobId": "e60aab73-...",
+  "title": "The Robot's Garden",
+  "artStyle": "manga",
+  "projectGoal": "comic",
+  "pageCount": 4,
+  "panelCount": 12,
+  "createdAt": "2026-06-01T19:08:23.123Z",
+  "previewUrls": {
+    "pdf": "/api/comic/e60aab73.../pdf",
+    "cover": "/api/comic/e60aab73.../cover",
+    "panel": "/api/comic/e60aab73.../images/0-0"
+  },
+  "artifactUrls": {
+    "project": "/api/comic/e60aab73.../project",
+    "screenplay": "/api/comic/e60aab73.../screenplay",
+    "directorBrief": "/api/comic/e60aab73.../director-brief",
+    "musicCuePackage": "/api/comic/e60aab73.../music-cue-package",
+    "videoPackage": "/api/comic/e60aab73.../video-package",
+    "studioBundle": "/api/comic/e60aab73.../studio-bundle"
+  }
+}
+```
+
+**404** if the jobId isn't in history. Also exposed as the `get_share_card`
+MCP tool and the `--share=<jobId>` CLI flag.
 
 ### `DELETE /api/history/:jobId`
 

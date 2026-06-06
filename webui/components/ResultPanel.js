@@ -167,6 +167,14 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
   const [thumbs, setThumbs] = useState([]); // array of { dataUrl, page }
   const [regenLoading, setRegenLoading] = useState(false);
   const [downloadingImages, setDownloadingImages] = useState(false);
+  // Production-run state: `idle` (no run started), `planning`
+  // (dry-run requested), `running` (real run in flight), `done`
+  // (last run finished), `error` (last run errored).
+  const [prodRunStatus, setProdRunStatus] = useState('idle');
+  const [prodRunId, setProdRunId] = useState(null);
+  const [prodRunReport, setProdRunReport] = useState(null);
+  const [prodRunError, setProdRunError] = useState(null);
+  const [prodRunDryRun, setProdRunDryRun] = useState(true);
   // Format selector for the primary download button. Persists per session
   // (kept in component state — not URL state) so refreshing the page
   // resets to PDF.
@@ -587,6 +595,74 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
     showToast('Production run manifest downloaded.', 'success');
   }
 
+  // Run the production manifest. Two modes:
+  //   - dryRun=true  → plan everything, don't actually call mmx
+  //   - dryRun=false → actually invoke mmx music generate + mmx video
+  //                    generate (async) + poll + download
+  // In both modes the server returns 202 with a runId; we poll until
+  // the run is done or errored, then render the phase status inline.
+  async function handleRunProduction() {
+    if (!jobId) return;
+    if (!result?.musicCuePackage || !result?.videoPackage) {
+      showToast('This comic has no music/video package — re-run with project-goal=screen or studio.', 'error');
+      return;
+    }
+    setProdRunError(null);
+    setProdRunReport(null);
+    setProdRunStatus(prodRunDryRun ? 'planning' : 'running');
+    try {
+      const res = await fetch(`/api/comic/${jobId}/run-production`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: prodRunDryRun }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const { runId } = await res.json();
+      setProdRunId(runId);
+      showToast(
+        prodRunDryRun ? 'Production run planned. Polling for report...' : 'Production run started. Polling for status...',
+        'info'
+      );
+      // Poll until the run is done or errored.
+      const start = Date.now();
+      const timeoutMs = 30 * 60 * 1000; // 30 min hard cap
+      while (Date.now() - start < timeoutMs) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const r = await fetch(`/api/production-run/${runId}`);
+        if (!r.ok) {
+          if (r.status === 404) throw new Error(`run ${runId} not found`);
+          continue;
+        }
+        const rec = await r.json();
+        if (rec.status === 'done') {
+          setProdRunReport(rec.report);
+          setProdRunStatus('done');
+          showToast(
+            prodRunDryRun
+              ? 'Production plan ready — see report below.'
+              : 'Production run complete. Report + artifacts saved.',
+            'success'
+          );
+          return;
+        }
+        if (rec.status === 'error') {
+          setProdRunError(rec.error || 'unknown error');
+          setProdRunStatus('error');
+          showToast(`Production run errored: ${rec.error}`, 'error');
+          return;
+        }
+      }
+      throw new Error('Timed out waiting for production run to finish.');
+    } catch (err) {
+      setProdRunError(err.message);
+      setProdRunStatus('error');
+      showToast(`Production run failed: ${err.message}`, 'error');
+    }
+  }
+
   function handleDownloadAgentGuidance() {
     if (result?.agentGuidancePath) {
       const a = document.createElement('a');
@@ -948,6 +1024,57 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
             <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadProductionRunManifest}>
               Download production run manifest
             </button>
+          ` : null}
+          ${(result.musicCuePackage && result.videoPackage) ? html`
+            <div class="prod-run-controls">
+              <label class="prod-run-toggle">
+                <input
+                  type="checkbox"
+                  checked=${prodRunDryRun}
+                  onChange=${(e) => setProdRunDryRun(e.currentTarget.checked)}
+                />
+                <span>Plan only (dry-run, no real mmx calls)</span>
+              </label>
+              <button
+                class="btn btn-primary btn-sm"
+                type="button"
+                onClick=${handleRunProduction}
+                disabled=${prodRunStatus === 'planning' || prodRunStatus === 'running'}
+              >
+                ${prodRunStatus === 'planning' || prodRunStatus === 'running'
+                  ? html`<span class="spinner" /> ${prodRunDryRun ? 'Planning…' : 'Running…'}`
+                  : html`Run production ${prodRunDryRun ? '(plan only)' : 'against MiniMax'}`}
+              </button>
+            </div>
+            ${prodRunReport ? html`
+              <div class="prod-run-report">
+                <h4>Production run report</h4>
+                <p class="prod-run-meta">
+                  ${prodRunReport.dryRun ? 'Dry run' : 'Real run'} —
+                  ${prodRunReport.phases?.length || 0} phases,
+                  ${prodRunReport.taskIds?.length || 0} mmx task ids,
+                  ${prodRunReport.files?.length || 0} files
+                </p>
+                <ul class="prod-run-phases">
+                  ${(prodRunReport.phases || []).map((p) => html`
+                    <li>
+                      <span class="phase-id">${p.phaseId}</span>
+                      <span class="phase-status phase-status-${p.status}">${p.status}</span>
+                      ${p.error ? html`<span class="phase-error">${p.error}</span>` : null}
+                    </li>
+                  `)}
+                </ul>
+                <a
+                  class="btn btn-ghost btn-sm"
+                  href=${`/api/comic/${jobId}/production-run-report`}
+                  target="_blank"
+                  rel="noopener"
+                >View full report JSON</a>
+              </div>
+            ` : null}
+            ${prodRunError ? html`
+              <p class="prod-run-error">Error: ${prodRunError}</p>
+            ` : null}
           ` : null}
         </section>
 

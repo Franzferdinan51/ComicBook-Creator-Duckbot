@@ -21,6 +21,45 @@ assert.equal(parseArgs(['--json', 'A JSON story']).json, true);
 assert.equal(parseArgs(['--preflight']).preflight, true);
 assert.equal(parseArgs(['--production-run-manifest', 'A manifest story']).productionRunManifest, true);
 
+// Search-history and share flags are parsed correctly.
+{
+  const a = parseArgs(['--search-history', '--search-favorites']);
+  assert.equal(a.searchHistory, true);
+  assert.equal(a.searchFavorites, true);
+  assert.equal(a.favorite, null); // --search-favorites doesn't toggle favorite
+}
+{
+  const a = parseArgs(['--search-history', '--search-q=foo', '--search-tags=noir,draft']);
+  assert.equal(a.searchQuery, 'foo');
+  assert.deepEqual(a.searchTags, ['noir', 'draft']);
+}
+{
+  const a = parseArgs(['--favorite=job-abc-123']);
+  assert.equal(a.favorite, true);
+  assert.equal(a.jobId, 'job-abc-123');
+}
+{
+  const a = parseArgs(['--unfavorite=job-abc-123']);
+  assert.equal(a.favorite, false);
+  assert.equal(a.jobId, 'job-abc-123');
+}
+{
+  const a = parseArgs(['--tag=job-abc-123', '--tags=client-acme,noir']);
+  assert.equal(a.jobId, 'job-abc-123');
+  assert.deepEqual(a.tags, ['client-acme', 'noir']);
+}
+{
+  const a = parseArgs(['--share=job-abc-123']);
+  assert.equal(a.share, true);
+  assert.equal(a.jobId, 'job-abc-123');
+}
+{
+  const a = parseArgs(['--run-production=job-abc-123', '--run-production-dry-run', '--run-production-out=/tmp/foo']);
+  assert.equal(a.runProduction, 'job-abc-123');
+  assert.equal(a.runProductionDryRun, true);
+  assert.equal(a.runProductionOutputDir, '/tmp/foo');
+}
+
 const playbookProbe = await execFileAsync('node', ['bin/comic-creator.mjs', '--agent-playbook'], {
   cwd: process.cwd(),
   maxBuffer: 1024 * 1024,

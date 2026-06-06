@@ -12,12 +12,17 @@
  *   - get_agent_playbook  — fetch the repository-level Hermes/OpenClaw playbook
  *   - get_studio_bundle   — fetch the unified project/adaptation/music bundle
  *   - get_production_run_manifest — fetch the MiniMax/Hermes/OpenClaw run manifest
+ *   - run_production_manifest     — actually invoke `mmx` against the manifest
+ *   - get_production_run_report   — poll status of an in-flight production run
  *   - get_music_cue_package — fetch the music cue / score brief
  *   - get_trailer_package  — fetch the screen pitch / teaser package
  *   - get_comic_cover     — fetch the cover/title image as base64
  *   - list_providers      — discover available text + image + music providers
  *   - get_preflight       — production readiness diagnostics
  *   - get_history         — recent comics (persisted on disk)
+ *   - search_history      — filter/search the on-disk comic history
+ *   - patch_history_meta  — star/unstar, re-tag, or re-categorize a history entry
+ *   - get_share_card      — public, secret-free share card for a history entry
  *   - get_settings        / update_settings — user preferences
  *
  * Run: `comic-creator-mcp` (stdin/stdout JSON-RPC) — works with any MCP host.
@@ -49,10 +54,14 @@ import {
 import {
   audioExtensionForPath,
   audioMimeTypeForPath,
+  buildProductionRunManifest,
   buildStudioBundle,
   runPreflight,
 } from '../project/index.js';
-import type { ComicOptions } from '../types.js';
+import { runProductionManifest } from '../project/production-runner.js';
+import { getProductionRunManager } from '../server/production-runs.js';
+import { randomUUID } from 'node:crypto';
+import type { ComicOptions, ProductionRunReport } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1207,6 +1216,78 @@ export function buildMcpServer(): McpServer {
       } catch (e) {
         return errResult(`search_history failed: ${(e as Error).message}`);
       }
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // run_production_manifest
+  // -------------------------------------------------------------------------
+  server.tool(
+    'run_production_manifest',
+    'Actually invoke `mmx` against the production run manifest for a finished comic. Returns a runId you can poll via `get_production_run_report`.',
+    {
+      jobId: z.string().min(1).describe('The jobId of the finished comic to run.'),
+      dryRun: z.boolean().optional().describe('Plan the run but skip real mmx calls (default false).'),
+      outputDir: z
+        .string()
+        .optional()
+        .describe('Override the output directory. Defaults to the comic output directory.'),
+      videoTimeoutSec: z.number().int().min(30).max(3600).optional(),
+    },
+    async ({ jobId, dryRun, outputDir, videoTimeoutSec }) => {
+      const record = await getJobManager().resolve(jobId);
+      if (!record) return errResult(`job ${jobId} not found`);
+      if (record.status !== 'done' || !record.result) {
+        return errResult(`job ${jobId} not done (status: ${record.status})`);
+      }
+      const r = record.result;
+      if (!r.musicCuePackage || !r.videoPackage) {
+        return errResult(
+          `job ${jobId} has no music/video package (re-run with --project-goal=studio or screen)`
+        );
+      }
+      const manifest = r.productionRunManifest ?? buildProductionRunManifest(jobId, r);
+      const outDir =
+        outputDir && outputDir.trim().length > 0
+          ? outputDir.trim()
+          : r.outputPath
+            ? dirname(r.outputPath)
+            : process.cwd();
+      const runId = randomUUID();
+      const manager = getProductionRunManager();
+      manager.create({ runId, jobId, outputDir: outDir, dryRun: dryRun === true });
+      setImmediate(() => {
+        const onPhaseUpdate = (phase: ProductionRunReport['phases'][number]) => {
+          manager.updatePhase(runId, phase);
+        };
+        runProductionManifest(manifest, r, {
+          outputDir: outDir,
+          dryRun: dryRun === true,
+          onPhaseUpdate,
+          ...(videoTimeoutSec ? { videoTimeoutSec } : {}),
+        })
+          .then((report) => manager.markDone(runId, report))
+          .catch((err) =>
+            manager.markError(runId, err instanceof Error ? err.message : String(err))
+          );
+      });
+      return jsonResult({ runId, status: 'pending', dryRun: dryRun === true, outputDir: outDir });
+    }
+  );
+
+  // -------------------------------------------------------------------------
+  // get_production_run_report
+  // -------------------------------------------------------------------------
+  server.tool(
+    'get_production_run_report',
+    'Poll the status / phase progress / final report of a production run started by `run_production_manifest`.',
+    {
+      runId: z.string().min(1).describe('The runId returned by `run_production_manifest`.'),
+    },
+    async ({ runId }) => {
+      const record = getProductionRunManager().get(runId);
+      if (!record) return errResult(`production run ${runId} not found`);
+      return jsonResult(record);
     }
   );
 

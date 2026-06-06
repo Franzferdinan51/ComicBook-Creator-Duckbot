@@ -145,6 +145,104 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   assert.equal(regeneratedResolved?.status, 'done');
+
+  // -----------------------------------------------------------------
+  // get_share_card, patch_history_meta, search_history — added in
+  // 9ee575c. Run after we have a real history entry from the job
+  // above.
+  // -----------------------------------------------------------------
+
+  // Share card returns the expected shape and artifact URLs.
+  const shareJson = await mcpServer._registeredTools.get_share_card.handler({ jobId: job.jobId });
+  assert.equal(shareJson.isError, undefined);
+  const share = JSON.parse(shareJson.content[0].text);
+  assert.equal(share.format, 'share-card');
+  assert.equal(typeof share.title, 'string');
+  assert.ok(share.pageCount > 0);
+  assert.ok(share.panelCount > 0);
+  assert.ok(share.preview.pdf.includes(`/api/comic/${job.jobId}/pdf`));
+  assert.ok(share.artifacts.studioBundle.includes(`/api/comic/${job.jobId}/studio-bundle`));
+
+  // Share card errors on unknown job.
+  const shareMissingJson = await mcpServer._registeredTools.get_share_card.handler({ jobId: 'no-such-job' });
+  assert.equal(shareMissingJson.isError, true);
+  assert.equal(shareMissingJson.content[0].text.includes('not found'), true);
+
+  // patch_history_meta star/unstar + tag cycle.
+  const starJson = await mcpServer._registeredTools.patch_history_meta.handler({
+    jobId: job.jobId,
+    favorite: true,
+    tags: ['mcp-test', 'mcp-test'], // dedupe should collapse to one
+    projectGoal: 'music',
+  });
+  const starred = JSON.parse(starJson.content[0].text);
+  assert.equal(starred.favorite, true);
+  assert.deepEqual(starred.tags, ['mcp-test']);
+  assert.equal(starred.projectGoal, 'music');
+
+  // Empty patch is a 400-like error.
+  const emptyPatchJson = await mcpServer._registeredTools.patch_history_meta.handler({ jobId: job.jobId });
+  assert.equal(emptyPatchJson.isError, true);
+
+  // Unknown jobId returns an error.
+  const patchMissingJson = await mcpServer._registeredTools.patch_history_meta.handler({
+    jobId: 'no-such-job',
+    favorite: true,
+  });
+  assert.equal(patchMissingJson.isError, true);
+
+  // search_history filters the live history by tag, favorite, and text.
+  const searchJson = await mcpServer._registeredTools.search_history.handler({ tags: ['mcp-test'] });
+  const searchResults = JSON.parse(searchJson.content[0].text) as Array<{ jobId: string; tags?: string[] }>;
+  assert.ok(searchResults.some((e) => e.jobId === job.jobId));
+
+  const searchFavJson = await mcpServer._registeredTools.search_history.handler({ favorite: true });
+  const favResults = JSON.parse(searchFavJson.content[0].text) as Array<{ jobId: string; favorite?: boolean }>;
+  assert.ok(favResults.some((e) => e.jobId === job.jobId && e.favorite === true));
+
+  const searchEmptyJson = await mcpServer._registeredTools.search_history.handler({ q: 'no-such-term-xyzzy' });
+  const emptyResults = JSON.parse(searchEmptyJson.content[0].text) as unknown[];
+  assert.equal(emptyResults.length, 0);
+
+  // run_production_manifest + get_production_run_report: dry-run end-to-end.
+  // We point outputDir at /tmp so the runner has a writable place to
+  // drop the report.
+  const runJson = await mcpServer._registeredTools.run_production_manifest.handler({
+    jobId: job.jobId,
+    dryRun: true,
+    outputDir: '/tmp/mcp-prod-run-test',
+  });
+  const started = JSON.parse(runJson.content[0].text) as { runId: string; status: string; dryRun: boolean };
+  assert.equal(started.dryRun, true);
+  assert.ok(started.runId);
+  // Poll get_production_run_report until done (dry-run is fast).
+  let runReport: { status: string; report: { dryRun: boolean; phases: Array<{ phaseId: string; status: string }> } | null } | null = null;
+  for (let i = 0; i < 40; i++) {
+    await new Promise((r) => setTimeout(r, 50));
+    const r = await mcpServer._registeredTools.get_production_run_report.handler({ runId: started.runId });
+    const j = JSON.parse(r.content[0].text) as typeof runReport;
+    if (j && (j.status === 'done' || j.status === 'error')) { runReport = j; break; }
+  }
+  assert.ok(runReport, 'expected the production run to finish within 2s');
+  assert.equal(runReport.status, 'done');
+  assert.equal(runReport.report?.dryRun, true);
+  assert.equal(runReport.report?.phases.length, 4);
+
+  // 404 path: unknown runId
+  const missingJson = await mcpServer._registeredTools.get_production_run_report.handler({ runId: 'no-such-run' });
+  assert.equal(missingJson.isError, true);
+
+  // 404 path: run against a job that doesn't exist
+  const badJobJson = await mcpServer._registeredTools.run_production_manifest.handler({ jobId: 'no-such-job' });
+  assert.equal(badJobJson.isError, true);
+
+  // Reset state for any subsequent runs in the same dir.
+  await mcpServer._registeredTools.patch_history_meta.handler({
+    jobId: job.jobId,
+    favorite: false,
+    tags: [],
+    projectGoal: 'studio',
+  });
 } finally {
   await rm(storageDir, { recursive: true, force: true });
 }

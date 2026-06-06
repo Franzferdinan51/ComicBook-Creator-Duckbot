@@ -271,10 +271,12 @@ Briefly: the server exposes a JSON API at `/api/*` and serves the static
 frontend from the same origin. Key endpoints:
 
 - `POST /api/comic` — kick off a comic from a story
-- `GET  /api/comic/:jobId` — poll job status
+- `GET  /api/comic/:jobId` — poll job status (includes stage `progress`)
 - `GET  /api/comic/:jobId/pdf` — stream the generated PDF
 - `GET  /api/comic/:jobId/images/:panelId` — stream a single panel PNG
-- `GET  /api/history` — list recent comics (persisted to disk)
+- `GET  /api/history` — list recent comics; supports `?q=&projectGoal=&artStyle=&favorite=&tags=&limit=` filters
+- `PATCH /api/history/:jobId` — favorite / re-tag / re-categorize a history entry
+- `GET  /api/share/:jobId` — public, secret-free share card for a history entry
 - `GET  /api/providers` — list available text + image + music providers
 - `GET  /api/preflight` — production readiness diagnostics
 - `GET  /api/comic/:jobId/production-run-manifest` — MiniMax production run manifest

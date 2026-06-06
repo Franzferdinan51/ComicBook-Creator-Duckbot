@@ -44,8 +44,8 @@ For the most actionable workflow, start with the repo playbook at
   availability, and the Hermes/OpenClaw guidance files.
 - MCP: `comic-creator-mcp` exposes tool access for external hosts. Use
   `create_comic`, `regenerate_comic`, `get_comic`, `get_comic_pdf`, `get_comic_image`, and
-  `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_production_run_manifest`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`,
-  `get_theme_audio`, and `get_preflight` for complete agent workflows. Use
+  `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_production_run_manifest`, `run_production_manifest`, `get_production_run_report`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`,
+  `get_theme_audio`, `get_preflight`, `get_share_card`, `get_history`, `search_history`, and `patch_history_meta` for complete agent workflows. Use
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
 - WebUI: the Settings page exposes the Production readiness panel for the same

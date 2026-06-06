@@ -77,7 +77,11 @@ import {
   type XAILoginProgress,
 } from './openclaw-auth.js';
 import type { ComicOptions, ComicResult, ProjectGoal } from '../types.js';
-import { audioExtensionForPath, audioMimeTypeForPath, buildStudioBundle, runPreflight } from '../project/index.js';
+import { audioExtensionForPath, audioMimeTypeForPath, buildProductionRunManifest, buildStudioBundle, runPreflight } from '../project/index.js';
+import { runProductionManifest } from '../project/production-runner.js';
+import type { ProductionRunReport } from '../types.js';
+import { getProductionRunManager } from './production-runs.js';
+import { randomUUID } from 'node:crypto';
 
 /** Names of the providers that the user can configure through the UI. */
 const CONFIGURABLE_PROVIDERS = new Set(['openrouter', 'lmstudio', 'minimax', 'xai', 'gemini', 'comfyui']);
@@ -858,6 +862,7 @@ export function buildRouter(): Router {
       result?: ComicResult;
       error?: string;
       fromHistory?: boolean;
+      progress?: { stage: string; label: string; fraction: number; emittedAt: string };
     } = {
       status: record.status,
       createdAt: record.createdAt,
@@ -868,6 +873,8 @@ export function buildRouter(): Router {
       // compute an ETA from the live run duration.
       startedAt: record.startedAt ?? null,
     };
+    // Stage progress for live jobs — drives the ETA in the WebUI.
+    if (record.progress) body.progress = record.progress;
     if (record.status === 'done' && record.result) body.result = record.result;
     if (record.status === 'error' && record.error) body.error = record.error;
     if (record.fromHistory) body.fromHistory = true;
@@ -1147,6 +1154,162 @@ export function buildRouter(): Router {
     );
     res.end(body);
   });
+
+  /**
+   * POST /api/comic/:jobId/run-production
+   * Actually invokes `mmx` against the production run manifest for a
+   * finished comic. Returns 202 with a runId; poll
+   * `GET /api/production-run/:runId` for status.
+   *
+   * Body (all optional):
+   *   { "dryRun": true, "outputDir": "/tmp/...", "videoTimeoutSec": 600 }
+   */
+  router.post(
+    '/comic/:jobId/run-production',
+    async (
+      req: Request<{ jobId: string }>,
+      res: Response
+    ): Promise<void> => {
+      const jobId = req.params.jobId;
+      const record = await jobs.resolve(jobId);
+      if (!record) {
+        res.status(404).json({ error: `job ${jobId} not found` });
+        return;
+      }
+      if (record.status !== 'done' || !record.result) {
+        res
+          .status(409)
+          .json({ error: `job ${jobId} not done (status: ${record.status})` });
+        return;
+      }
+      const r = record.result;
+      if (!r.musicCuePackage || !r.videoPackage) {
+        res.status(409).json({
+          error: `job ${jobId} has no music/video package (re-run with --project-goal=studio or screen)`,
+        });
+        return;
+      }
+
+      type RunBody = {
+        dryRun?: unknown;
+        outputDir?: unknown;
+        videoTimeoutSec?: unknown;
+      };
+      const body = (req.body ?? {}) as RunBody;
+      const dryRun = body.dryRun === true;
+      const videoTimeoutSec =
+        typeof body.videoTimeoutSec === 'number' && Number.isFinite(body.videoTimeoutSec) && body.videoTimeoutSec > 0
+          ? body.videoTimeoutSec
+          : undefined;
+      const outputDir =
+        typeof body.outputDir === 'string' && body.outputDir.trim().length > 0
+          ? body.outputDir.trim()
+          : r.outputPath
+            ? dirname(r.outputPath)
+            : process.cwd();
+
+      const manifest = r.productionRunManifest ?? buildProductionRunManifest(jobId, r);
+      const runId = randomUUID();
+      const manager = getProductionRunManager();
+      manager.create({ runId, jobId, outputDir, dryRun });
+
+      // Fire-and-forget — the route returns 202 immediately and the
+      // runner pushes progress through the manager. We use
+      // setImmediate so the response is sent before the first
+      // onPhaseUpdate fires (otherwise the WebUI would never get
+      // the 202).
+      setImmediate(() => {
+        const onPhaseUpdate = (phase: ProductionRunReport['phases'][number]) => {
+          manager.updatePhase(runId, phase);
+        };
+        runProductionManifest(manifest, r, {
+          outputDir,
+          dryRun,
+          onPhaseUpdate,
+          videoTimeoutSec,
+        })
+          .then((report) => manager.markDone(runId, report))
+          .catch((err) =>
+            manager.markError(
+              runId,
+              err instanceof Error ? err.message : String(err)
+            )
+          );
+      });
+
+      res.status(202).json({ runId, status: 'pending', dryRun, outputDir });
+      return;
+    }
+  );
+
+  /**
+   * GET /api/production-run/:runId
+   * Poll status of an in-flight or completed production run. Returns
+   * the live record (status, phases, final report when done).
+   */
+  router.get('/production-run/:runId', async (req: Request<{ runId: string }>, res: Response) => {
+    const runId = req.params.runId;
+    const record = getProductionRunManager().get(runId);
+    if (!record) {
+      res.status(404).json({ error: `production run ${runId} not found` });
+      return;
+    }
+    res.json(record);
+  });
+
+  /**
+   * GET /api/comic/:jobId/production-run-report
+   * Returns the most recent completed production run report for a
+   * given jobId. Looks in:
+   *   1. The most recent ProductionRunRecord's `outputDir` (covers
+   *      custom `--run-production-out=<dir>` runs)
+   *   2. `dirname(outputPath)` (default location, next to the PDF)
+   *
+   * The runner also writes a JSON file to disk, but this endpoint
+   * surfaces it via the same shape the WebUI gets from the manager.
+   */
+  router.get(
+    '/comic/:jobId/production-run-report',
+    async (req: Request<{ jobId: string }>, res: Response) => {
+      const jobId = req.params.jobId;
+      const record = await jobs.resolve(jobId);
+      if (!record) {
+        res.status(404).json({ error: `job ${jobId} not found` });
+        return;
+      }
+      if (record.status !== 'done' || !record.result) {
+        res
+          .status(409)
+          .json({ error: `job ${jobId} not done (status: ${record.status})` });
+        return;
+      }
+      const stem = slugifyFilename(record.result.script?.title ?? jobId);
+      // Walk the manager's records for the latest run for this jobId.
+      const manager = getProductionRunManager();
+      const candidateDirs: string[] = [];
+      for (const r of manager.listForJob(jobId)) candidateDirs.push(r.outputDir);
+      if (record.result.outputPath) candidateDirs.push(dirname(record.result.outputPath));
+      candidateDirs.push(process.cwd());
+      // Dedupe while preserving order.
+      const seen = new Set<string>();
+      const ordered: string[] = [];
+      for (const d of candidateDirs) {
+        if (!seen.has(d)) { seen.add(d); ordered.push(d); }
+      }
+      for (const dir of ordered) {
+        const path = join(dir, `${stem}-production-run-report.json`);
+        if (existsSync(path)) {
+          const body = await readFile(path, 'utf8');
+          res.setHeader('Content-Type', 'application/json; charset=utf-8');
+          res.end(body);
+          return;
+        }
+      }
+      res.status(404).json({
+        error: `no production run report for job ${jobId} (run --run-production first)`,
+      });
+    }
+  );
 
   /**
    * GET /api/comic/:jobId/screenplay

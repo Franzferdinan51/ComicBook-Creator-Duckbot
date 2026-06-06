@@ -20,6 +20,11 @@ import type { ComicOptions, ComicResult, StoryProject } from '../types.js';
 import { buildProductionRunManifest } from '../project/index.js';
 import { upsertHistoryEntry, type HistoryEntry } from './storage.js';
 
+// Re-export the JOB_PROGRESS_STAGES list so the server route and
+// tests can look up stage labels without duplicating the weight table.
+export { JOB_PROGRESS_STAGES } from './progress-stages.js';
+import type { JobProgress } from './progress-stages.js';
+
 export type JobStatus = 'pending' | 'done' | 'error';
 
 export interface JobRecord {
@@ -38,6 +43,8 @@ export interface JobRecord {
   error?: string;
   /** Used to cancel a long-running job. */
   abortController: AbortController;
+  /** Latest pipeline progress event. Polled by /api/comic/:jobId. */
+  progress: JobProgress;
 }
 
 export interface CreateJobInput {
@@ -71,6 +78,9 @@ export interface ResolvedJob {
    *  pending (between createAndStart and the worker picking the job up).
    *  Always null for history-only entries. */
   startedAt: string | null;
+  /** Latest per-stage progress event. The WebUI uses this together
+   *  with `startedAt` to compute a stage-aware ETA. */
+  progress: JobProgress;
   result: ComicResult;
   error?: string;
   /** True if this was synthesized from on-disk history. The
@@ -101,6 +111,14 @@ class JobManager {
       // picks the job up, so a slow upstream queue doesn't burn the
       // estimate while we wait.
       startedAt: null,
+      // Initial progress = idle (no work started). The worker will
+      // overwrite this on every stage transition.
+      progress: {
+        stage: 'idle',
+        label: 'Queued',
+        fraction: 0,
+        emittedAt: now,
+      },
       abortController: new AbortController(),
     };
     this.jobs.set(jobId, record);
@@ -151,6 +169,7 @@ class JobManager {
         createdAt: live.createdAt,
         updatedAt: live.updatedAt,
         startedAt: live.startedAt,
+        progress: live.progress,
         result: live.result as ComicResult,
         error: live.error,
         fromHistory: false,
@@ -436,6 +455,15 @@ class JobManager {
       // No real "start" time for history entries — null so the WebUI
       // falls back to "started 1m ago" rather than a fake timestamp.
       startedAt: null,
+      // History entries already finished — we report the final stage
+      // (packaging) at 100% so the WebUI's progress bar lands at the
+      // end. There's nothing more to do for an old job.
+      progress: {
+        stage: 'packaging',
+        label: 'Done',
+        fraction: 1,
+        emittedAt: entry.createdAt,
+      },
       result,
       fromHistory: true,
     };
@@ -470,8 +498,27 @@ class JobManager {
       // from the actual run duration, not the time spent waiting in queue.
       record.startedAt = new Date().toISOString();
       record.updatedAt = record.startedAt;
-      const { createComic } = await import('../index.js');
-      const result = await createComic(record.story, record.options ?? {});
+      record.progress = {
+        stage: 'script',
+        label: 'Generating script',
+        fraction: 0,
+        emittedAt: record.startedAt,
+      };
+      const { createComic, JOB_PROGRESS_STAGES } = await import('../index.js');
+      // Subscribe to the per-stage progress events. createComic calls
+      // `onProgress` when it transitions between the script / images /
+      // assembly / packaging stages. We use the official stage labels
+      // from JOB_PROGRESS_STAGES so the UI shows consistent text.
+      const onProgress = (stageId: JobProgress['stage'], fraction: number) => {
+        const stageDef = JOB_PROGRESS_STAGES.find((s) => s.id === stageId);
+        record.progress = {
+          stage: stageId,
+          label: stageDef?.label ?? stageId,
+          fraction: Math.max(0, Math.min(1, fraction)),
+          emittedAt: new Date().toISOString(),
+        };
+      };
+      const result = await createComic(record.story, record.options ?? {}, { onProgress });
       record.result = result;
 
       // Best-effort: append to history. If disk is broken, log and continue.

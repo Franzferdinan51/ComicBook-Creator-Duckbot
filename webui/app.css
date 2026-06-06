@@ -1878,3 +1878,70 @@ code {
   .status-bar { padding: .35rem 1rem; gap: .75rem; font-size: .7rem; }
   .toast { max-width: calc(100vw - 3rem); }
 }
+
+/* Production-run controls (ResultPanel). Inline report + dry-run
+   toggle live here so the buttons stay close to the manifest
+   download. */
+.prod-run-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+  margin-top: .75rem;
+}
+.prod-run-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .8rem;
+  opacity: .9;
+}
+.prod-run-toggle input { margin: 0; }
+.prod-run-report {
+  margin-top: .75rem;
+  padding: .75rem;
+  background: rgba(255, 255, 255, .04);
+  border-radius: .5rem;
+  font-size: .8rem;
+}
+.prod-run-report h4 { margin: 0 0 .35rem 0; font-size: .9rem; }
+.prod-run-meta { margin: 0 0 .5rem 0; opacity: .75; }
+.prod-run-phases {
+  list-style: none;
+  margin: 0 0 .5rem 0;
+  padding: 0;
+}
+.prod-run-phases li {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .25rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+}
+.prod-run-phases li:last-child { border-bottom: 0; }
+.phase-id {
+  flex: 0 0 8rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: .75rem;
+  opacity: .85;
+}
+.phase-status {
+  flex: 0 0 auto;
+  padding: .1rem .5rem;
+  border-radius: .3rem;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.phase-status-done { background: rgba(34, 197, 94, .2); color: #4ade80; }
+.phase-status-error { background: rgba(239, 68, 68, .2); color: #f87171; }
+.phase-status-skipped { background: rgba(148, 163, 184, .2); color: #cbd5e1; }
+.phase-status-running,
+.phase-status-pending { background: rgba(250, 204, 21, .2); color: #fbbf24; }
+.phase-error { font-size: .7rem; opacity: .7; }
+.prod-run-error {
+  color: #f87171;
+  font-size: .8rem;
+  margin-top: .5rem;
+}

@@ -174,6 +174,19 @@ node bin/comic-creator.mjs --agent-playbook
 | `--music-cue-package` | off | Print the music cue package JSON |
 | `--agent-playbook` | off | Print the repo-level Hermes/OpenClaw playbook |
 | `--preflight` | off | Print production readiness diagnostics JSON |
+| `--share=<jobId>` | off | Print the public share-card JSON for an existing history entry |
+| `--search-history` | off | List history entries (newest first); use with `--search-q`, `--search-tags`, `--search-favorites`, `--search-project-goal`, `--limit` |
+| `--search-q=<text>` | — | Substring filter for `--search-history` (matches title, prompt, tags) |
+| `--search-tags=<a,b>` | — | Comma-separated tag filter; entries must include ALL listed tags |
+| `--search-favorites` | off | When set with `--search-history`, only return favorited entries |
+| `--search-project-goal=<name>` | — | Filter history by `comic` \| `screen` \| `music` \| `studio` |
+| `--favorite=<jobId>` | — | Mark a history entry as a favorite (idempotent) |
+| `--unfavorite=<jobId>` | — | Remove the favorite flag from a history entry (idempotent) |
+| `--tag=<jobId>` | — | Edit tags for a history entry (reads tags from the next `--tags=<a,b>` flag) |
+| `--tags=<a,b>` | — | Comma-separated tag list, lowercased, deduped, max 16 |
+| `--run-production=<jobId>` | — | Actually run the production run manifest against MiniMax (`mmx music generate`, `mmx video generate --async` + polling, `mmx video download`); writes a `*-production-run-report.json` next to the PDF |
+| `--run-production-dry-run` | off | Plan the production run but skip real `mmx` calls (with `--run-production`) |
+| `--run-production-out=<dir>` | — | Override the output directory for produced theme audio, video clips, and the run report |
 
 ## MCP server
 
@@ -183,13 +196,29 @@ External agents (OpenClaw, Claude Desktop, etc.) can invoke the pipeline via MCP
 comic-creator-mcp
 ```
 
-Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_production_run_manifest`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_preflight`, `get_history`, `get_settings`, `update_settings`.
+Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_production_run_manifest`, `run_production_manifest`, `get_production_run_report`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_share_card`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_preflight`, `get_history`, `search_history`, `patch_history_meta`, `get_settings`, `update_settings`.
 
 MCP provider fields are registry-based, not hard-coded. Agents should call `list_providers` first, then pass any registered text/image/music provider name into `create_comic` or `regenerate_comic`, including built-ins such as `xai`, `gemini`, `comfyui`, `minimax`, and WebUI-created custom OpenAI-compatible providers.
 
 Run `comic-creator --preflight`, `GET /api/preflight`, MCP `get_preflight`, or the WebUI Production readiness panel in Settings before production runs. The report checks Node.js, output directory writability, package entrypoints, provider readiness, MiniMax CLI availability, and the Hermes/OpenClaw guidance files.
 
 The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from preflight, then the studio bundle, then open the specialized files as needed. The workflow package is the next best handoff when Hermes/OpenClaw needs a track-by-track execution plan across story, video, and music. The production run manifest is the concrete next handoff when an agent is ready to run MiniMax music/video generation with `mmx auth status`, `mmx music generate`, `mmx video generate`, `mmx video task get`, and `mmx video download`. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package and production run manifest to drive `mmx video` clip generation.
+
+### Share cards and history curation
+
+Every history entry exposes a public, secret-free share card via:
+
+- HTTP: `GET /api/share/:jobId` — title, art style, project goal, page/panel counts, preview URLs, all artifact URLs
+- MCP: `get_share_card(jobId)` — same payload, callable from any MCP client
+- CLI: `comic-creator --share=<jobId>` — prints the JSON to stdout
+
+Use these for posting a "view this comic" link in chat without leaking file paths or settings.
+
+History entries can also be curated from the CLI / MCP / HTTP — search by free text, tags, project goal, or favorites-only, then star or re-tag entries to organize your library:
+
+- HTTP: `GET /api/history?q=...&tags=...&favorite=true&projectGoal=screen&limit=10` and `PATCH /api/history/:jobId` with `{ favorite, tags, projectGoal }`
+- MCP: `search_history(...)` and `patch_history_meta(jobId, { favorite, tags, projectGoal })`
+- CLI: `--search-history --search-q=robot --search-favorites --search-project-goal=screen`, plus `--favorite=<jobId>`, `--unfavorite=<jobId>`, `--tag=<jobId> --tags=cult-classic,redo`
 
 ## Agent playbook
 

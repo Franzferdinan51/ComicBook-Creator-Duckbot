@@ -6,11 +6,13 @@ import { join } from 'node:path';
 import { _resetJobManager, getJobManager } from './jobs.js';
 import { setStorageDir, upsertHistoryEntry } from './storage.js';
 import type { HistoryEntry } from './storage.js';
+import { _resetProductionRunManager } from './production-runs.js';
 import { startWebUI } from './index.js';
 
 const storageDir = await mkdtemp(join(tmpdir(), 'comic-routes-test-'));
 setStorageDir(storageDir);
 _resetJobManager();
+_resetProductionRunManager();
 
 const seriesPackage = {
   format: 'series-bible' as const,
@@ -499,6 +501,158 @@ try {
     assert.equal(generatedResult.project?.projectGoal, 'screen');
     assert.equal(generatedResult.project?.renderProfile?.outputProfile, 'storyboard-widescreen');
     assert.equal(generatedResult.seriesPackage?.targetFormat, 'series');
+
+    // -----------------------------------------------------------------
+    // History search/filter, PATCH, share card — added in 9ee575c
+    // -----------------------------------------------------------------
+
+    // PATCH tags + favorite. Tags should be lowercased + deduped, with
+    // empty/duplicate values silently dropped.
+    const patchRes = await fetch(`http://127.0.0.1:${handle.port}/api/history/history-job`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        favorite: true,
+        tags: ['Draft', 'draft', '  client-acme  ', 'noir', 'noir', ''],
+      }),
+    });
+    assert.equal(patchRes.status, 200);
+    const patched = await patchRes.json() as {
+      favorite: boolean;
+      tags: string[];
+      updatedAt: string;
+    };
+    assert.equal(patched.favorite, true);
+    assert.deepEqual(patched.tags, ['draft', 'client-acme', 'noir']);
+    assert.ok(typeof patched.updatedAt === 'string' && patched.updatedAt.length > 0);
+
+    // PATCH rejects empty body with 400.
+    const emptyRes = await fetch(`http://127.0.0.1:${handle.port}/api/history/history-job`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    assert.equal(emptyRes.status, 400);
+
+    // PATCH unknown jobId → 404.
+    const missingRes = await fetch(`http://127.0.0.1:${handle.port}/api/history/no-such-job`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ favorite: true }),
+    });
+    assert.equal(missingRes.status, 404);
+
+    // Filter by favorite=true — should find the starred one.
+    const favRes = await fetch(`http://127.0.0.1:${handle.port}/api/history?favorite=true&limit=50`);
+    const favList = await favRes.json() as Array<{ jobId: string; favorite?: boolean }>;
+    assert.ok(favList.length >= 1, 'expected at least one starred entry');
+    assert.ok(favList.every((e) => e.favorite === true));
+
+    // Filter by tag.
+    const tagRes = await fetch(`http://127.0.0.1:${handle.port}/api/history?tags=client-acme&limit=50`);
+    const tagList = await tagRes.json() as Array<{ jobId: string; tags?: string[] }>;
+    assert.ok(tagList.length >= 1);
+    assert.ok(tagList.every((e) => (e.tags || []).includes('client-acme')));
+
+    // Free-text search across tags.
+    const qRes = await fetch(`http://127.0.0.1:${handle.port}/api/history?q=acme&limit=50`);
+    const qList = await qRes.json() as Array<{ jobId: string }>;
+    assert.ok(qList.length >= 1);
+
+    // Filter by projectGoal.
+    const goalRes = await fetch(`http://127.0.0.1:${handle.port}/api/history?projectGoal=screen&limit=50`);
+    const goalList = await goalRes.json() as Array<{ jobId: string; projectGoal?: string }>;
+    assert.ok(goalList.every((e) => e.projectGoal === 'screen'));
+
+    // Filter by artStyle.
+    const styleRes = await fetch(`http://127.0.0.1:${handle.port}/api/history?artStyle=manga&limit=50`);
+    const styleList = await styleRes.json() as Array<{ jobId: string; artStyle: string }>;
+    assert.ok(styleList.every((e) => e.artStyle.toLowerCase().includes('manga')));
+
+    // Share card endpoint.
+    const shareRes = await fetch(`http://127.0.0.1:${handle.port}/api/share/history-job`);
+    assert.equal(shareRes.status, 200);
+    assert.equal(shareRes.headers.get('content-type')?.includes('application/json'), true);
+    const share = await shareRes.json() as {
+      format: string;
+      jobId: string;
+      title: string;
+      artStyle: string;
+      projectGoal: string;
+      pageCount: number;
+      panelCount: number;
+      preview: { cover: string | null; pdf: string; cbz: string };
+      artifacts: { studioBundle: string };
+    };
+    assert.equal(share.format, 'share-card');
+    assert.equal(share.title, 'History Project');
+    assert.equal(share.artStyle, 'manga');
+    assert.equal(share.projectGoal, 'screen');
+    assert.ok(share.pageCount > 0);
+    assert.ok(share.panelCount > 0);
+    assert.ok(share.preview.pdf.includes('/api/comic/history-job/pdf'));
+    assert.ok(share.artifacts.studioBundle.includes('/api/comic/history-job/studio-bundle'));
+
+    // Share endpoint 404s for unknown job.
+    const shareMissing = await fetch(`http://127.0.0.1:${handle.port}/api/share/no-such-job`);
+    assert.equal(shareMissing.status, 404);
+
+    // PATCH endpoint supports projectGoal override too.
+    const goalPatchRes = await fetch(`http://127.0.0.1:${handle.port}/api/history/history-job`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectGoal: 'music' }),
+    });
+    assert.equal(goalPatchRes.status, 200);
+    const goalPatched = await goalPatchRes.json() as { projectGoal: string };
+    assert.equal(goalPatched.projectGoal, 'music');
+    // Reset back to screen so the rest of the test suite is happy.
+    await fetch(`http://127.0.0.1:${handle.port}/api/history/history-job`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectGoal: 'screen' }),
+    });
+
+    // Production-run dry-run: should 202 with a runId, then status
+    // `done` and a fully-formed report in the body. We use a temp
+    // output dir so we don't pollute the test workspace.
+    const dryRunRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/run-production`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dryRun: true, outputDir: '/tmp/history-job-prod-run-dry' }),
+    });
+    assert.equal(dryRunRes.status, 202);
+    const dryStarted = await dryRunRes.json() as { runId: string; status: string; dryRun: boolean };
+    assert.equal(dryStarted.dryRun, true);
+    assert.ok(dryStarted.runId);
+    // Poll until done (dry-run should be near-instant).
+    let dryReport: { status: string; report: { phases: Array<{ phaseId: string; status: string }>; dryRun: boolean } | null } | null = null;
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 50));
+      const r = await fetch(`http://127.0.0.1:${handle.port}/api/production-run/${dryStarted.runId}`);
+      if (r.ok) {
+        const j = await r.json() as typeof dryReport;
+        if (j && j.status === 'done') { dryReport = j; break; }
+        if (j && j.status === 'error') { dryReport = j; break; }
+      }
+    }
+    assert.ok(dryReport, 'expected the production run to finish within 2s');
+    assert.equal(dryReport.status, 'done');
+    assert.equal(dryReport.report?.dryRun, true);
+    assert.equal(dryReport.report?.phases.length, 4);
+    for (const phase of dryReport.report!.phases) {
+      assert.equal(phase.status, 'done', `phase ${phase.phaseId} should be done`);
+    }
+    // The runner also wrote the JSON report to disk in the chosen
+    // output dir — verify it's readable via the per-comic endpoint.
+    const reportRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/production-run-report`);
+    assert.equal(reportRes.status, 200);
+    const onDisk = await reportRes.json() as { manifest: { jobId: string }; dryRun: boolean };
+    assert.equal(onDisk.manifest.jobId, 'history-job');
+    assert.equal(onDisk.dryRun, true);
+    // Unknown runId → 404
+    const missingRun = await fetch(`http://127.0.0.1:${handle.port}/api/production-run/no-such-run`);
+    assert.equal(missingRun.status, 404);
   } finally {
     await handle.close();
   }

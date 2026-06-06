@@ -81,8 +81,23 @@ import {
   buildVideoPackage,
   buildStudioBundle,
 } from './project/index.js';
+
+// Re-export JOB_PROGRESS_STAGES so the jobs runner can look up stage
+// labels without duplicating the weight table. The values here are
+// the source of truth — keep them in sync with what the WebUI uses.
+export { JOB_PROGRESS_STAGES, type JobProgress, type JobProgressStage } from './server/progress-stages.js';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
+
+/**
+ * Optional callbacks for the createComic() pipeline. The progress
+ * callback is fired at every stage boundary (script / images /
+ * assembly / packaging) so callers can surface an ETA without
+ * re-deriving it from a wall-clock guess.
+ */
+export interface CreateComicOptions {
+  onProgress?: (stage: 'script' | 'images' | 'assembly' | 'packaging' | 'writing', fraction: number) => void;
+}
 
 /**
  * End-to-end comic generation:
@@ -90,7 +105,8 @@ import { join, dirname } from 'node:path';
  */
 export async function createComic(
   story: string,
-  options: ComicOptions = {}
+  options: ComicOptions = {},
+  hooks: CreateComicOptions = {}
 ): Promise<ComicResult> {
   const HOME = process.env.HOME ?? '/tmp';
   const opts = {
@@ -121,6 +137,7 @@ export async function createComic(
   const musicProvider = getMusicProvider(opts.musicProvider);
   const project = buildStoryProject(story, opts);
 
+  hooks.onProgress?.('script', 0);
   const script: ComicScript = await generateScript(
     story,
     {
@@ -134,6 +151,8 @@ export async function createComic(
     },
     textProvider
   );
+  hooks.onProgress?.('script', 1);
+  hooks.onProgress?.('images', 0);
   const images = await generatePanelImages(
     script,
     {
@@ -186,6 +205,8 @@ export async function createComic(
     }
   }
 
+  hooks.onProgress?.('images', 1);
+  hooks.onProgress?.('assembly', 0);
   const outputPath = await assembleComic(script, images, {
     outputPath: opts.outputPath,
     format: opts.outputFormat,
@@ -240,6 +261,8 @@ export async function createComic(
   //
   // The image directory is per-job (sibling to the PDF) so two comics in the
   // same parent directory don't trample each other's panel images.
+  hooks.onProgress?.('assembly', 1);
+  hooks.onProgress?.('packaging', 0);
   const stemFromOutput = outputPath.replace(/\.[^./\\]+$/, '');
   const imageDir = `${stemFromOutput}.images`;
   await mkdir(imageDir, { recursive: true });

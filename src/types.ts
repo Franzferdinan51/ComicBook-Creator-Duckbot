@@ -265,6 +265,79 @@ export interface ProductionRunManifest {
   reviewChecklist: string[];
 }
 
+/**
+ * Result of actually running a `ProductionRunManifest` against MiniMax.
+ * The manifest itself is the recipe; this is the cook's log: which
+ * `mmx` calls fired, what came back, where the files landed.
+ *
+ * Lives in `types.ts` so the runner, the server route, the MCP tool,
+ * and the CLI can all share the same shape.
+ */
+export type ProductionRunStepStatus = 'pending' | 'running' | 'done' | 'error' | 'skipped';
+export type ProductionRunPhaseId = 'preflight' | 'music-theme' | 'video-clips' | 'review-package';
+
+export interface ProductionRunStep {
+  /** Human-readable label, e.g. "mmx video generate (clip 1 of 3)" */
+  label: string;
+  /** argv[0] */
+  cmd: string;
+  /** argv[1..] */
+  args: string[];
+  /** Child process exit code; null if the call was aborted or never ran. */
+  exitCode: number | null;
+  /** Captured stdout (truncated to 64 KB to keep reports readable). */
+  stdout: string;
+  /** Captured stderr (truncated to 64 KB). */
+  stderr: string  | null;
+  /** Wall-clock duration of the step in milliseconds. */
+  durationMs: number;
+  /** MiniMax task id returned by `mmx video generate --async`, if any. */
+  taskId?: string;
+  /** MiniMax file id returned by `mmx video task get` on success, if any. */
+  fileId?: string;
+  /** Local path of the downloaded/saved artifact, if any. */
+  outputPath?: string;
+}
+
+export interface ProductionRunPhase {
+  phaseId: ProductionRunPhaseId;
+  title: string;
+  status: ProductionRunStepStatus;
+  startedAt?: string;
+  completedAt?: string;
+  steps: ProductionRunStep[];
+  /** Absolute paths to artifacts produced by this phase. */
+  outputs: string[];
+  error?: string;
+}
+
+export interface ProductionRunReport {
+  /** Wall-clock start of the run. */
+  startedAt: string;
+  /** Wall-clock end of the run. */
+  completedAt: string;
+  /** Mirrors the manifest header for easy cross-reference. */
+  manifest: {
+    jobId: string;
+    title: string;
+    projectGoal: ProjectGoal;
+  };
+  /** Directory the runner dropped artifacts into. */
+  outputDir: string;
+  /** All phases attempted, in manifest order. */
+  phases: ProductionRunPhase[];
+  /** Flat list of every file path the runner produced. */
+  files: string[];
+  /** Flat list of every MiniMax task id the runner started. */
+  taskIds: string[];
+  /** Top-level errors (e.g. abort signal). Phase-level errors live on
+   *  `phases[i].error`. */
+  errors: string[];
+  /** True if this report was produced by `--dry-run` (no real mmx
+   *  calls fired). */
+  dryRun: boolean;
+}
+
 export interface StoryProject {
   id: string;
   title: string;

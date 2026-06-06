@@ -36,6 +36,9 @@ import {
   type OutputProfile,
   type PageLayout,
 } from './index.js';
+import { runProductionManifest } from './project/production-runner.js';
+import { loadHistory, filterHistory, patchHistoryEntryMeta } from './server/storage.js';
+import { getJobManager } from './server/jobs.js';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -88,6 +91,37 @@ interface ParsedArgs {
   version: boolean;
   agentPlaybook: boolean;
   preflight: boolean;
+  /** Print the public share-card JSON for a single comic. */
+  share: boolean;
+  /** Search/filter the on-disk history. Mutually exclusive with story
+   *  generation — when set, the positional story is ignored. */
+  searchHistory: boolean;
+  /** When --search-history is set, free-text query against title + tags. */
+  searchQuery: string | null;
+  /** When --search-history is set, comma-separated tags (AND). */
+  searchTags: string[] | null;
+  /** When --search-history is set, only starred entries. Set to true
+   *  if --search-favorites was passed; null = no filter. */
+  searchFavorites: boolean | null;
+  /** When --search-history is set, project goal filter. */
+  searchProjectGoal: ProjectGoal | null;
+  /** Tri-state favorite toggle. null = no flag passed, true = --favorite,
+   *  false = --unfavorite. The boolean default of `false` would
+   *  conflate "no flag" with "unfavorite" so we use a nullable. */
+  favorite: boolean | null;
+  /** JobId used with --favorite, --unfavorite, or --tag. */
+  jobId: string | null;
+  /** Tags to set on a history entry (use with --job-id, comma-separated). */
+  tags: string[] | null;
+  /** When set, run the production run manifest for a finished comic
+   *  against MiniMax. Value is the jobId. Replaces <story>. */
+  runProduction: string | null;
+  /** When set with --run-production, don't actually invoke mmx — just
+   *  plan the command list and write the report. */
+  runProductionDryRun: boolean;
+  /** When set with --run-production, override the output directory
+   *  for the produced music / video / report files. */
+  runProductionOutputDir: string | null;
 }
 
 const USAGE = `comic-creator — generate a multi-page AI comic from a story
@@ -126,6 +160,19 @@ Options:
   --music-cue-package       Print the music cue package JSON and exit
   --agent-playbook          Print the repo-level Hermes/OpenClaw playbook and exit
   --preflight               Print production readiness diagnostics JSON and exit
+  --share=<jobId>           Print the public share-card JSON for a finished comic and exit
+  --search-history          Search/filter the on-disk comic history (replaces <story>)
+  --search-q=<text>         Free-text query against title + tags (with --search-history)
+  --search-tags=<a,b>       Comma-separated tags, AND-matched (with --search-history)
+  --search-favorites        Only starred entries (with --search-history)
+  --search-project-goal=<g> comic | screen | music | studio (with --search-history)
+  --favorite=<jobId>        Star a comic by jobId and exit
+  --unfavorite=<jobId>      Unstar a comic by jobId and exit
+  --tag=<jobId>             Set tags on a comic by jobId, then read --tags=<a,b> for the new tags
+  --tags=<a,b>              Comma-separated tag list (used with --tag=<jobId>)
+  --run-production=<jobId>  Actually run the production run manifest for a finished comic against MiniMax
+  --run-production-dry-run  Plan the production run but don't actually invoke mmx (with --run-production)
+  --run-production-out=<dir> Override the output directory for production-run artifacts (default: next to PDF)
   --help                    Print this help and exit
   --version                 Print version and exit
 
@@ -133,6 +180,10 @@ Examples:
   comic-creator --style=manga --pages=2 --panels=2 "A robot discovers a garden"
   comic-creator --image-provider=openrouter --image-model=black-forest-labs/flux.1-schnell "A short story"
   comic-creator --image-provider=minimax --image-aspect-ratio=16:9 "A cinematic landscape"
+  comic-creator --search-history --search-favorites
+  comic-creator --search-history --search-q=acme --search-tags=noir,draft
+  comic-creator --favorite=<jobId-from-history>
+  comic-creator --tag=<jobId-from-history> --tags=client-acme,noir
 `;
 
 function defaultArgs(): ParsedArgs {
@@ -171,6 +222,18 @@ function defaultArgs(): ParsedArgs {
     version: false,
     agentPlaybook: false,
     preflight: false,
+    share: false,
+    searchHistory: false,
+    searchQuery: null,
+    searchTags: null,
+    searchFavorites: null,
+    searchProjectGoal: null,
+    favorite: null,
+    jobId: null,
+    tags: null,
+    runProduction: null,
+    runProductionDryRun: false,
+    runProductionOutputDir: null,
   };
 }
 
@@ -247,6 +310,51 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
         throw new Error(`--generate-cover must be true|false, got "${value}"`);
       }
       break;
+    case 'share':
+      args.share = true;
+      args.jobId = value;
+      break;
+    case 'search-q':
+      args.searchQuery = value;
+      break;
+    case 'search-tags':
+      args.searchTags = value
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+      break;
+    case 'search-project-goal':
+      if (value !== 'comic' && value !== 'screen' && value !== 'music' && value !== 'studio') {
+        throw new Error(`--search-project-goal must be one of comic|screen|music|studio, got "${value}"`);
+      }
+      args.searchProjectGoal = value;
+      break;
+    case 'favorite':
+      args.favorite = true;
+      args.jobId = value;
+      break;
+    case 'unfavorite':
+      args.favorite = false;
+      args.jobId = value;
+      break;
+    case 'tag':
+      args.jobId = value;
+      break;
+    case 'tags':
+      args.tags = value
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+      break;
+    case 'run-production':
+      args.runProduction = value;
+      break;
+    case 'run-production-dry-run':
+      args.runProductionDryRun = true;
+      break;
+    case 'run-production-out':
+      args.runProductionOutputDir = value;
+      break;
     case 'output-profile':
       if (value !== 'comic-print' && value !== 'digital-portrait' && value !== 'storyboard-widescreen') {
         throw new Error(`--output-profile must be one of comic-print|digital-portrait|storyboard-widescreen, got "${value}"`);
@@ -305,6 +413,12 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
       args.agentPlaybook = true;
     } else if (arg === '--preflight') {
       args.preflight = true;
+    } else if (arg === '--search-history') {
+      args.searchHistory = true;
+    } else if (arg === '--search-favorites') {
+      args.searchFavorites = true;
+    } else if (arg === '--run-production-dry-run') {
+      args.runProductionDryRun = true;
     } else if (arg.startsWith('--') && arg.includes('=')) {
       const eq = arg.indexOf('=');
       const key = arg.slice(2, eq);
@@ -619,6 +733,141 @@ async function main(): Promise<void> {
   if (args.preflight) {
     process.stdout.write(JSON.stringify(await runPreflight(), null, 2) + '\n');
     return;
+  }
+  if (args.share) {
+    if (!args.jobId) {
+      process.stderr.write('comic-creator: --share=<jobId> requires a jobId\n');
+      process.exit(2);
+    }
+    const resolved = await getJobManager().resolve(args.jobId);
+    if (!resolved) {
+      process.stderr.write(`comic-creator: job ${args.jobId} not found\n`);
+      process.exit(1);
+    }
+    if (resolved.status !== 'done' || !resolved.result) {
+      process.stderr.write(`comic-creator: job ${args.jobId} not done (status: ${resolved.status})\n`);
+      process.exit(1);
+    }
+    const r = resolved.result;
+    const panelCount = (r.script?.pages || []).reduce(
+      (acc, p) => acc + (p.panels?.length || 0), 0
+    );
+    process.stdout.write(JSON.stringify({
+      format: 'share-card',
+      jobId: r.project?.id || args.jobId,
+      title: r.script?.title || 'Untitled',
+      artStyle: r.script?.artStyle || '—',
+      projectGoal: r.project?.projectGoal || 'comic',
+      outputProfile: r.project?.renderProfile?.outputProfile || 'comic-print',
+      pageCount: r.script?.pages?.length || 0,
+      panelCount,
+      preview: {
+        cover: r.coverImagePath ? `/api/comic/${args.jobId}/cover` : null,
+        pdf: r.pdfPath ? `/api/comic/${args.jobId}/pdf` : null,
+        cbz: r.cbzPath ? `/api/comic/${args.jobId}/cbz` : null,
+      },
+      artifacts: {
+        studioBundle: r.studioBundlePath ? `/api/comic/${args.jobId}/studio-bundle` : null,
+        project: r.projectPath ? `/api/comic/${args.jobId}/project` : null,
+        screenplay: r.screenplayPath ? `/api/comic/${args.jobId}/screenplay` : null,
+        directorBrief: r.directorBriefPath ? `/api/comic/${args.jobId}/director-brief` : null,
+        storyboardPackage: r.storyboardPackagePath ? `/api/comic/${args.jobId}/storyboard-package` : null,
+        videoPackage: r.videoPackagePath ? `/api/comic/${args.jobId}/video-package` : null,
+        trailerPackage: r.trailerPackagePath ? `/api/comic/${args.jobId}/trailer-package` : null,
+        seriesPackage: r.seriesPackagePath ? `/api/comic/${args.jobId}/series-package` : null,
+        musicCuePackage: r.musicCuePackagePath ? `/api/comic/${args.jobId}/music-cue-package` : null,
+        songSheet: r.songSheetPath ? `/api/comic/${args.jobId}/song-sheet` : null,
+        themeAudio: r.songAudioPath ? `/api/comic/${args.jobId}/theme-audio` : null,
+        agentGuidance: r.agentGuidancePath ? `/api/comic/${args.jobId}/agent-guidance` : null,
+        agentWorkflowPackage: r.agentWorkflowPackagePath
+          ? `/api/comic/${args.jobId}/agent-workflow-package`
+          : null,
+        productionRunManifest: r.productionRunManifestPath
+          ? `/api/comic/${args.jobId}/production-run-manifest`
+          : null,
+      },
+      storyBible: {
+        premise: r.storyBible?.premise || '',
+        synopsis: r.storyBible?.synopsis || '',
+        chapterCount: r.storyBible?.chapterOutline?.length || 0,
+      },
+    }, null, 2) + '\n');
+    return;
+  }
+  if (args.searchHistory) {
+    const list = await loadHistory();
+    const filtered = filterHistory(list, {
+      q: args.searchQuery ?? undefined,
+      projectGoal: args.searchProjectGoal ?? undefined,
+      favorite: args.searchFavorites === true ? true : undefined,
+      tags: args.searchTags ?? undefined,
+      limit: 50,
+    });
+    process.stdout.write(JSON.stringify(filtered, null, 2) + '\n');
+    return;
+  }
+  // --favorite=<jobId>  /  --unfavorite=<jobId>  → toggle the favorite bit.
+  // The tri-state `favorite` field lets us distinguish "user passed the
+  // flag" (true / false) from "user didn't pass the flag" (null).
+  if (args.favorite !== null && args.tags === null) {
+    const next = await patchHistoryEntryMeta(args.jobId!, { favorite: args.favorite });
+    if (!next) {
+      process.stderr.write(`comic-creator: history entry ${args.jobId} not found\n`);
+      process.exit(1);
+    }
+    process.stdout.write(JSON.stringify(next, null, 2) + '\n');
+    return;
+  }
+  if (args.jobId && args.tags !== null) {
+    // --tag=<jobId> --tags=foo,bar → set tags on the entry
+    const next = await patchHistoryEntryMeta(args.jobId, { tags: args.tags });
+    if (!next) {
+      process.stderr.write(`comic-creator: history entry ${args.jobId} not found\n`);
+      process.exit(1);
+    }
+    process.stdout.write(JSON.stringify(next, null, 2) + '\n');
+    return;
+  }
+  if (args.runProduction) {
+    // --run-production=<jobId> [--run-production-dry-run] [--run-production-out=<dir>]
+    // Resolve the comic, build the manifest, then run it.
+    const jobId = args.runProduction;
+    const resolved = await getJobManager().resolve(jobId);
+    if (!resolved) {
+      process.stderr.write(`comic-creator: job ${jobId} not found\n`);
+      process.exit(1);
+    }
+    if (resolved.status !== 'done' || !resolved.result) {
+      process.stderr.write(`comic-creator: job ${jobId} not done (status: ${resolved.status})\n`);
+      process.exit(1);
+    }
+    const r = resolved.result;
+    if (!r.musicCuePackage || !r.videoPackage) {
+      process.stderr.write(`comic-creator: job ${jobId} has no music/video package (re-run with --project-goal=studio or screen)\n`);
+      process.exit(1);
+    }
+    const manifest = r.productionRunManifest ?? buildProductionRunManifest(jobId, r);
+    const outDir = args.runProductionOutputDir
+      ? resolve(args.runProductionOutputDir)
+      : r.outputPath
+        ? dirname(r.outputPath)
+        : process.cwd();
+    const controller = new AbortController();
+    process.on('SIGINT', () => controller.abort());
+    process.on('SIGTERM', () => controller.abort());
+    process.stderr.write(
+      args.runProductionDryRun
+        ? `comic-creator: planning production run for ${jobId} → ${outDir}\n`
+        : `comic-creator: running production for ${jobId} → ${outDir}\n`
+    );
+    const report = await runProductionManifest(manifest, r, {
+      outputDir: outDir,
+      dryRun: args.runProductionDryRun,
+      signal: controller.signal,
+    });
+    process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+    const anyPhaseError = report.phases.some((p) => p.status === 'error');
+    process.exit(anyPhaseError ? 1 : 0);
   }
   if (!args.story) {
     process.stderr.write('comic-creator: missing <story> argument. Run `comic-creator --help`.\n');

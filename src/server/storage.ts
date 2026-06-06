@@ -376,10 +376,27 @@ export async function patchHistoryEntryMeta(
     const list = await loadHistory();
     const idx = list.findIndex((e) => e.jobId === jobId);
     if (idx < 0) return undefined;
+    // Normalize tag list: trim, lowercase, drop empty, dedupe, cap at 16.
+    // Same logic the route handler applies so any caller (HTTP or
+    // MCP) sees consistent behavior.
+    let normalizedTags: string[] | undefined;
+    if (patch.tags !== undefined) {
+      const seen = new Set<string>();
+      const cleaned: string[] = [];
+      for (const raw of patch.tags) {
+        if (typeof raw !== 'string') continue;
+        const t = raw.trim().toLowerCase();
+        if (!t || seen.has(t)) continue;
+        seen.add(t);
+        cleaned.push(t);
+        if (cleaned.length >= 16) break;
+      }
+      normalizedTags = cleaned;
+    }
     const next: HistoryEntry = {
       ...list[idx],
       ...(patch.favorite !== undefined ? { favorite: patch.favorite } : {}),
-      ...(patch.tags !== undefined ? { tags: patch.tags } : {}),
+      ...(normalizedTags !== undefined ? { tags: normalizedTags } : {}),
       ...(patch.projectGoal !== undefined ? { projectGoal: patch.projectGoal } : {}),
       updatedAt: new Date().toISOString(),
     };

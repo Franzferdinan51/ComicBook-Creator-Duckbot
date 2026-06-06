@@ -31,6 +31,9 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
   // compute an ETA by tracking elapsed time and how far through the
   // visual progress we are. Stays null while the job is still queued.
   const [startedAt, setStartedAt] = useState(null);
+  // Server-reported per-stage progress (label + fraction). The ETA
+  // line above is now driven by this rather than a wall-clock guess.
+  const [progress, setProgress] = useState(null);
   // Number of seconds the worker has been running — used to render the
   // ETA line. Bumped from a 1s interval so it ticks even when the
   // server is slow to respond.
@@ -70,6 +73,7 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
     setProgressPct(0);
     setStageIdx(0);
     setStartedAt(null);
+    setProgress(null);
 
     let lastUpdate = 0;
     for (let i = 0; !cancelRef.current; i++) {
@@ -92,6 +96,10 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
       // we keep polling until the server reports a startedAt.
       if (data.startedAt && !startedAt) {
         setStartedAt(data.startedAt);
+      }
+      // Track per-stage progress so the ETA can be stage-aware.
+      if (data.progress) {
+        setProgress(data.progress);
       }
 
       if (data.status === 'done') {
@@ -166,23 +174,37 @@ export function GenerateButton({ story, options = {}, onDone, onError, externalJ
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [story, options, loading, tooShort]);
 
-  // Compute the ETA string. We need both `startedAt` (from the server)
-  // and some real progress — anything before startedAt is just queue
-  // time, which we don't count. After the worker starts, the visual
-  // percentage is roughly the fraction of work done, so:
-  //   eta_seconds ≈ (elapsed / progress_fraction) - elapsed
-  // We only show the ETA once we have at least 8% of progress so the
-  // first second doesn't display a wildly inflated estimate.
+  // Compute the ETA string. The server now reports a per-stage
+  // `progress` event with a `fraction` (0-1) of work done within the
+  // current stage. We weight stages by their share of the total
+  // pipeline (script=15%, images=70%, assembly=5%, packaging=10%) so
+  // the fraction is comparable across stage boundaries. The actual
+  // weights live on the server in JOB_PROGRESS_STAGES.
+  const STAGE_WEIGHTS = { script: 0.15, images: 0.7, assembly: 0.05, packaging: 0.1 };
+  const STAGE_ORDER = ['script', 'images', 'assembly', 'packaging'];
+  const progressFromData = (() => {
+    if (loading && startedAt && progress?.stage && progress.stage !== 'idle') {
+      const idx = STAGE_ORDER.indexOf(progress.stage);
+      if (idx < 0) return null;
+      // Sum weights of all earlier stages (fully done) + the
+      // fraction done of the current stage.
+      let base = 0;
+      for (let i = 0; i < idx; i++) base += STAGE_WEIGHTS[STAGE_ORDER[i]] || 0;
+      const w = STAGE_WEIGHTS[progress.stage] || 0;
+      return Math.min(0.999, base + w * (progress.fraction || 0));
+    }
+    return null;
+  })();
+
   let etaLabel = '';
-  if (loading && startedAt && progressPct >= 8) {
+  if (loading && startedAt && progressFromData !== null) {
     const elapsedMs = Date.now() - new Date(startedAt).getTime();
     const elapsedSec = Math.max(1, Math.floor(elapsedMs / 1000));
-    const fraction = progressPct / 100;
-    const totalSec = elapsedSec / fraction;
+    const totalSec = elapsedSec / Math.max(0.05, progressFromData);
     const remainingSec = Math.max(0, Math.round(totalSec - elapsedSec));
     etaLabel = `~${formatDuration(remainingSec)} left`;
   } else if (loading) {
-    // Worker hasn't started yet — show the elapsed "queue + run" time
+    // Worker hasn't started yet — show elapsed "queue + run" time
     // so the user sees something moving.
     etaLabel = `${formatDuration(elapsedSec)} elapsed`;
   }
