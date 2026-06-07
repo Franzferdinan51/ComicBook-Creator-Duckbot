@@ -813,9 +813,9 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
             class="btn btn-ghost"
             type="button"
             onClick=${onOpenMovie}
-            title="Open the movie/show adaptation workspace"
+            title="Open the Movie / Show adaptation workspace"
           >
-            🎬 Open movie board
+            🎬 Open Movie / Show board
           </button>
         ` : null}
 

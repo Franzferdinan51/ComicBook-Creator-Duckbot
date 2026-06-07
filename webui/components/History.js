@@ -23,15 +23,17 @@ export function History({ onOpen }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openingId, setOpeningId] = useState(null);
-  // Search/filter state — debounced when typing in the search box.
+  // Search/filter state — `queryInput` updates on each keystroke while
+  // `query` is the debounced value that actually hits the server.
+  const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
   const [projectGoal, setProjectGoal] = useState('');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [editingTags, setEditingTags] = useState(null); // jobId whose tags row is open
   const [tagInput, setTagInput] = useState('');
 
-  function load() {
-    setLoading(true);
+  function load(isBackgroundRefresh = false) {
+    if (!isBackgroundRefresh) setLoading(true);
     setError(null);
     const params = new URLSearchParams();
     if (query.trim()) params.set('q', query.trim());
@@ -45,10 +47,12 @@ export function History({ onOpen }) {
       .finally(() => setLoading(false));
   }
 
-  // Reload on filter changes. `query` is debounced by the input handler below.
-  useEffect(() => { load(); }, [projectGoal, favoritesOnly]);
-  // Re-run on query change (already debounced via the input's onChange).
-  useEffect(() => { load(); }, [query]);
+  useEffect(() => {
+    const timer = setTimeout(() => setQuery(queryInput), 250);
+    return () => clearTimeout(timer);
+  }, [queryInput]);
+
+  useEffect(() => { load(history.length > 0); }, [projectGoal, favoritesOnly, query]);
 
   async function toggleFavorite(entry) {
     try {
@@ -83,7 +87,7 @@ export function History({ onOpen }) {
     }
   }
 
-  async function handleOpen(entry) {
+  async function handleOpen(entry, destination = 'home') {
     setOpeningId(entry.jobId);
     try {
       // Try to get the live job first — has the full result + working PDF endpoint.
@@ -137,7 +141,7 @@ export function History({ onOpen }) {
               studioBundlePath: bundle.artifactPaths?.studioBundlePath ?? entry.studioBundlePath ?? null,
               pages: [],
             };
-          }
+        }
         } catch { /* studio bundle may be unavailable — fall through */ }
       }
 
@@ -172,6 +176,7 @@ export function History({ onOpen }) {
           videoPackagePath: entry.videoPackagePath || null,
           animaticTimelinePath: entry.animaticTimelinePath || null,
           studioBundlePath: entry.studioBundlePath || null,
+          fromHistory: true,
           pages: [],
         };
       }
@@ -181,7 +186,7 @@ export function History({ onOpen }) {
         return;
       }
 
-      navTo('home');
+      navTo(destination);
       onOpen && onOpen(entry, result, entry.jobId);
     } catch (err) {
       showToast(err.message, 'error');
@@ -308,19 +313,6 @@ export function History({ onOpen }) {
     showToast('Production run manifest downloaded.', 'success');
   }
 
-  if (loading) {
-    return html`
-      <section class="panel" aria-labelledby="history-title">
-        <header class="panel-title">
-          <h2 id="history-title">History</h2>
-        </header>
-        <div class="history-grid">
-          ${[1, 2, 3, 4].map(() => html`<div class="skeleton skeleton-block"></div>`)}
-        </div>
-      </section>
-    `;
-  }
-
   if (error) {
     return html`
       <section class="panel" aria-labelledby="history-title">
@@ -357,6 +349,19 @@ export function History({ onOpen }) {
     return PROJECT_GOAL_LABELS[goal] || goal;
   }
 
+  function canOpenMovie(entry) {
+    return Boolean(
+      entry?.videoPackagePath ||
+      entry?.trailerPackagePath ||
+      entry?.seriesPackagePath ||
+      entry?.screenplayPath ||
+      entry?.project?.projectGoal === 'screen' ||
+      entry?.project?.projectGoal === 'studio'
+    );
+  }
+
+  const isInitialLoading = loading && history.length === 0;
+
   return html`
     <section class="panel" aria-labelledby="history-title">
       <header class="panel-title">
@@ -370,8 +375,8 @@ export function History({ onOpen }) {
           type="search"
           class="history-search"
           placeholder="Search title or tag…"
-          value=${query}
-          onInput=${(e) => setQuery(e.target.value)}
+          value=${queryInput}
+          onInput=${(e) => setQueryInput(e.target.value)}
           aria-label="Search history by title or tag"
         />
         <select
@@ -399,12 +404,20 @@ export function History({ onOpen }) {
           <button
             type="button"
             class="btn btn-ghost btn-sm"
-            onClick=${() => { setQuery(''); setProjectGoal(''); setFavoritesOnly(false); }}
+            onClick=${() => { setQueryInput(''); setQuery(''); setProjectGoal(''); setFavoritesOnly(false); }}
           >Clear filters</button>
         ` : null}
       </div>
 
-      ${history.length === 0 && (query || projectGoal || favoritesOnly) ? html`
+      ${loading && history.length > 0 ? html`
+        <p class="muted small" aria-live="polite">Updating history…</p>
+      ` : null}
+
+      ${isInitialLoading ? html`
+        <div class="history-grid">
+          ${[1, 2, 3, 4].map(() => html`<div class="skeleton skeleton-block"></div>`)}
+        </div>
+      ` : history.length === 0 && (query || projectGoal || favoritesOnly) ? html`
         <div class="empty-state">
           <h3>No matches</h3>
           <p>No comics match your current filters. Try clearing them.</p>
@@ -511,6 +524,13 @@ export function History({ onOpen }) {
                   type="button"
                   onClick=${(e) => { e.stopPropagation(); handleOpen(entry); }}
                 >Open</button>
+                ${canOpenMovie(entry) ? html`
+                  <button
+                    type="button"
+                    onClick=${(e) => { e.stopPropagation(); handleOpen(entry, 'movie'); }}
+                    title="Open this project directly in the Movie / Show board"
+                  >Movie / Show</button>
+                ` : null}
                 <button
                   type="button"
                   onClick=${handleDownloadAgentPlaybook}
