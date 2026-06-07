@@ -37,12 +37,16 @@ function fakeComicResult(): ComicResult {
         clipId: 'clip-1',
         prompt: 'A small robot walking through a city park at sunrise, cinematic, slow dolly forward.',
         durationSec: 6,
+        referenceImagePath: '/tmp/robot-first-frame.png',
+        subjectImagePath: 'https://example.com/robot-subject.png',
         notes: ['opening shot'],
       },
       {
         clipId: 'clip-2',
         prompt: 'The robot stops and looks at a small flower growing through concrete, close-up, shallow depth of field.',
         durationSec: 4,
+        referenceImagePath: '/tmp/robot-second-frame.png',
+        subjectImagePath: 'https://example.com/robot-subject.png',
         notes: ['discovery beat'],
       },
     ],
@@ -324,6 +328,10 @@ async function testFullRun(): Promise<void> {
     // Confirm step 1 of clip 1 captured the submit taskId
     const submitStep = videoPhase.steps[0];
     assert.match(submitStep.taskId ?? '', /^task-/);
+    assert.equal(submitStep.args.includes('--first-frame'), true);
+    assert.equal(submitStep.args.includes('/tmp/robot-first-frame.png'), true);
+    assert.equal(submitStep.args.includes('--subject-image'), true);
+    assert.equal(submitStep.args.includes('https://example.com/robot-subject.png'), true);
     // Confirm step 2 captured the fileId (after the 2nd poll)
     const pollStep = videoPhase.steps[1];
     assert.match(pollStep.fileId ?? '', /^file-task-/);

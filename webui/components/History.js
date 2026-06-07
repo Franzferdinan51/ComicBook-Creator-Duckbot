@@ -91,7 +91,10 @@ export function History({ onOpen }) {
       try {
         const data = await api(`/api/comic/${entry.jobId}`);
         if (data && data.status === 'done' && data.result) {
-          result = data.result;
+          result = {
+            ...data.result,
+            ...(data.fromHistory ? { fromHistory: true } : {}),
+          };
         }
       } catch { /* job may have been GC'd from in-memory map — fall through */ }
 
@@ -118,6 +121,7 @@ export function History({ onOpen }) {
               agentWorkflowPackage: bundle.agentWorkflowPackage,
               agentWorkflowPackagePath: bundle.artifactPaths?.agentWorkflowPackagePath ?? null,
               productionRunManifest: bundle.productionRunManifest,
+              fromHistory: true,
               productionRunManifestPath: bundle.artifactPaths?.productionRunManifestPath ?? null,
               screenplayPath: bundle.artifactPaths?.screenplayPath ?? null,
               directorBriefPath: bundle.artifactPaths?.directorBriefPath ?? null,

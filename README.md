@@ -202,7 +202,7 @@ Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agen
 
 MCP provider fields are registry-based, not hard-coded. Agents should call `list_providers` first, then pass any registered text/image/music provider name into `create_comic` or `regenerate_comic`, including built-ins such as `xai`, `gemini`, `comfyui`, `minimax`, and WebUI-created custom OpenAI-compatible providers.
 
-For stronger recurring-character continuity, pass one or more `--character-reference=...` flags in the CLI, `characterReferences` in HTTP or MCP, or fill the WebUI Character consistency references box. The app forwards these to MiniMax as `subject_reference` entries for panel art and cover generation.
+For stronger recurring-character continuity, pass one or more `--character-reference=...` flags in the CLI, `characterReferences` in HTTP or MCP, or fill the WebUI Character consistency references box. The app forwards these to MiniMax as `subject_reference` entries for panel art and cover generation, then carries the same continuity data into the movie/show handoff so generated video commands can use `--first-frame` and `--subject-image` when those references exist.
 
 Run `comic-creator --preflight`, `GET /api/preflight`, MCP `get_preflight`, or the WebUI Production readiness panel in Settings before production runs. The report checks Node.js, output directory writability, package entrypoints, provider readiness, MiniMax CLI availability, and the Hermes/OpenClaw guidance files.
 

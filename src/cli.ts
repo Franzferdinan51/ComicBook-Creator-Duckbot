@@ -660,7 +660,12 @@ export async function runCli(
     'utf8'
   );
   await writeFile(trailerPackagePath, JSON.stringify(project.trailerPackage, null, 2), 'utf8');
-  const videoPackage = buildVideoPackage({ project, pages, songAudioPath });
+  const videoPackage = buildVideoPackage({
+    project,
+    pages,
+    songAudioPath,
+    characterReferences: opts.characterReferences,
+  });
   await writeFile(videoPackagePath, JSON.stringify(videoPackage, null, 2), 'utf8');
   await writeFile(
     animaticTimelinePath,

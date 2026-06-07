@@ -1,4 +1,5 @@
 import type { Page, SeriesPackage, StoryProject, TrailerPackage, VideoPackage } from '../types.js';
+import { buildMiniMaxVideoGenerateCommand } from './minimax-video-command.js';
 
 export interface StoryboardPackageInput {
   project: Pick<StoryProject, 'title' | 'renderProfile' | 'adaptationPackage'>;
@@ -24,6 +25,7 @@ export interface VideoPackageInput {
     panelImagePaths: string[];
   }>;
   songAudioPath: string | null;
+  characterReferences?: string[];
 }
 
 export function buildTrailerPackage(input: TrailerPackageInput): TrailerPackage {
@@ -241,6 +243,13 @@ export function buildVideoPackage(input: VideoPackageInput): VideoPackage {
       : 'movie';
   const overview = `${input.project.title} should move beyond a slideshow into short cinematic clips with motion, scene continuity, and cue-aware pacing.`;
   const trailerDirection = input.project.trailerPackage.logline;
+  const subjectReferenceImages = (input.characterReferences ?? []).map((ref) => ref.trim()).filter(Boolean);
+  const primarySubjectImage = subjectReferenceImages[0] || null;
+  const previewCommand = buildMiniMaxVideoGenerateCommand({
+    prompt: '<clip prompt>',
+    referenceImagePath: '<clip reference image>',
+    subjectImagePath: primarySubjectImage ? '<character reference image>' : null,
+  });
 
   return {
     format: 'video-generation-package',
@@ -249,8 +258,9 @@ export function buildVideoPackage(input: VideoPackageInput): VideoPackage {
     renderGoal,
     overview,
     trailerDirection,
+    ...(subjectReferenceImages.length > 0 ? { subjectReferenceImages } : {}),
     commands: {
-      generate: `mmx video generate --prompt "<clip prompt>" --async`,
+      generate: previewCommand,
       poll: 'mmx video task get --task-id <task-id>',
       download: `mmx video download --file-id <file-id> --out ${titleSlug}-clip.mp4`,
     },
@@ -277,11 +287,13 @@ export function buildVideoPackage(input: VideoPackageInput): VideoPackage {
         musicCueId: cue?.cueId,
         musicCueTitle: cueMeta?.title,
         referenceImagePath: shot.panelImagePath || null,
+        subjectImagePath: primarySubjectImage,
       };
     }),
     workflowNotes: [
       'Start from the strongest hook shot and generate clips asynchronously with mmx video.',
-      'Use the panel image path as the visual continuity reference for each scene.',
+      'Use the panel image path as the first-frame continuity reference for each scene.',
+      ...(primarySubjectImage ? ['Use the supplied subject reference image to keep recurring characters recognizable in motion shots.'] : []),
       'Pair each clip with the mapped music cue before stitching into teaser, trailer, or scene assembly.',
       'Treat this package as the bridge from comic panels to actual motion, not as a slideshow export.',
     ],

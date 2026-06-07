@@ -159,6 +159,9 @@ export interface VideoPackage {
   renderGoal: 'show' | 'movie' | 'studio';
   overview: string;
   trailerDirection: string;
+  /** Optional subject reference images carried into the video pass for
+   *  better recurring-character continuity. */
+  subjectReferenceImages?: string[];
   commands: {
     generate: string;
     poll: string;
@@ -174,6 +177,8 @@ export interface VideoPackage {
     musicCueId?: string;
     musicCueTitle?: string;
     referenceImagePath?: string | null;
+    /** User-supplied subject reference chosen for MiniMax S2V when available. */
+    subjectImagePath?: string | null;
   }>;
   workflowNotes: string[];
 }

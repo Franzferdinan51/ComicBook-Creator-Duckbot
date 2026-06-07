@@ -67,7 +67,9 @@ For the most actionable workflow, start with the repo playbook at
   the director brief when the next step is a human production pass, shot
   planning review, or a quick producer/director sync. Use the video package
   when the next step is generating actual clips with MiniMax instead of staying
-  in static storyboard mode.
+  in static storyboard mode. When character references were supplied during comic
+  generation, the video package now carries those forward so MiniMax runs can use
+  `--first-frame` and `--subject-image` instead of falling back to prompt-only video generation.
   The new Movie / Show tab is the fastest way to review pitch, trailer, story,
   series, script, shots, previs, timeline, music, agents, and deliverables for a film/show pass.
 - Library API: `createComic()` returns `project`, `storyBible`,

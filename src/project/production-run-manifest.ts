@@ -1,4 +1,5 @@
 import type { ComicResult, ProductionRunManifest } from '../types.js';
+import { buildMiniMaxVideoGenerateCommand } from './minimax-video-command.js';
 
 export function buildProductionRunManifest(jobId: string, result: ComicResult): ProductionRunManifest {
   const title = result.script.title;
@@ -88,7 +89,7 @@ export function buildProductionRunManifest(jobId: string, result: ComicResult): 
         objective: 'Use MiniMax video for motion, parallax, camera movement, and scene continuity rather than a slideshow.',
         commands: [
           firstClip
-            ? `mmx video generate --prompt ${JSON.stringify(firstClip.prompt)} --async`
+            ? buildMiniMaxVideoGenerateCommand(firstClip)
             : 'mmx video generate --prompt "<clip prompt>" --async',
           'mmx video task get --task-id <task-id>',
           `mmx video download --file-id <file-id> --out ${titleSlug}-clip.mp4`,
@@ -104,6 +105,8 @@ export function buildProductionRunManifest(jobId: string, result: ComicResult): 
         ],
         verification: [
           'Each clip contains real motion, camera behavior, or environmental animation.',
+          ...(firstClip?.referenceImagePath ? ['The generated run uses each panel image as the first frame when a clip reference image is available.'] : []),
+          ...(firstClip?.subjectImagePath ? ['The generated run uses the selected subject reference image when recurring-character continuity matters.'] : []),
           'Reference image continuity is preserved without becoming a static panel slideshow.',
           'Clip timing can be mapped back to the animatic timeline and music cue package.',
         ],

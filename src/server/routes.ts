@@ -1579,7 +1579,16 @@ export function buildRouter(): Router {
     }
     const videoPackagePath = record.result.videoPackagePath;
     if (!videoPackagePath || !existsSync(videoPackagePath)) {
-      return res.status(404).json({ error: 'no video package for this comic' });
+      if (!record.result.videoPackage) {
+        return res.status(404).json({ error: 'no video package for this comic' });
+      }
+      const json = JSON.stringify(record.result.videoPackage, null, 2);
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Content-Length', String(Buffer.byteLength(json, 'utf8')));
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-video-package.json"`);
+      return res.end(json);
     }
     const size = statSync(videoPackagePath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);

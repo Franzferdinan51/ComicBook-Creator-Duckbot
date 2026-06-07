@@ -15,7 +15,7 @@
     "README.md"
   ],
   "scripts": {
-    "test": "tsx src/project/render-profile.test.ts && tsx src/project/story-project.test.ts && tsx src/project/preflight.test.ts && tsx src/project/production-run-manifest.test.ts && tsx src/project/history-filter.test.ts && tsx src/assembler/layouts.test.ts && tsx src/providers/music.test.ts && tsx src/pipeline/image.test.ts && tsx src/docs-contract.test.ts && tsx src/cli.test.ts && tsx src/mcp/server.test.ts && tsx src/index.test.ts",
+    "test": "tsx src/project/render-profile.test.ts && tsx src/project/story-project.test.ts && tsx src/project/preflight.test.ts && tsx src/project/video-assets.test.ts && tsx src/project/production-run-manifest.test.ts && tsx src/project/history-filter.test.ts && tsx src/assembler/layouts.test.ts && tsx src/providers/music.test.ts && tsx src/pipeline/image.test.ts && tsx src/docs-contract.test.ts && tsx src/cli.test.ts && tsx src/mcp/server.test.ts && tsx src/index.test.ts && tsx src/project/production-runner.test.ts",
     "test:server": "tsx src/server/routes.test.ts",
     "test:mcp": "tsx src/mcp/server.test.ts",
     "start": "tsx src/server/index.ts"

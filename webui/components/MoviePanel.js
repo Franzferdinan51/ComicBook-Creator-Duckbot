@@ -646,6 +646,14 @@ export function MoviePanel({ result, jobId, onOpenComic }) {
                       <strong>Music tie-in</strong>
                       <p>${clip.musicCueTitle || 'No cue linked yet.'}</p>
                     </div>
+                    <div>
+                      <strong>First frame</strong>
+                      <p>${clip.referenceImagePath || 'No panel reference image was saved for this clip.'}</p>
+                    </div>
+                    <div>
+                      <strong>Subject reference</strong>
+                      <p>${clip.subjectImagePath || 'No subject-reference image was attached for this clip.'}</p>
+                    </div>
                   </div>
                   ${isDone ? html`
                     <div class="video-clip-player">

@@ -234,6 +234,7 @@ export function buildStoryProject(
     },
     pages: [],
     songAudioPath: null,
+    characterReferences: options.characterReferences,
   });
 
   return {

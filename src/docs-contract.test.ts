@@ -169,6 +169,8 @@ assert.equal(moviePanel.includes('movie-previs-list'), true);
 assert.equal(moviePanel.includes('Built-in video production agent'), true);
 assert.equal(moviePanel.includes('Run built-in agent'), true);
 assert.equal(moviePanel.includes('video-clip-player'), true);
+assert.equal(moviePanel.includes('First frame'), true);
+assert.equal(moviePanel.includes('Subject reference'), true);
 assert.equal(moviePanel.includes('Trailer'), true);
 assert.equal(moviePanel.includes('Series'), true);
 assert.equal(moviePanel.includes('Series hook'), true);

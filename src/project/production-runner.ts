@@ -10,6 +10,7 @@ import type {
   ProductionRunStep,
   VideoPackage,
 } from '../types.js';
+import { buildMiniMaxVideoGenerateArgs } from './minimax-video-command.js';
 
 /**
  * The minimum shape the runner needs from a finished comic. Both
@@ -584,7 +585,7 @@ export async function runProductionManifest(
       const clipOut = join(outputDir, `${slug}-clip-${i + 1}.mp4`);
 
       // Step A: submit async, capture taskId
-      const submitArgs = ['video', 'generate', '--prompt', clip.prompt, '--async'];
+      const submitArgs = buildMiniMaxVideoGenerateArgs(clip);
       const submitStep = makeStep(
         `mmx video generate (clip ${i + 1}/${clips.length})`,
         mmxBin,

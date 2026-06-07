@@ -463,6 +463,12 @@ try {
     const videoPayload = await videoRes.json();
     assert.equal(videoPayload.format, 'video-generation-package');
     assert.equal(videoPayload.provider, 'minimax');
+    await rm(entry.videoPackagePath!, { force: true });
+    const videoFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/video-package`);
+    assert.equal(videoFallbackRes.ok, true);
+    const videoFallbackPayload = await videoFallbackRes.json();
+    assert.equal(videoFallbackPayload.format, 'video-generation-package');
+    assert.equal(videoFallbackPayload.provider, 'minimax');
 
     const createRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic`, {
       method: 'POST',

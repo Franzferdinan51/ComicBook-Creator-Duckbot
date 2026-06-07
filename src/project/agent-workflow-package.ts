@@ -1,4 +1,5 @@
 import type { AgentWorkflowPackage, ComicResult } from '../types.js';
+import { buildMiniMaxVideoGenerateCommand } from './minimax-video-command.js';
 
 export function buildAgentWorkflowPackage(jobId: string, result: ComicResult): AgentWorkflowPackage {
   const title = result.script.title;
@@ -124,7 +125,7 @@ export function buildAgentWorkflowPackage(jobId: string, result: ComicResult): A
       ],
       minimax: [
         firstVideoClip
-          ? `mmx video generate --prompt ${JSON.stringify(firstVideoClip.prompt)} --async`
+          ? buildMiniMaxVideoGenerateCommand(firstVideoClip)
           : 'mmx video generate --prompt "<clip prompt>" --async',
         themePrompt
           ? `mmx music generate --prompt ${JSON.stringify(themePrompt)} --lyrics ${JSON.stringify(result.musicCuePackage.songDraft.lyrics)} --out theme.mp3`
