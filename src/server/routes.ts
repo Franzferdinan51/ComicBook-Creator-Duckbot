@@ -77,7 +77,16 @@ import {
   type XAILoginProgress,
 } from './openclaw-auth.js';
 import type { ComicOptions, ComicResult, ProjectGoal } from '../types.js';
-import { audioExtensionForPath, audioMimeTypeForPath, buildProductionRunManifest, buildStudioBundle, runPreflight } from '../project/index.js';
+import {
+  audioExtensionForPath,
+  audioMimeTypeForPath,
+  buildProductionRunManifest,
+  buildStudioBundle,
+  renderAgentGuidanceMarkdown,
+  renderDirectorBriefMarkdown,
+  renderScreenplayMarkdown,
+  runPreflight,
+} from '../project/index.js';
 import { runProductionManifest } from '../project/production-runner.js';
 import type { ProductionRunReport } from '../types.js';
 import { getProductionRunManager } from './production-runs.js';
@@ -112,6 +121,23 @@ function slugifyFilename(raw: string): string {
 
 function isConfigurableProvider(name: string): boolean {
   return CONFIGURABLE_PROVIDERS.has(name);
+}
+
+function sendJsonDownload(res: Response, filename: string, value: unknown): void {
+  const json = JSON.stringify(value, null, 2);
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Length', String(Buffer.byteLength(json, 'utf8')));
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.end(json);
+}
+
+function sendMarkdownDownload(res: Response, filename: string, markdown: string): void {
+  res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+  res.setHeader('Content-Length', String(Buffer.byteLength(markdown, 'utf8')));
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.end(markdown);
 }
 
 function sanitizeCharacterReferences(raw: unknown): { ok: true; value: string[] } | { ok: false; error: string } {
@@ -1101,7 +1127,15 @@ export function buildRouter(): Router {
     }
     const guidancePath = record.result.agentGuidancePath;
     if (!guidancePath || !existsSync(guidancePath)) {
-      return res.status(404).json({ error: 'no agent guidance for this comic' });
+      if (!record.result.project) {
+        return res.status(404).json({ error: 'no agent guidance for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendMarkdownDownload(
+        res,
+        `${titleSlug}-agent-guidance.md`,
+        renderAgentGuidanceMarkdown(record.result.project)
+      );
     }
     const size = statSync(guidancePath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -1133,7 +1167,15 @@ export function buildRouter(): Router {
     }
     const workflowPath = record.result.agentWorkflowPackagePath;
     if (!workflowPath || !existsSync(workflowPath)) {
-      return res.status(404).json({ error: 'no agent workflow package for this comic' });
+      if (!record.result.agentWorkflowPackage) {
+        return res.status(404).json({ error: 'no agent workflow package for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendJsonDownload(
+        res,
+        `${titleSlug}-agent-workflow-package.json`,
+        record.result.agentWorkflowPackage
+      );
     }
     const size = statSync(workflowPath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -1433,7 +1475,15 @@ export function buildRouter(): Router {
     }
     const screenplayPath = record.result.screenplayPath;
     if (!screenplayPath || !existsSync(screenplayPath)) {
-      return res.status(404).json({ error: 'no screenplay for this comic' });
+      if (!record.result.project) {
+        return res.status(404).json({ error: 'no screenplay for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendMarkdownDownload(
+        res,
+        `${titleSlug}-screenplay.md`,
+        renderScreenplayMarkdown(record.result.project)
+      );
     }
     const size = statSync(screenplayPath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -1463,7 +1513,15 @@ export function buildRouter(): Router {
     }
     const directorBriefPath = record.result.directorBriefPath;
     if (!directorBriefPath || !existsSync(directorBriefPath)) {
-      return res.status(404).json({ error: 'no director brief for this comic' });
+      if (!record.result.project) {
+        return res.status(404).json({ error: 'no director brief for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendMarkdownDownload(
+        res,
+        `${titleSlug}-director-brief.md`,
+        renderDirectorBriefMarkdown(record.result.project)
+      );
     }
     const size = statSync(directorBriefPath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -1521,7 +1579,11 @@ export function buildRouter(): Router {
     }
     const seriesPackagePath = record.result.seriesPackagePath;
     if (!seriesPackagePath || !existsSync(seriesPackagePath)) {
-      return res.status(404).json({ error: 'no series package for this comic' });
+      if (!record.result.seriesPackage) {
+        return res.status(404).json({ error: 'no series package for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendJsonDownload(res, `${titleSlug}-series-package.json`, record.result.seriesPackage);
     }
     const size = statSync(seriesPackagePath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -1550,7 +1612,11 @@ export function buildRouter(): Router {
     }
     const trailerPackagePath = record.result.trailerPackagePath;
     if (!trailerPackagePath || !existsSync(trailerPackagePath)) {
-      return res.status(404).json({ error: 'no trailer package for this comic' });
+      if (!record.result.trailerPackage) {
+        return res.status(404).json({ error: 'no trailer package for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendJsonDownload(res, `${titleSlug}-trailer-package.json`, record.result.trailerPackage);
     }
     const size = statSync(trailerPackagePath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -1582,13 +1648,8 @@ export function buildRouter(): Router {
       if (!record.result.videoPackage) {
         return res.status(404).json({ error: 'no video package for this comic' });
       }
-      const json = JSON.stringify(record.result.videoPackage, null, 2);
       const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.setHeader('Content-Length', String(Buffer.byteLength(json, 'utf8')));
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-video-package.json"`);
-      return res.end(json);
+      return sendJsonDownload(res, `${titleSlug}-video-package.json`, record.result.videoPackage);
     }
     const size = statSync(videoPackagePath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -1673,7 +1734,11 @@ export function buildRouter(): Router {
     }
     const musicCuePackagePath = record.result.musicCuePackagePath;
     if (!musicCuePackagePath || !existsSync(musicCuePackagePath)) {
-      return res.status(404).json({ error: 'no music cue package for this comic' });
+      if (!record.result.musicCuePackage) {
+        return res.status(404).json({ error: 'no music cue package for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendJsonDownload(res, `${titleSlug}-music-cue-package.json`, record.result.musicCuePackage);
     }
     const size = statSync(musicCuePackagePath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);

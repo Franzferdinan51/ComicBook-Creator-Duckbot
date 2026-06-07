@@ -204,6 +204,11 @@ agents and operators.
 `characterReferences` accepts up to 8 non-empty strings. Each value can be a
 hosted image URL or a file path that the running provider can reach.
 
+Several artifact download routes will now serialize from the stored result data
+when the original exported file is missing, so reopened history items can still
+retrieve structured handoffs such as screenplay, director brief, series,
+trailer, video, music cue, and workflow packages.
+
 **Response 202**
 ```json
 { "jobId": "e60aab73-0600-4e3b-b016-623360bad0d1" }

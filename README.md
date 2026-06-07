@@ -208,6 +208,8 @@ Run `comic-creator --preflight`, `GET /api/preflight`, MCP `get_preflight`, or t
 
 The WebUI result panel also exposes a unified studio bundle download that packages the project, adaptation, music, and artifact-path map into one JSON handoff. External agents should start from preflight, then the studio bundle, then open the specialized files as needed. The workflow package is the next best handoff when Hermes/OpenClaw needs a track-by-track execution plan across story, video, and music. The production run manifest is the concrete next handoff when an agent is ready to run MiniMax music/video generation with `mmx auth status`, `mmx music generate`, `mmx video generate`, `mmx video task get`, and `mmx video download`. When score planning is the next step, grab the music cue package before the theme audio. When the next step is real motion instead of a storyboard-only pass, use the video package and production run manifest to drive `mmx video` clip generation.
 
+For history-loaded projects, several downloads now fall back to the structured artifact already stored in the result bundle when the original exported file is missing on disk. That keeps screenplay, director brief, series, trailer, video, music, and agent workflow handoffs usable after reopens or partial cleanup.
+
 ### Resuming an interrupted production run
 
 A real `mmx video generate` task can take 5–10 minutes per clip. If a

@@ -382,6 +382,13 @@ try {
     assert.equal(playbookText.includes('Hermes + OpenClaw Playbook'), true);
     assert.equal(playbookText.includes('Music Handoff'), true);
 
+    const guidanceRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/agent-guidance`);
+    assert.equal(guidanceRes.ok, true);
+    assert.equal(guidanceRes.headers.get('content-type')?.includes('text/markdown'), true);
+    const guidanceText = await guidanceRes.text();
+    assert.equal(guidanceText.includes('Hermes Agent'), true);
+    assert.equal(guidanceText.includes('OpenClaw'), true);
+
     const bundleRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/studio-bundle`);
     assert.equal(bundleRes.ok, true);
     assert.equal(bundleRes.headers.get('content-type')?.includes('application/json'), true);
@@ -417,6 +424,12 @@ try {
     const musicPayload = await musicRes.json();
     assert.equal(musicPayload.format, 'music-brief');
     assert.equal(musicPayload.songDraft.title, 'History Theme');
+    await rm(entry.musicCuePackagePath!, { force: true });
+    const musicFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/music-cue-package`);
+    assert.equal(musicFallbackRes.ok, true);
+    const musicFallbackPayload = await musicFallbackRes.json();
+    assert.equal(musicFallbackPayload.format, 'music-brief');
+    assert.equal(musicFallbackPayload.songDraft.title, 'History Theme');
 
     const seriesRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/series-package`);
     assert.equal(seriesRes.ok, true);
@@ -424,24 +437,45 @@ try {
     const seriesPayload = await seriesRes.json();
     assert.equal(seriesPayload.format, 'series-bible');
     assert.equal(seriesPayload.targetFormat, 'series');
+    await rm(entry.seriesPackagePath!, { force: true });
+    const seriesFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/series-package`);
+    assert.equal(seriesFallbackRes.ok, true);
+    const seriesFallbackPayload = await seriesFallbackRes.json();
+    assert.equal(seriesFallbackPayload.format, 'series-bible');
+    assert.equal(seriesFallbackPayload.targetFormat, 'series');
 
     const screenplayRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/screenplay`);
     assert.equal(screenplayRes.ok, true);
     assert.equal(screenplayRes.headers.get('content-type')?.includes('text/markdown'), true);
     const screenplayText = await screenplayRes.text();
     assert.equal(screenplayText.includes('## Screenplay Handoff'), true);
+    await rm(entry.screenplayPath!, { force: true });
+    const screenplayFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/screenplay`);
+    assert.equal(screenplayFallbackRes.ok, true);
+    const screenplayFallbackText = await screenplayFallbackRes.text();
+    assert.equal(screenplayFallbackText.includes('## Screenplay Handoff'), true);
 
     const directorBriefRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/director-brief`);
     assert.equal(directorBriefRes.ok, true);
     assert.equal(directorBriefRes.headers.get('content-type')?.includes('text/markdown'), true);
     const directorBriefText = await directorBriefRes.text();
     assert.equal(directorBriefText.includes('## Director Brief'), true);
+    await rm(entry.directorBriefPath!, { force: true });
+    const directorBriefFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/director-brief`);
+    assert.equal(directorBriefFallbackRes.ok, true);
+    const directorBriefFallbackText = await directorBriefFallbackRes.text();
+    assert.equal(directorBriefFallbackText.includes('## Director Brief'), true);
 
     const workflowRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/agent-workflow-package`);
     assert.equal(workflowRes.ok, true);
     assert.equal(workflowRes.headers.get('content-type')?.includes('application/json'), true);
     const workflowPayload = await workflowRes.json();
     assert.equal(workflowPayload.format, 'agent-workflow-package');
+    await rm(entry.agentWorkflowPackagePath!, { force: true });
+    const workflowFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/agent-workflow-package`);
+    assert.equal(workflowFallbackRes.ok, true);
+    const workflowFallbackPayload = await workflowFallbackRes.json();
+    assert.equal(workflowFallbackPayload.format, 'agent-workflow-package');
 
     const manifestRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/production-run-manifest`);
     assert.equal(manifestRes.ok, true);
@@ -456,6 +490,12 @@ try {
     const trailerPayload = await trailerRes.json();
     assert.equal(trailerPayload.format, 'trailer-package');
     assert.equal(trailerPayload.logline.includes('History Project'), true);
+    await rm(entry.trailerPackagePath!, { force: true });
+    const trailerFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/trailer-package`);
+    assert.equal(trailerFallbackRes.ok, true);
+    const trailerFallbackPayload = await trailerFallbackRes.json();
+    assert.equal(trailerFallbackPayload.format, 'trailer-package');
+    assert.equal(trailerFallbackPayload.logline.includes('History Project'), true);
 
     const videoRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/video-package`);
     assert.equal(videoRes.ok, true);
