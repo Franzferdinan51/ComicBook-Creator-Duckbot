@@ -37,6 +37,7 @@ import {
   type PageLayout,
 } from './index.js';
 import { runProductionManifest } from './project/production-runner.js';
+import { validateCharacterReferences } from './project/character-references.js';
 import { loadHistory, filterHistory, patchHistoryEntryMeta } from './server/storage.js';
 import { getJobManager } from './server/jobs.js';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
@@ -311,10 +312,7 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
       args.imageAigcWatermark = true;
       break;
     case 'character-reference':
-      if (value.trim().length === 0) {
-        throw new Error('--character-reference must be a non-empty URL or file path');
-      }
-      args.characterReferences.push(value.trim());
+      args.characterReferences.push(value);
       break;
     case 'generate-cover':
       if (value === 'true' || value === '1' || value === 'yes') {
@@ -449,6 +447,20 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   }
 
   args.story = positionals.join(' ').trim();
+  // Validate the accumulated character references now that the
+  // parser has seen every flag. This used to happen (incompletely)
+  // inside the case handler, which accepted an empty-after-trim
+  // value as a fatal error rather than a clean dedupe. The shared
+  // helper is the same one the HTTP route + MCP tool use, so a
+  // bad reference is rejected with the same error message in all
+  // three control surfaces.
+  if (args.characterReferences.length > 0) {
+    const refs = validateCharacterReferences(args.characterReferences);
+    if (!refs.ok) {
+      throw new Error(`--character-reference: ${refs.error}`);
+    }
+    args.characterReferences = refs.value;
+  }
   return args;
 }
 

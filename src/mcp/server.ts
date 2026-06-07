@@ -59,6 +59,7 @@ import {
   runPreflight,
 } from '../project/index.js';
 import { runProductionManifest } from '../project/production-runner.js';
+import { validateCharacterReferences } from '../project/character-references.js';
 import { getProductionRunManager } from '../server/production-runs.js';
 import { randomUUID } from 'node:crypto';
 import type { ComicOptions, ProductionRunReport } from '../types.js';
@@ -117,9 +118,14 @@ function validateMcpOptions(options: Partial<ComicOptions> = {}): { ok: true; op
     return { ok: false, error: `musicProvider "${options.musicProvider}" is not a registered music provider. Available: ${[...musicNames].join(', ')}` };
   }
   if (options.characterReferences != null) {
-    if (!Array.isArray(options.characterReferences) || options.characterReferences.some((ref) => typeof ref !== 'string' || ref.trim().length === 0)) {
-      return { ok: false, error: 'characterReferences must be an array of non-empty strings' };
-    }
+    // Use the same strict validator the HTTP route uses. This used
+    // to be a much weaker check (only type + non-empty); the
+    // shared helper additionally enforces the 8-item cap, the
+    // 2048-char-per-entry cap, and rejects control characters
+    // so a hostile value can't smuggle a shell metacharacter or
+    // break a downstream log line.
+    const refs = validateCharacterReferences(options.characterReferences);
+    if (!refs.ok) return refs;
   }
   return { ok: true, options };
 }

@@ -9,7 +9,7 @@
  *   disabled:  boolean — disables inputs during generation
  */
 
-import { html } from './_lib.js';
+import { html, showToast } from './_lib.js';
 
 const ART_STYLES = [
   'manga', 'noir', 'cartoon', 'watercolor', 'comic book',
@@ -274,14 +274,35 @@ export function OptionsPanel({ options = {}, providers, onChange, disabled = fal
           disabled=${disabled}
           placeholder="One reference image URL or file path per line"
           value=${(options.characterReferences || []).join('\n')}
-          onInput=${(e) => set({
-            characterReferences: e.target.value
+          onInput=${(e) => {
+            // Mirror the server-side validator so the user sees a
+            // friendly inline message before submit. Hard cap at 8
+            // lines + 2048 chars each; overlong values are rejected
+            // locally instead of round-tripping to the server.
+            const raw = e.target.value
               .split('\n')
               .map((line) => line.trim())
-              .filter(Boolean),
-          })}
+              .filter(Boolean);
+            const overLimit = raw.length > 8;
+            const oversize = raw.find((line) => line.length > 2048);
+            const cleaned = overLimit
+              ? raw.slice(0, 8)
+              : raw.map((line) => (line.length > 2048 ? line.slice(0, 2048) : line));
+            if (overLimit || oversize) {
+              showToast(
+                overLimit
+                  ? 'Character references: max 8 entries. Extra lines were dropped.'
+                  : `Character references: each entry is capped at 2048 characters; long line was truncated.`,
+                'warn'
+              );
+            }
+            set({ characterReferences: cleaned });
+          }}
         ></textarea>
-        <div class="muted small">MiniMax uses these as subject references so recurring characters stay recognizable across panels, covers, and later movie/show handoffs.</div>
+        <div class="muted small">
+          MiniMax uses these as subject references so recurring characters stay recognizable
+          across panels, covers, and later movie/show handoffs. Up to 8 entries, 2048 chars each.
+        </div>
       </div>
 
       <div class="field">

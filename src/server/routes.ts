@@ -89,6 +89,7 @@ import {
   renderScreenplayMarkdown,
   runPreflight,
 } from '../project/index.js';
+import { validateCharacterReferences } from '../project/character-references.js';
 import { runProductionManifest } from '../project/production-runner.js';
 import type { ProductionRunReport } from '../types.js';
 import { getProductionRunManager } from './production-runs.js';
@@ -142,25 +143,42 @@ function sendMarkdownDownload(res: Response, filename: string, markdown: string)
   res.end(markdown);
 }
 
+/**
+ * Stream a binary payload (already in memory) as a download with
+ * the right Content-Type, Content-Length, Cache-Control, and
+ * Content-Disposition headers. Used by the theme-audio route and
+ * the production-run-report route so every binary download shares
+ * the same header contract.
+ *
+ * Pass `disposition: 'inline'` to embed the file in a `<video>` /
+ * `<audio>` tag rather than triggering a save-as dialog (used by
+ * the in-browser video player in the Movie/Show board).
+ */
+function sendBinaryDownload(
+  res: Response,
+  args: {
+    filename: string;
+    contentType: string;
+    body: Buffer;
+    disposition?: 'attachment' | 'inline';
+    cacheSeconds?: number;
+  }
+): void {
+  res.setHeader('Content-Type', args.contentType);
+  res.setHeader('Content-Length', String(args.body.length));
+  res.setHeader('Cache-Control', `public, max-age=${args.cacheSeconds ?? 86400}`);
+  res.setHeader(
+    'Content-Disposition',
+    `${args.disposition ?? 'attachment'}; filename="${args.filename}"`
+  );
+  res.end(args.body);
+}
+
 function sanitizeCharacterReferences(raw: unknown): { ok: true; value: string[] } | { ok: false; error: string } {
-  if (!Array.isArray(raw)) {
-    return { ok: false, error: 'characterReferences must be an array of non-empty strings' };
-  }
-  if (raw.length > 8) {
-    return { ok: false, error: 'characterReferences may include at most 8 items' };
-  }
-  const cleaned: string[] = [];
-  for (const value of raw) {
-    if (typeof value !== 'string') {
-      return { ok: false, error: 'characterReferences must be an array of non-empty strings' };
-    }
-    const trimmed = value.trim();
-    if (trimmed.length === 0 || trimmed.length > 2048 || /[\x00-\x1f\x7f]/.test(trimmed)) {
-      return { ok: false, error: 'characterReferences must contain strings between 1 and 2048 printable characters' };
-    }
-    cleaned.push(trimmed);
-  }
-  return { ok: true, value: cleaned };
+  // Thin alias for the shared validator. Kept as a local name so
+  // the call sites read naturally and so a future test can target
+  // it without importing from src/project.
+  return validateCharacterReferences(raw);
 }
 
 /** Refresh the custom-provider caches and the live registry from disk state. */
@@ -1436,20 +1454,19 @@ export function buildRouter(): Router {
         seen.add(dir);
         const fullPath = join(dir, clipFilename);
         if (existsSync(fullPath)) {
-          const size = statSync(fullPath).size;
-          res.setHeader('Content-Type', 'video/mp4');
-          res.setHeader('Content-Length', String(size));
-          res.setHeader('Cache-Control', 'public, max-age=86400');
-          res.setHeader(
-            'Content-Disposition',
-            `inline; filename="${clipFilename}"`
-          );
           // Stream via a range-aware send. The standard `readFile` is
           // fine here for clips (a few MB each) but using it keeps
           // the route simple and consistent with the other binary
-          // endpoints in this file.
+          // endpoints in this file. `disposition: 'inline'` so the
+          // <video> element in the WebUI can play the clip without a
+          // save-as dialog.
           const buf = await readFile(fullPath);
-          res.end(buf);
+          sendBinaryDownload(res, {
+            filename: clipFilename,
+            contentType: 'video/mp4',
+            body: buf,
+            disposition: 'inline',
+          });
           return;
         }
       }
@@ -1826,14 +1843,14 @@ export function buildRouter(): Router {
     if (!songAudioPath || !existsSync(songAudioPath)) {
       return res.status(404).json({ error: 'no theme audio for this comic' });
     }
-    const size = statSync(songAudioPath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
-    res.setHeader('Content-Type', audioMimeTypeForPath(songAudioPath));
-    res.setHeader('Content-Length', String(size));
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.setHeader('Content-Disposition', `attachment; filename="${titleSlug}-theme.${audioExtensionForPath(songAudioPath)}"`);
     const buf = await readFile(songAudioPath);
-    res.end(buf);
+    sendBinaryDownload(res, {
+      filename: `${titleSlug}-theme.${audioExtensionForPath(songAudioPath)}`,
+      contentType: audioMimeTypeForPath(songAudioPath),
+      body: buf,
+    });
+    return;
   });
 
   /**

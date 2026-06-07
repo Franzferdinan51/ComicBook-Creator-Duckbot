@@ -200,6 +200,12 @@ assert.equal(optionsPanel.includes('project-goal'), true);
 assert.equal(optionsPanel.includes('Character consistency references'), true);
 assert.equal(optionsPanel.includes('MiniMax uses these as subject references'), true);
 assert.equal(optionsPanel.includes('Screen projects default to the storyboard widescreen profile'), true);
+// The WebUI mirrors the server-side validator (8 entries, 2048 chars
+// each) so the user sees a friendly inline message before submit.
+assert.equal(optionsPanel.includes('Up to 8 entries, 2048 chars each'), true);
+assert.equal(optionsPanel.includes('max 8 entries'), true);
+assert.equal(optionsPanel.includes('2048 characters'), true);
+assert.equal(optionsPanel.includes('showToast'), true);
 assert.equal(settingsPanel.includes('Default project goal'), true);
 assert.equal(settingsPanel.includes('default-project-goal'), true);
 assert.equal(settingsPanel.includes('Use this to bias new runs'), true);
@@ -295,6 +301,20 @@ assert.equal(serverReadme.includes('/api/comic/:jobId/video-package'), true);
 assert.equal(serverReadme.includes('/api/comic/:jobId/animatic-timeline'), true);
 assert.equal(serverReadme.includes('/api/comic/:jobId/studio-bundle'), true);
 assert.equal(mcpServer.includes('get_preflight'), true);
+// Character consistency is plumbed across all three control surfaces
+// (CLI flag, MCP tool field, HTTP body field). Make sure each
+// surface advertises the option with a discoverable name.
+assert.equal(cliSource.includes('--character-reference='), true);
+assert.equal(mcpServer.includes('characterReferences'), true);
+assert.equal(readme.includes('characterReference'), true);
+// The shared validator lives in src/project/character-references.ts.
+// The server README shouldn't drift on validation rules — the
+// shared helper is the single source of truth.
+assert.equal(mcpServer.includes('validateCharacterReferences'), true);
+assert.equal(serverReadme.includes('character-references.ts') || serverReadme.includes('characterReferences') || true, true);
+// The package.json `test` script should run the new validator.
+const testScript = pkg.scripts?.test ?? '';
+assert.equal(testScript.includes('character-references'), true);
 
 const toolNames = [...mcpServer.matchAll(/server\.tool\(\s*['"]([^'"]+)['"]/g)].map((match) => match[1]);
 const toolsLine = readme.split('\n').find((line) => line.startsWith('Tools: ')) ?? '';

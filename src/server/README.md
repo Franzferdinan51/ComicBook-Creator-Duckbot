@@ -201,8 +201,17 @@ agents and operators.
 `options` is `Partial<ComicOptions>` — every field is optional. See
 `src/types.ts` for the full shape.
 
-`characterReferences` accepts up to 8 non-empty strings. Each value can be a
-hosted image URL or a file path that the running provider can reach.
+`characterReferences` accepts up to 8 non-empty strings (max 2048 chars
+each, printable only — control characters / NUL are rejected so a
+hostile value can't smuggle a shell metacharacter or break a
+downstream log line). Each value can be a hosted image URL or a
+file path that the running provider can reach. URL values
+(`http://`, `https://`) flow through the MiniMax provider as
+`image_url`; local paths flow through as `image_file`. The same
+validation lives in the shared helper at
+`src/project/character-references.ts` and is used by the CLI, the
+HTTP route, and the MCP tool so a bad reference is rejected with
+the same error message on all three control surfaces.
 
 Several artifact download routes will now serialize from the stored result data
 when the original exported file is missing, so reopened history items can still

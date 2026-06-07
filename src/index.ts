@@ -99,12 +99,24 @@ export interface CreateComicOptions {
   onProgress?: (stage: 'script' | 'images' | 'assembly' | 'packaging' | 'writing', fraction: number) => void;
 }
 
+/**
+ * Convert user-supplied character reference paths/URLs into the
+ * `subject_reference` shape MiniMax expects. URLs go in
+ * `image_url`; local paths (anything that isn't an http(s) URL)
+ * go in `image_file`. This is the same shape the MiniMax provider
+ * emits, so the two stay in sync.
+ */
 function toCharacterSubjectReferences(
   refs: readonly string[] | undefined
-): Array<{ type: string; image_file: string }> | undefined {
+): Array<{ type: string; image_file?: string; image_url?: string }> | undefined {
   const cleaned = (refs ?? []).map((ref) => ref.trim()).filter(Boolean);
   if (cleaned.length === 0) return undefined;
-  return cleaned.map((ref) => ({ type: 'character', image_file: ref }));
+  return cleaned.map((ref) => {
+    if (/^https?:\/\//i.test(ref)) {
+      return { type: 'character', image_url: ref };
+    }
+    return { type: 'character', image_file: ref };
+  });
 }
 
 /**
