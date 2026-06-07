@@ -206,8 +206,8 @@ hosted image URL or a file path that the running provider can reach.
 
 Several artifact download routes will now serialize from the stored result data
 when the original exported file is missing, so reopened history items can still
-retrieve structured handoffs such as screenplay, director brief, series,
-trailer, video, music cue, and workflow packages.
+retrieve structured handoffs such as screenplay, director brief, storyboard,
+animatic, series, trailer, video, music cue, and workflow packages.
 
 **Response 202**
 ```json

@@ -80,7 +80,9 @@ import type { ComicOptions, ComicResult, ProjectGoal } from '../types.js';
 import {
   audioExtensionForPath,
   audioMimeTypeForPath,
+  buildAnimaticTimeline,
   buildProductionRunManifest,
+  buildStoryboardPackage,
   buildStudioBundle,
   renderAgentGuidanceMarkdown,
   renderDirectorBriefMarkdown,
@@ -1550,7 +1552,19 @@ export function buildRouter(): Router {
     }
     const storyboardPackagePath = record.result.storyboardPackagePath;
     if (!storyboardPackagePath || !existsSync(storyboardPackagePath)) {
-      return res.status(404).json({ error: 'no storyboard package for this comic' });
+      if (!record.result.project || !record.result.pages?.length) {
+        return res.status(404).json({ error: 'no storyboard package for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendJsonDownload(
+        res,
+        `${titleSlug}-storyboard-package.json`,
+        buildStoryboardPackage({
+          project: record.result.project,
+          pages: record.result.pages,
+          songAudioPath: record.result.songAudioPath,
+        }),
+      );
     }
     const size = statSync(storyboardPackagePath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -1678,7 +1692,19 @@ export function buildRouter(): Router {
     }
     const animaticTimelinePath = record.result.animaticTimelinePath;
     if (!animaticTimelinePath || !existsSync(animaticTimelinePath)) {
-      return res.status(404).json({ error: 'no animatic timeline for this comic' });
+      if (!record.result.project || !record.result.pages?.length) {
+        return res.status(404).json({ error: 'no animatic timeline for this comic' });
+      }
+      const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
+      return sendJsonDownload(
+        res,
+        `${titleSlug}-animatic-timeline.json`,
+        buildAnimaticTimeline({
+          project: record.result.project,
+          pages: record.result.pages,
+          songAudioPath: record.result.songAudioPath,
+        }),
+      );
     }
     const size = statSync(animaticTimelinePath).size;
     const titleSlug = slugifyFilename(record.result.script?.title ?? record.jobId);
@@ -2037,18 +2063,23 @@ export function buildRouter(): Router {
         project: r.projectPath ? `/api/comic/${jobId}/project` : null,
         screenplay: r.screenplayPath ? `/api/comic/${jobId}/screenplay` : null,
         directorBrief: r.directorBriefPath ? `/api/comic/${jobId}/director-brief` : null,
-        storyboardPackage: r.storyboardPackagePath ? `/api/comic/${jobId}/storyboard-package` : null,
-        videoPackage: r.videoPackagePath ? `/api/comic/${jobId}/video-package` : null,
-        trailerPackage: r.trailerPackagePath ? `/api/comic/${jobId}/trailer-package` : null,
-        seriesPackage: r.seriesPackagePath ? `/api/comic/${jobId}/series-package` : null,
-        musicCuePackage: r.musicCuePackagePath ? `/api/comic/${jobId}/music-cue-package` : null,
+        storyboardPackage: (r.storyboardPackagePath || (r.project && r.pages?.length))
+          ? `/api/comic/${jobId}/storyboard-package`
+          : null,
+        videoPackage: (r.videoPackagePath || r.videoPackage) ? `/api/comic/${jobId}/video-package` : null,
+        trailerPackage: (r.trailerPackagePath || r.trailerPackage) ? `/api/comic/${jobId}/trailer-package` : null,
+        seriesPackage: (r.seriesPackagePath || r.seriesPackage) ? `/api/comic/${jobId}/series-package` : null,
+        musicCuePackage: (r.musicCuePackagePath || r.musicCuePackage) ? `/api/comic/${jobId}/music-cue-package` : null,
+        animaticTimeline: (r.animaticTimelinePath || (r.project && r.pages?.length))
+          ? `/api/comic/${jobId}/animatic-timeline`
+          : null,
         songSheet: r.songSheetPath ? `/api/comic/${jobId}/song-sheet` : null,
         themeAudio: r.songAudioPath ? `/api/comic/${jobId}/theme-audio` : null,
         agentGuidance: r.agentGuidancePath ? `/api/comic/${jobId}/agent-guidance` : null,
-        agentWorkflowPackage: r.agentWorkflowPackagePath
+        agentWorkflowPackage: (r.agentWorkflowPackagePath || r.agentWorkflowPackage)
           ? `/api/comic/${jobId}/agent-workflow-package`
           : null,
-        productionRunManifest: r.productionRunManifestPath
+        productionRunManifest: (r.productionRunManifestPath || r.productionRunManifest)
           ? `/api/comic/${jobId}/production-run-manifest`
           : null,
       },

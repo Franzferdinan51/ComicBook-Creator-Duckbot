@@ -541,7 +541,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
   }
 
   function handleDownloadStoryboardPackage() {
-    if (!result?.storyboardPackagePath) return;
+    if (!jobId || !(result?.storyboardPackagePath || (result?.project && result?.pages?.length))) return;
     const a = document.createElement('a');
     a.href = `/api/comic/${jobId}/storyboard-package`;
     a.download = `${localSlug(result.script?.title)}-storyboard-package.json`;
@@ -552,7 +552,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
   }
 
   function handleDownloadAnimaticTimeline() {
-    if (!result?.animaticTimelinePath) return;
+    if (!jobId || !(result?.animaticTimelinePath || (result?.project && result?.pages?.length))) return;
     const a = document.createElement('a');
     a.href = `/api/comic/${jobId}/animatic-timeline`;
     a.download = `${localSlug(result.script?.title)}-animatic-timeline.json`;
@@ -736,6 +736,8 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
   // in which case we fall back to `outputPath` and guess by extension.
   const hasPdf = !!(result.pdfPath || (result.outputPath && /\.pdf$/i.test(result.outputPath)));
   const hasCbz = !!(result.cbzPath || (result.outputPath && /\.cbz$/i.test(result.outputPath)));
+  const hasStoryboardPackage = !!(result.storyboardPackagePath || (result.project && result.pages?.length));
+  const hasAnimaticTimeline = !!(result.animaticTimelinePath || (result.project && result.pages?.length));
   // Title-based slug for the download filename attribute. Matches the
   // server's slugifyFilename() so the saved file name is the same on
   // both ends.
@@ -1099,7 +1101,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
               Download series package
             </button>
           ` : null}
-          ${result.storyboardPackagePath ? html`
+          ${hasStoryboardPackage ? html`
             <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadStoryboardPackage}>
               Download storyboard package
             </button>
@@ -1114,7 +1116,7 @@ export function ResultPanel({ result, jobId, onRegenerate, onClose, onOpenMovie 
               Download trailer package
             </button>
           ` : null}
-          ${result.animaticTimelinePath ? html`
+          ${hasAnimaticTimeline ? html`
             <button class="btn btn-ghost btn-sm" type="button" onClick=${handleDownloadAnimaticTimeline}>
               Download animatic timeline
             </button>

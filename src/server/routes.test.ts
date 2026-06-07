@@ -510,6 +510,32 @@ try {
     assert.equal(videoFallbackPayload.format, 'video-generation-package');
     assert.equal(videoFallbackPayload.provider, 'minimax');
 
+    const storyboardRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/storyboard-package`);
+    assert.equal(storyboardRes.ok, true);
+    assert.equal(storyboardRes.headers.get('content-type')?.includes('application/json'), true);
+    const storyboardPayload = await storyboardRes.json();
+    assert.equal(storyboardPayload.format, 'storyboard-package');
+    assert.equal(storyboardPayload.shots[0]?.sceneId, 'scene-1');
+    await rm(entry.storyboardPackagePath!, { force: true });
+    const storyboardFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/storyboard-package`);
+    assert.equal(storyboardFallbackRes.ok, true);
+    const storyboardFallbackPayload = await storyboardFallbackRes.json();
+    assert.equal(storyboardFallbackPayload.format, 'storyboard-package');
+    assert.equal(storyboardFallbackPayload.shots[0]?.sceneId, 'scene-1');
+
+    const animaticRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/animatic-timeline`);
+    assert.equal(animaticRes.ok, true);
+    assert.equal(animaticRes.headers.get('content-type')?.includes('application/json'), true);
+    const animaticPayload = await animaticRes.json();
+    assert.equal(animaticPayload.format, 'animatic-timeline');
+    assert.equal(animaticPayload.tracks.video[0]?.sceneId, 'scene-1');
+    await rm(entry.animaticTimelinePath!, { force: true });
+    const animaticFallbackRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/history-job/animatic-timeline`);
+    assert.equal(animaticFallbackRes.ok, true);
+    const animaticFallbackPayload = await animaticFallbackRes.json();
+    assert.equal(animaticFallbackPayload.format, 'animatic-timeline');
+    assert.equal(animaticFallbackPayload.tracks.video[0]?.sceneId, 'scene-1');
+
     const createRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
