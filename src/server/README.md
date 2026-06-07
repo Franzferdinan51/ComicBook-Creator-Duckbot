@@ -189,6 +189,7 @@ agents and operators.
     "artStyle": "manga",
     "imageProvider": "mock",
     "textProvider": "mock",
+    "characterReferences": ["https://example.com/hero.png"],
     "pageCount": 4,
     "panelsPerPage": 4,
     "outputFormat": "pdf",
@@ -199,6 +200,9 @@ agents and operators.
 
 `options` is `Partial<ComicOptions>` — every field is optional. See
 `src/types.ts` for the full shape.
+
+`characterReferences` accepts up to 8 non-empty strings. Each value can be a
+hosted image URL or a file path that the running provider can reach.
 
 **Response 202**
 ```json

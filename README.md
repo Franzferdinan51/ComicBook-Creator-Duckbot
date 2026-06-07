@@ -160,6 +160,7 @@ node bin/comic-creator.mjs --agent-playbook
 | `--text-provider=<name>` | `mock` | Text/script provider |
 | `--music-provider=<name>` | `mock` | Music provider |
 | `--project-goal=<name>` | `comic` | `comic` \| `screen` \| `music` \| `studio` |
+| `--character-reference=<path-or-url>` | — | Repeatable reference image URL/path used for recurring character consistency in MiniMax image generation |
 | `--output-profile=<name>` | `comic-print` | Output profile |
 | `--output=<path>` | auto | Override output path |
 | `--json` | off | Print the full `ComicResult` JSON |
@@ -200,6 +201,8 @@ comic-creator-mcp
 Tools: `create_comic`, `regenerate_comic`, `get_comic`, `get_project`, `get_agent_guidance`, `get_screenplay`, `get_director_brief`, `get_agent_playbook`, `get_agent_workflow_package`, `get_production_run_manifest`, `run_production_manifest`, `get_production_run_report`, `get_studio_bundle`, `get_music_cue_package`, `get_series_package`, `get_trailer_package`, `get_video_package`, `get_song_sheet`, `get_storyboard_package`, `get_animatic_timeline`, `get_theme_audio`, `get_share_card`, `get_comic_pdf`, `get_comic_cover`, `get_comic_image`, `list_providers`, `get_preflight`, `get_history`, `search_history`, `patch_history_meta`, `get_settings`, `update_settings`.
 
 MCP provider fields are registry-based, not hard-coded. Agents should call `list_providers` first, then pass any registered text/image/music provider name into `create_comic` or `regenerate_comic`, including built-ins such as `xai`, `gemini`, `comfyui`, `minimax`, and WebUI-created custom OpenAI-compatible providers.
+
+For stronger recurring-character continuity, pass one or more `--character-reference=...` flags in the CLI, `characterReferences` in HTTP or MCP, or fill the WebUI Character consistency references box. The app forwards these to MiniMax as `subject_reference` entries for panel art and cover generation.
 
 Run `comic-creator --preflight`, `GET /api/preflight`, MCP `get_preflight`, or the WebUI Production readiness panel in Settings before production runs. The report checks Node.js, output directory writability, package entrypoints, provider readiness, MiniMax CLI availability, and the Hermes/OpenClaw guidance files.
 

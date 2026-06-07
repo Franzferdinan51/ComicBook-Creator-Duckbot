@@ -72,6 +72,7 @@ interface ParsedArgs {
   imageAspectRatio: string | null;
   imagePromptOptimizer: boolean;
   imageAigcWatermark: boolean;
+  characterReferences: string[];
   generateCover: boolean;
   outputProfile: OutputProfile;
   outputProfileExplicit: boolean;
@@ -148,6 +149,7 @@ Options:
   --image-aspect-ratio=<r>  Aspect ratio for image gen (e.g. 16:9, 1:1, 4:3). Default: 1:1. Equivalent to the MiniMax CLI's --aspect-ratio.
   --image-prompt-optimizer  Let MiniMax rewrite the prompt before generation. Equivalent to the MiniMax CLI's --prompt-optimizer.
   --image-aigc-watermark    Embed an AI-generated watermark in the output image. Equivalent to the MiniMax CLI's --aigc-watermark.
+  --character-reference=<p> Repeatable reference image URL/path for recurring character consistency
   --generate-cover=<bool>   Generate an AI cover image for the title page. Default: true
   --output-profile=<name>   comic-print | digital-portrait | storyboard-widescreen. Default: comic-print
   --output=<path>           Output file path. Default: ~/.openclaw/workspace/output/comics/<title>-<ts>.<format>
@@ -208,6 +210,7 @@ function defaultArgs(): ParsedArgs {
     imageAspectRatio: null,
     imagePromptOptimizer: false,
     imageAigcWatermark: false,
+    characterReferences: [],
     generateCover: true,
     outputProfile: 'comic-print',
     outputProfileExplicit: false,
@@ -306,6 +309,12 @@ function applyFlag(args: ParsedArgs, key: string, value: string): void {
       break;
     case 'image-aigc-watermark':
       args.imageAigcWatermark = true;
+      break;
+    case 'character-reference':
+      if (value.trim().length === 0) {
+        throw new Error('--character-reference must be a non-empty URL or file path');
+      }
+      args.characterReferences.push(value.trim());
       break;
     case 'generate-cover':
       if (value === 'true' || value === '1' || value === 'yes') {
@@ -526,6 +535,7 @@ export async function runCli(
     ...(args.imageAspectRatio ? { imageAspectRatio: args.imageAspectRatio } : {}),
     ...(args.imagePromptOptimizer ? { imagePromptOptimizer: true } : {}),
     ...(args.imageAigcWatermark ? { imageAigcWatermark: true } : {}),
+    ...(args.characterReferences.length > 0 ? { characterReferences: [...args.characterReferences] } : {}),
     // Forward both true and false — explicit false is meaningful (skip cover).
     generateCover: args.generateCover,
   };
@@ -566,6 +576,18 @@ export async function runCli(
       artStyle: opts.artStyle,
       renderProfile: project.renderProfile,
       seed: opts.seed,
+      ...(opts.imageModel ? { model: opts.imageModel } : {}),
+      ...(opts.imageAspectRatio ? { aspectRatio: opts.imageAspectRatio } : {}),
+      ...(opts.imagePromptOptimizer ? { promptOptimizer: true } : {}),
+      ...(opts.imageAigcWatermark ? { aigcWatermark: true } : {}),
+      ...(opts.characterReferences?.length
+        ? {
+            subjectReference: opts.characterReferences.map((ref) => ({
+              type: 'character',
+              image_file: ref,
+            })),
+          }
+        : {}),
     },
     imageProvider
   );

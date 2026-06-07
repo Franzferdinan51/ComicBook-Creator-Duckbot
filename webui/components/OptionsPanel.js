@@ -267,6 +267,24 @@ export function OptionsPanel({ options = {}, providers, onChange, disabled = fal
       />
 
       <div class="field">
+        <label for="character-references">Character consistency references</label>
+        <textarea
+          id="character-references"
+          rows="4"
+          disabled=${disabled}
+          placeholder="One reference image URL or file path per line"
+          value=${(options.characterReferences || []).join('\n')}
+          onInput=${(e) => set({
+            characterReferences: e.target.value
+              .split('\n')
+              .map((line) => line.trim())
+              .filter(Boolean),
+          })}
+        ></textarea>
+        <div class="muted small">MiniMax uses these as subject references so recurring characters stay recognizable across panels, covers, and later movie/show handoffs.</div>
+      </div>
+
+      <div class="field">
         <label for="seed">Seed <span class="muted">(optional — for reproducible results)</span></label>
         <input
           id="seed"

@@ -25,6 +25,8 @@ For the most actionable workflow, start with the repo playbook at
   for MiniMax-generated theme audio. Use `--project-goal=screen` when the
   next pass should emphasize show/movie handoff artifacts, `--project-goal=music`
   for soundtrack-focused work, or `--project-goal=studio` for a balanced run.
+  Use one or more `--character-reference=...` flags when a recurring hero,
+  villain, or cast lineup needs stronger visual identity consistency.
   Use `--agent-playbook` to print the repo-level Hermes/OpenClaw playbook
   directly from the CLI. Use `--json` when an external agent needs a
   machine-readable result payload. Use `--studio-bundle` when the agent wants
@@ -48,6 +50,8 @@ For the most actionable workflow, start with the repo playbook at
   `get_theme_audio`, `get_preflight`, `get_share_card`, `get_history`, `search_history`, and `patch_history_meta` for complete agent workflows. Use
   `get_storyboard_package` and
   `get_animatic_timeline` for show/movie handoff files.
+  Pass `characterReferences` into `create_comic` / `regenerate_comic` when the
+  host should preserve a cast look from user-supplied reference images.
 - WebUI: the Settings page exposes the Production readiness panel for the same
   preflight diagnostics available through CLI, HTTP, and MCP. The result panel
   exposes project, adaptation, music, and agent guidance downloads, plus a

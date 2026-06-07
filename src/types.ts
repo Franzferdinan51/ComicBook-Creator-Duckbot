@@ -395,6 +395,11 @@ export interface ComicOptions {
    * Equivalent to the CLI's `--aigc-watermark` flag.
    */
   imageAigcWatermark?: boolean;
+  /**
+   * Optional reference image URLs or file paths used to keep recurring
+   * characters visually consistent across panels and cover art.
+   */
+  characterReferences?: string[];
   /** default 4 */
   pageCount?: number;
   /** default 4 */

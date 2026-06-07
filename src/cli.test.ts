@@ -20,6 +20,14 @@ assert.equal(parsed.musicProvider, 'mock');
 assert.equal(parseArgs(['--json', 'A JSON story']).json, true);
 assert.equal(parseArgs(['--preflight']).preflight, true);
 assert.equal(parseArgs(['--production-run-manifest', 'A manifest story']).productionRunManifest, true);
+assert.deepEqual(
+  parseArgs([
+    '--character-reference=https://example.com/hero-1.png',
+    '--character-reference=/tmp/hero-2.png',
+    'A consistency story',
+  ]).characterReferences,
+  ['https://example.com/hero-1.png', '/tmp/hero-2.png']
+);
 
 // Search-history and share flags are parsed correctly.
 {

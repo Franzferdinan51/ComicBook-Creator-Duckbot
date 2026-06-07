@@ -475,6 +475,7 @@ try {
           textProvider: 'mock',
           imageProvider: 'mock',
           musicProvider: 'mock',
+          characterReferences: ['https://example.com/hero-1.png', '/tmp/hero-2.png'],
           pageCount: 1,
           panelsPerPage: 3,
         },
@@ -482,6 +483,10 @@ try {
     });
     assert.equal(createRes.status, 202);
     const { jobId } = await createRes.json() as { jobId: string };
+    assert.deepEqual(getJobManager().get(jobId)?.options.characterReferences, [
+      'https://example.com/hero-1.png',
+      '/tmp/hero-2.png',
+    ]);
     let generated: Record<string, unknown> | null = null;
     for (let i = 0; i < 25; i++) {
       const pollRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic/${jobId}`);
@@ -501,6 +506,22 @@ try {
     assert.equal(generatedResult.project?.projectGoal, 'screen');
     assert.equal(generatedResult.project?.renderProfile?.outputProfile, 'storyboard-widescreen');
     assert.equal(generatedResult.seriesPackage?.targetFormat, 'series');
+
+    const invalidCharacterRefsRes = await fetch(`http://127.0.0.1:${handle.port}/api/comic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        story: 'An invalid consistency request.',
+        options: {
+          imageProvider: 'mock',
+          textProvider: 'mock',
+          characterReferences: ['ok', '', 42],
+        },
+      }),
+    });
+    assert.equal(invalidCharacterRefsRes.status, 400);
+    const invalidCharacterRefsBody = await invalidCharacterRefsRes.json() as { error?: string };
+    assert.equal(invalidCharacterRefsBody.error?.includes('characterReferences'), true);
 
     // -----------------------------------------------------------------
     // History search/filter, PATCH, share card — added in 9ee575c

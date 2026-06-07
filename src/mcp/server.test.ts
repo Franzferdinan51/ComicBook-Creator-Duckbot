@@ -47,6 +47,14 @@ try {
     },
   });
   assert.equal(createSchemaProbe.success, true);
+  const consistencySchemaProbe = mcpServer._registeredTools.create_comic.inputSchema.safeParse({
+    story: 'Character consistency schema probe',
+    options: {
+      imageProvider: 'mock',
+      characterReferences: ['https://example.com/hero-1.png', '/tmp/hero-2.png'],
+    },
+  });
+  assert.equal(consistencySchemaProbe.success, true);
   const customSchemaProbe = mcpServer._registeredTools.create_comic.inputSchema.safeParse({
     story: 'Custom provider schema probe',
     options: {
@@ -67,6 +75,19 @@ try {
   });
   assert.equal(invalidProviderJson.isError, true);
   assert.equal(invalidProviderJson.content[0].text.includes('not a registered text provider'), true);
+  const consistencyJobJson = await mcpServer._registeredTools.create_comic.handler({
+    story: 'A consistent hero returns across scenes.',
+    options: {
+      imageProvider: 'mock',
+      textProvider: 'mock',
+      characterReferences: ['https://example.com/hero-1.png', '/tmp/hero-2.png'],
+    },
+  });
+  const consistencyJob = JSON.parse(consistencyJobJson.content[0].text) as { jobId: string };
+  assert.deepEqual(getJobManager().get(consistencyJob.jobId)?.options.characterReferences, [
+    'https://example.com/hero-1.png',
+    '/tmp/hero-2.png',
+  ]);
   const preflightJson = await mcpServer._registeredTools.get_preflight.handler({});
   const preflight = JSON.parse(preflightJson.content[0].text);
   assert.equal(['pass', 'warn', 'fail'].includes(preflight.status), true);

@@ -114,6 +114,27 @@ function isConfigurableProvider(name: string): boolean {
   return CONFIGURABLE_PROVIDERS.has(name);
 }
 
+function sanitizeCharacterReferences(raw: unknown): { ok: true; value: string[] } | { ok: false; error: string } {
+  if (!Array.isArray(raw)) {
+    return { ok: false, error: 'characterReferences must be an array of non-empty strings' };
+  }
+  if (raw.length > 8) {
+    return { ok: false, error: 'characterReferences may include at most 8 items' };
+  }
+  const cleaned: string[] = [];
+  for (const value of raw) {
+    if (typeof value !== 'string') {
+      return { ok: false, error: 'characterReferences must be an array of non-empty strings' };
+    }
+    const trimmed = value.trim();
+    if (trimmed.length === 0 || trimmed.length > 2048 || /[\x00-\x1f\x7f]/.test(trimmed)) {
+      return { ok: false, error: 'characterReferences must contain strings between 1 and 2048 printable characters' };
+    }
+    cleaned.push(trimmed);
+  }
+  return { ok: true, value: cleaned };
+}
+
 /** Refresh the custom-provider caches and the live registry from disk state. */
 function refreshCustomCachesAndRegistry(all: import('./provider-overrides.js').OverridesFile): void {
   const customCache: Record<string, { apiKey?: string; baseUrl?: string; model?: string }> = {};
@@ -825,6 +846,13 @@ export function buildRouter(): Router {
           return res.status(400).json({ error: 'imageAigcWatermark must be a boolean' });
         }
         if (options.imageAigcWatermark === true) safeOptions.imageAigcWatermark = true;
+      }
+      if (options.characterReferences != null) {
+        const refs = sanitizeCharacterReferences(options.characterReferences);
+        if (!refs.ok) {
+          return res.status(400).json({ error: refs.error });
+        }
+        if (refs.value.length > 0) safeOptions.characterReferences = refs.value;
       }
       if (options.generateCover != null) {
         if (typeof options.generateCover !== 'boolean') {

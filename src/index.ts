@@ -99,6 +99,14 @@ export interface CreateComicOptions {
   onProgress?: (stage: 'script' | 'images' | 'assembly' | 'packaging' | 'writing', fraction: number) => void;
 }
 
+function toCharacterSubjectReferences(
+  refs: readonly string[] | undefined
+): Array<{ type: string; image_file: string }> | undefined {
+  const cleaned = (refs ?? []).map((ref) => ref.trim()).filter(Boolean);
+  if (cleaned.length === 0) return undefined;
+  return cleaned.map((ref) => ({ type: 'character', image_file: ref }));
+}
+
 /**
  * End-to-end comic generation:
  *   story + options → script → panel images → PDF/CBZ → ComicResult
@@ -128,9 +136,11 @@ export async function createComic(
     imageAspectRatio: options.imageAspectRatio,
     imagePromptOptimizer: options.imagePromptOptimizer,
     imageAigcWatermark: options.imageAigcWatermark,
+    characterReferences: options.characterReferences,
     generateCover: options.generateCover ?? true,
     coverImage: options.coverImage,
   } as const;
+  const subjectReference = toCharacterSubjectReferences(opts.characterReferences);
 
   const textProvider = getTextProvider(opts.textProvider);
   const imageProvider = getImageProvider(opts.imageProvider);
@@ -163,6 +173,7 @@ export async function createComic(
       ...(opts.imageAspectRatio ? { aspectRatio: opts.imageAspectRatio } : {}),
       ...(opts.imagePromptOptimizer ? { promptOptimizer: true } : {}),
       ...(opts.imageAigcWatermark ? { aigcWatermark: true } : {}),
+      ...(subjectReference ? { subjectReference } : {}),
     },
     imageProvider
   );
@@ -196,6 +207,7 @@ export async function createComic(
         width: project.renderProfile.cover.width,
         height: project.renderProfile.cover.height,
         ...(opts.imageModel ? { model: opts.imageModel } : {}),
+        ...(subjectReference ? { subjectReference } : {}),
       });
       const ext = detectImageFormat(coverImage);
       coverImagePath = join(coverDir, `cover.${ext}`);

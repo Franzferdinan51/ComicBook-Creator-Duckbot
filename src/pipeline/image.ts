@@ -24,6 +24,7 @@ export interface ImageGeneratorOptions {
   artStyle?: string; // default 'manga'
   width?: number; // default 1024
   height?: number; // default 1024
+  aspectRatio?: string;
   renderProfile?: RenderProfile;
   concurrency?: number; // default 4
   /**
@@ -32,6 +33,13 @@ export interface ImageGeneratorOptions {
    * entrypoint — not all providers honor it.
    */
   seed?: number;
+  promptOptimizer?: boolean;
+  aigcWatermark?: boolean;
+  subjectReference?: Array<{
+    type: string;
+    image_url?: string;
+    image_file?: string;
+  }>;
   /**
    * Optional model override. Forwarded to `imageProvider.generate(prompt,
    * { model })`. Falls back to the provider's configured default if
@@ -121,6 +129,11 @@ export async function generatePanelImages(
       width,
       height,
       ...(options.model ? { model: options.model } : {}),
+      ...(options.seed != null ? { seed: options.seed } : {}),
+      ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
+      ...(options.promptOptimizer ? { promptOptimizer: true } : {}),
+      ...(options.aigcWatermark ? { aigcWatermark: true } : {}),
+      ...(options.subjectReference?.length ? { subjectReference: options.subjectReference } : {}),
     });
   });
 

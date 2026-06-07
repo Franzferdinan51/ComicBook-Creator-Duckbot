@@ -116,6 +116,11 @@ function validateMcpOptions(options: Partial<ComicOptions> = {}): { ok: true; op
   if (options.musicProvider != null && !musicNames.has(options.musicProvider)) {
     return { ok: false, error: `musicProvider "${options.musicProvider}" is not a registered music provider. Available: ${[...musicNames].join(', ')}` };
   }
+  if (options.characterReferences != null) {
+    if (!Array.isArray(options.characterReferences) || options.characterReferences.some((ref) => typeof ref !== 'string' || ref.trim().length === 0)) {
+      return { ok: false, error: 'characterReferences must be an array of non-empty strings' };
+    }
+  }
   return { ok: true, options };
 }
 
@@ -181,6 +186,7 @@ export function buildMcpServer(): McpServer {
           outputFormat: z.enum(['pdf', 'cbz']).optional().describe('Output container. Default: "pdf".'),
           imageModel: z.string().optional().describe('Override image model id for providers that support it.'),
           textModel: z.string().optional().describe('Override text model id for providers that support it.'),
+          characterReferences: z.array(z.string().min(1)).max(8).optional().describe('Reference image URLs/paths used for recurring character consistency.'),
           outputPath: z.string().optional().describe('Override the output file path.'),
           generateCover: z.boolean().optional().describe('Whether to generate a cover image. Default: true.'),
           seed: z.number().int().optional().describe('Deterministic seed (mock provider). Default: 0.'),
@@ -244,6 +250,7 @@ export function buildMcpServer(): McpServer {
           outputFormat: z.enum(['pdf', 'cbz']).optional().describe('Output container override.'),
           imageModel: z.string().optional().describe('Override image model id.'),
           textModel: z.string().optional().describe('Override text model id.'),
+          characterReferences: z.array(z.string().min(1)).max(8).optional().describe('Reference image URLs/paths used for recurring character consistency.'),
           outputPath: z.string().optional().describe('Override the output file path.'),
           generateCover: z.boolean().optional().describe('Whether to generate a cover image.'),
           seed: z.number().int().optional().describe('Deterministic seed.'),
